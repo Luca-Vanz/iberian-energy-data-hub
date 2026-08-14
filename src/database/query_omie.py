@@ -34,14 +34,50 @@ with sqlite3.connect(DATABASE_PATH) as connection:
     for row in results:
         print(row)
 
+
     # Query 3: periods with ES-PT price separation
     query = """
         SELECT
             timestamp_market,
-            MAX(price_eur_mwh) - MIN(price_eur_mwh) AS price_difference
+
+            MAX(
+                CASE
+                    WHEN bidding_zone = 'ES'
+                    THEN price_eur_mwh
+                END
+            ) AS price_es,
+
+            MAX(
+                CASE
+                    WHEN bidding_zone = 'PT'
+                    THEN price_eur_mwh
+                END
+            ) AS price_pt,
+
+            ROUND(
+                MAX(
+                    CASE
+                        WHEN bidding_zone = 'PT'
+                        THEN price_eur_mwh
+                    END
+                )
+                -
+                MAX(
+                    CASE
+                        WHEN bidding_zone = 'ES'
+                        THEN price_eur_mwh
+                    END
+                ),
+                2
+            ) AS pt_minus_es
+
         FROM omie_day_ahead_prices
+
         GROUP BY timestamp_market
-        HAVING price_difference > 0;
+
+        HAVING ABS(pt_minus_es) > 0.001
+
+        ORDER BY timestamp_market;
     """
 
     results = connection.execute(query).fetchall()
