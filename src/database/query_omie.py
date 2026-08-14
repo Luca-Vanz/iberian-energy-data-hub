@@ -87,3 +87,86 @@ with sqlite3.connect(DATABASE_PATH) as connection:
 
     for row in results:
         print(row)
+
+
+    # Query 4: daily average Spanish day-ahead price
+    query = """
+        SELECT
+            market_date,
+            ROUND(AVG(price_eur_mwh), 2) AS avg_price
+        FROM omie_day_ahead_prices
+        WHERE bidding_zone = 'ES'
+        GROUP BY market_date
+        ORDER BY market_date;
+    """
+
+    results = connection.execute(query).fetchall()
+
+    print()
+    print("Daily average Spanish price:")
+
+    for row in results:
+        print(row)
+
+    # Query 5: daily ES-PT market summary
+    query = """
+        WITH hourly_prices AS (
+            SELECT
+                market_date,
+                timestamp_market,
+
+                MAX(
+                    CASE
+                        WHEN bidding_zone = 'ES'
+                        THEN price_eur_mwh
+                    END
+                ) AS price_es,
+
+                MAX(
+                    CASE
+                        WHEN bidding_zone = 'PT'
+                        THEN price_eur_mwh
+                    END
+                ) AS price_pt
+
+            FROM omie_day_ahead_prices
+
+            GROUP BY
+                market_date,
+                timestamp_market
+        )
+
+        SELECT
+            market_date,
+
+            ROUND(AVG(price_es), 2) AS avg_price_es,
+
+            ROUND(AVG(price_pt), 2) AS avg_price_pt,
+
+            SUM(
+                CASE
+                    WHEN ABS(price_pt - price_es) > 0.001
+                    THEN 1
+                    ELSE 0
+                END
+            ) AS split_periods,
+
+            ROUND(
+                MAX(ABS(price_pt - price_es)),
+                2
+            ) AS max_spread
+
+        FROM hourly_prices
+
+        GROUP BY market_date
+
+        ORDER BY market_date;
+    """
+
+    results = connection.execute(query).fetchall()
+
+    print()
+    print("Daily ES-PT market summary:")
+
+    for row in results:
+        print(row)
