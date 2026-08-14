@@ -21,7 +21,9 @@ def generate_dates(start_date: str, end_date: str):
     final_date = datetime.strptime(end_date, "%Y%m%d")
 
     if final_date < current_date:
-        raise ValueError("End date cannot be before start date.")
+        raise ValueError(
+            "End date cannot be before start date."
+        )
 
     dates = []
 
@@ -32,7 +34,11 @@ def generate_dates(start_date: str, end_date: str):
     return dates
 
 
-def run_pipeline(start_date: str, end_date: str | None = None):
+def run_pipeline(
+    start_date: str,
+    end_date: str | None = None,
+    force: bool = False,
+):
     if end_date is None:
         end_date = start_date
 
@@ -46,15 +52,17 @@ def run_pipeline(start_date: str, end_date: str | None = None):
 
     for date in dates:
         print(f"Processing {date}")
-        print()
 
-        download_omie_day_ahead(date)
+        download_omie_day_ahead(
+            date,
+            force=force,
+        )
 
-        print()
+        process_omie_day_ahead(
+            date,
+            force=force,
+        )
 
-        process_omie_day_ahead(date)
-
-        print()
         print(f"Completed {date}")
         print("-" * 50)
 
@@ -80,9 +88,19 @@ def main():
         help="Optional final market date in YYYYMMDD format.",
     )
 
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Download and process files again even if they already exist.",
+    )
+
     args = parser.parse_args()
 
-    run_pipeline(args.start_date, args.end_date)
+    run_pipeline(
+        args.start_date,
+        args.end_date,
+        force=args.force,
+    )
 
 
 if __name__ == "__main__":

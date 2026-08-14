@@ -4,8 +4,23 @@ from pathlib import Path
 import pandas as pd
 
 
-def process_omie_day_ahead(date: str) -> Path:
+def process_omie_day_ahead(date: str, force: bool = False) -> Path:
     raw_path = Path("data") / "raw" / "omie" / f"marginalpdbc_{date}.1"
+
+    processed_dir = Path("data") / "processed" / "omie"
+    processed_dir.mkdir(parents=True, exist_ok=True)
+
+    output_path = (
+        processed_dir / f"day_ahead_prices_{date}.csv"
+    )
+
+    # Skip processing if the output already exists
+    if output_path.exists() and not force:
+        print(
+            f"Processed file already exists, "
+            f"skipping processing: {output_path}"
+        )
+        return output_path
 
     if not raw_path.exists():
         raise FileNotFoundError(
@@ -91,24 +106,12 @@ def process_omie_day_ahead(date: str) -> Path:
         ]
     ].copy()
 
-    processed_dir = Path("data") / "processed" / "omie"
-    processed_dir.mkdir(parents=True, exist_ok=True)
-
-    output_path = (
-        processed_dir / f"day_ahead_prices_{date}.csv"
-    )
-
     processed_df.to_csv(
         output_path,
         index=False,
     )
 
     print("Validation passed!")
-    print()
-    print(processed_df.head())
-    print()
-    print(processed_df.tail())
-    print()
     print(f"Processed data saved to: {output_path}")
 
     return output_path
@@ -124,9 +127,18 @@ def main():
         help="Market date in YYYYMMDD format, for example 20260813",
     )
 
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Process the file again even if output already exists.",
+    )
+
     args = parser.parse_args()
 
-    process_omie_day_ahead(args.date)
+    process_omie_day_ahead(
+        args.date,
+        force=args.force,
+    )
 
 
 if __name__ == "__main__":
