@@ -2,6 +2,7 @@ import argparse
 from datetime import datetime, timedelta
 
 from src.collectors.omie_day_ahead import download_omie_day_ahead
+from src.database.load_omie_prices import create_database, load_omie_prices
 from src.processing.parse_omie_day_ahead import process_omie_day_ahead
 
 
@@ -50,18 +51,27 @@ def run_pipeline(
     )
     print()
 
+    # Create the SQLite database/table if needed
+    create_database()
+    print()
+
     for date in dates:
         print(f"Processing {date}")
 
+        # 1. Extract
         download_omie_day_ahead(
             date,
             force=force,
         )
 
+        # 2. Transform
         process_omie_day_ahead(
             date,
             force=force,
         )
+
+        # 3. Load
+        load_omie_prices(date)
 
         print(f"Completed {date}")
         print("-" * 50)
@@ -72,7 +82,10 @@ def run_pipeline(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Download and process OMIE day-ahead electricity prices."
+        description=(
+            "Download, process and load OMIE "
+            "day-ahead electricity prices."
+        )
     )
 
     parser.add_argument(
@@ -91,7 +104,10 @@ def main():
     parser.add_argument(
         "--force",
         action="store_true",
-        help="Download and process files again even if they already exist.",
+        help=(
+            "Download and process files again "
+            "even if they already exist."
+        ),
     )
 
     args = parser.parse_args()

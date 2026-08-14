@@ -183,3 +183,4 @@ cython_debug/
 # Project data
 data/raw/
 data/processed/
+data/database/
