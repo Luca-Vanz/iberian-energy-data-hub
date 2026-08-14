@@ -1,9 +1,21 @@
+import argparse
 from pathlib import Path
 
 import pandas as pd
 
 
-DATE = "20260813"
+parser = argparse.ArgumentParser(
+    description="Process OMIE day-ahead electricity prices."
+)
+
+parser.add_argument(
+    "date",
+    help="Market date in YYYYMMDD format, for example 20260813",
+)
+
+args = parser.parse_args()
+
+DATE = args.date
 
 raw_path = Path("data") / "raw" / "omie" / f"marginalpdbc_{DATE}.1"
 

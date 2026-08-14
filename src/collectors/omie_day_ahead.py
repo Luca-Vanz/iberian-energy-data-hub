@@ -1,9 +1,21 @@
+import argparse
 from pathlib import Path
 
 import requests
 
 
-DATE = "20260813"
+parser = argparse.ArgumentParser(
+    description="Download OMIE day-ahead electricity prices."
+)
+
+parser.add_argument(
+    "date",
+    help="Market date in YYYYMMDD format, for example 20260813",
+)
+
+args = parser.parse_args()
+
+DATE = args.date
 
 BASE_URL = "https://www.omie.es/en/file-download"
 FILE_PREFIX = "marginalpdbc"
