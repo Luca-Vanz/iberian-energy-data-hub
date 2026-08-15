@@ -35,10 +35,8 @@
             gap: 15px;
             align-items: end;
             flex-wrap: wrap;
-
             padding: 20px;
             margin-bottom: 25px;
-
             background-color: #f5f5f5;
             border-radius: 8px;
         }
@@ -135,7 +133,9 @@
     </p>
 
 
-    <!-- DAILY FILTERS -->
+    <!-- ==================================================
+         DAILY FILTERS
+         ================================================== -->
 
     <div class="controls">
 
@@ -209,7 +209,9 @@
     ></div>
 
 
-    <!-- DAILY PRICE CHART -->
+    <!-- ==================================================
+         DAILY PRICE CHART
+         ================================================== -->
 
     <h2>Daily Average Prices</h2>
 
@@ -218,7 +220,9 @@
     </div>
 
 
-    <!-- INTRADAY SECTION -->
+    <!-- ==================================================
+         INTRADAY SECTION
+         ================================================== -->
 
     <h2>15-Minute Intraday Prices</h2>
 
@@ -275,7 +279,49 @@
     </div>
 
 
-    <!-- DAILY SUMMARY TABLE -->
+    <!-- ==================================================
+         PORTUGAL PRICE + LOAD
+         ================================================== -->
+
+    <h2>Portugal Price + Electricity Load</h2>
+
+    <div class="controls">
+
+        <div class="control">
+
+            <label for="price-load-date">
+                Market date
+            </label>
+
+            <input
+                type="date"
+                id="price-load-date"
+            >
+
+        </div>
+
+
+        <button id="price-load-button">
+            Load price + demand
+        </button>
+
+    </div>
+
+
+    <div
+        id="price-load-message"
+        class="message"
+    ></div>
+
+
+    <div class="chart-container">
+        <canvas id="price-load-chart"></canvas>
+    </div>
+
+
+    <!-- ==================================================
+         DAILY SUMMARY TABLE
+         ================================================== -->
 
     <h2>Daily Market Summary</h2>
 
@@ -295,11 +341,12 @@
         let priceChart = null;
         let intradayChart = null;
         let spreadChart = null;
+        let priceLoadChart = null;
 
 
-        // --------------------------------------------------
+        // ==================================================
         // DATE UTILITIES
-        // --------------------------------------------------
+        // ==================================================
 
         function formatDate(dateString) {
 
@@ -323,9 +370,9 @@
         }
 
 
-        // --------------------------------------------------
+        // ==================================================
         // DAILY API URL
-        // --------------------------------------------------
+        // ==================================================
 
         function buildApiUrl() {
 
@@ -384,9 +431,9 @@
         }
 
 
-        // --------------------------------------------------
+        // ==================================================
         // DAILY CHART DATASETS
-        // --------------------------------------------------
+        // ==================================================
 
         function createDatasets(
             data,
@@ -430,9 +477,9 @@
         }
 
 
-        // --------------------------------------------------
+        // ==================================================
         // DAILY TABLE
-        // --------------------------------------------------
+        // ==================================================
 
         function renderTable(
             data,
@@ -544,9 +591,9 @@
         }
 
 
-        // --------------------------------------------------
+        // ==================================================
         // DAILY CHART
-        // --------------------------------------------------
+        // ==================================================
 
         function renderChart(
             data,
@@ -633,9 +680,9 @@
         }
 
 
-        // --------------------------------------------------
+        // ==================================================
         // LOAD DAILY DATA
-        // --------------------------------------------------
+        // ==================================================
 
         async function loadMarketData() {
 
@@ -689,6 +736,20 @@
                 }
 
 
+                const firstDate =
+                    formatDate(
+                        data[0].market_date
+                    );
+
+
+                const lastDate =
+                    formatDate(
+                        data[
+                            data.length - 1
+                        ].market_date
+                    );
+
+
                 if (
                     !document.getElementById(
                         "start-date"
@@ -698,9 +759,7 @@
                     document.getElementById(
                         "start-date"
                     ).value =
-                        formatDate(
-                            data[0].market_date
-                        );
+                        firstDate;
                 }
 
 
@@ -713,11 +772,7 @@
                     document.getElementById(
                         "end-date"
                     ).value =
-                        formatDate(
-                            data[
-                                data.length - 1
-                            ].market_date
-                        );
+                        lastDate;
                 }
 
 
@@ -730,11 +785,20 @@
                     document.getElementById(
                         "intraday-date"
                     ).value =
-                        formatDate(
-                            data[
-                                data.length - 1
-                            ].market_date
-                        );
+                        lastDate;
+                }
+
+
+                if (
+                    !document.getElementById(
+                        "price-load-date"
+                    ).value
+                ) {
+
+                    document.getElementById(
+                        "price-load-date"
+                    ).value =
+                        lastDate;
                 }
 
 
@@ -761,9 +825,9 @@
         }
 
 
-        // --------------------------------------------------
+        // ==================================================
         // LOAD INTRADAY DATA
-        // --------------------------------------------------
+        // ==================================================
 
         async function loadIntradayData() {
 
@@ -850,10 +914,6 @@
                 }
 
 
-                // -----------------------------
-                // PREPARE DATA
-                // -----------------------------
-
                 const times =
                     data.map(
                         row =>
@@ -882,9 +942,9 @@
                     );
 
 
-                // -----------------------------
-                // CALCULATE STATISTICS
-                // -----------------------------
+                // ------------------------------------------
+                // STATISTICS
+                // ------------------------------------------
 
                 const averageSpain =
                     spanishPrices.reduce(
@@ -958,9 +1018,9 @@
                     ).length;
 
 
-                // -----------------------------
+                // ------------------------------------------
                 // STATISTIC CARDS
-                // -----------------------------
+                // ------------------------------------------
 
                 statsContainer.innerHTML = `
 
@@ -1077,9 +1137,9 @@
                 `;
 
 
-                // -----------------------------
+                // ------------------------------------------
                 // INTRADAY PRICE CHART
-                // -----------------------------
+                // ------------------------------------------
 
                 if (intradayChart) {
                     intradayChart.destroy();
@@ -1162,9 +1222,9 @@
                     );
 
 
-                // -----------------------------
+                // ------------------------------------------
                 // SPREAD CHART
-                // -----------------------------
+                // ------------------------------------------
 
                 if (spreadChart) {
                     spreadChart.destroy();
@@ -1256,9 +1316,239 @@
         }
 
 
-        // --------------------------------------------------
+        // ==================================================
+        // PORTUGAL PRICE + LOAD
+        // ==================================================
+
+        async function loadPriceLoadData() {
+
+            const dateInput =
+                document.getElementById(
+                    "price-load-date"
+                ).value;
+
+
+            const message =
+                document.getElementById(
+                    "price-load-message"
+                );
+
+
+            if (!dateInput) {
+
+                message.textContent =
+                    "Please select a market date.";
+
+                return;
+            }
+
+
+            const apiDate =
+                convertDateForApi(
+                    dateInput
+                );
+
+
+            message.textContent =
+                "Loading price and demand data...";
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        `/market/price-load?country=PT&date=${apiDate}`
+                    );
+
+
+                if (!response.ok) {
+
+                    const errorData =
+                        await response.json();
+
+
+                    throw new Error(
+                        errorData.detail
+                        || "Unable to load price/load data."
+                    );
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                if (data.length === 0) {
+
+                    message.textContent =
+                        "No price/load data found for this date.";
+
+                    if (priceLoadChart) {
+                        priceLoadChart.destroy();
+                        priceLoadChart = null;
+                    }
+
+                    return;
+                }
+
+
+                const times =
+                    data.map(
+                        row =>
+                            row.timestamp_market.slice(
+                                11,
+                                16
+                            )
+                    );
+
+
+                const prices =
+                    data.map(
+                        row => row.price_eur_mwh
+                    );
+
+
+                const loads =
+                    data.map(
+                        row => row.load_mw
+                    );
+
+
+                if (priceLoadChart) {
+                    priceLoadChart.destroy();
+                }
+
+
+                const chartContext =
+                    document.getElementById(
+                        "price-load-chart"
+                    );
+
+
+                priceLoadChart =
+                    new Chart(
+                        chartContext,
+                        {
+
+                            type: "line",
+
+                            data: {
+
+                                labels: times,
+
+                                datasets: [
+
+                                    {
+                                        label:
+                                            "Portugal Day-Ahead Price",
+
+                                        data: prices,
+
+                                        yAxisID:
+                                            "yPrice",
+
+                                        tension: 0.1,
+
+                                        pointRadius: 2
+                                    },
+
+
+                                    {
+                                        label:
+                                            "Portugal Electricity Load",
+
+                                        data: loads,
+
+                                        yAxisID:
+                                            "yLoad",
+
+                                        tension: 0.1,
+
+                                        pointRadius: 2
+                                    }
+                                ]
+                            },
+
+                            options: {
+
+                                responsive: true,
+
+                                interaction: {
+                                    mode: "index",
+                                    intersect: false
+                                },
+
+                                plugins: {
+
+                                    title: {
+                                        display: true,
+                                        text:
+                                            "Portugal Day-Ahead Price and Electricity Load"
+                                    }
+                                },
+
+                                scales: {
+
+                                    x: {
+
+                                        title: {
+                                            display: true,
+                                            text: "Market time"
+                                        }
+                                    },
+
+
+                                    yPrice: {
+
+                                        type: "linear",
+
+                                        position: "left",
+
+                                        title: {
+                                            display: true,
+                                            text:
+                                                "Price (€/MWh)"
+                                        }
+                                    },
+
+
+                                    yLoad: {
+
+                                        type: "linear",
+
+                                        position: "right",
+
+                                        title: {
+                                            display: true,
+                                            text:
+                                                "Load (MW)"
+                                        },
+
+                                        grid: {
+                                            drawOnChartArea:
+                                                false
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    );
+
+
+                message.textContent =
+                    `${data.length} joined observations loaded.`;
+
+            } catch (error) {
+
+                message.textContent =
+                    "Error: " + error.message;
+            }
+        }
+
+
+        // ==================================================
         // BUTTONS
-        // --------------------------------------------------
+        // ==================================================
 
         document.getElementById(
             "apply-button"
@@ -1302,9 +1592,17 @@
         );
 
 
-        // --------------------------------------------------
+        document.getElementById(
+            "price-load-button"
+        ).addEventListener(
+            "click",
+            loadPriceLoadData
+        );
+
+
+        // ==================================================
         // INITIAL PAGE LOAD
-        // --------------------------------------------------
+        // ==================================================
 
         loadMarketData();
 
