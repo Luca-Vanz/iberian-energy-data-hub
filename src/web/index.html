@@ -7,10 +7,12 @@
 
     <title>Iberian Energy Data Hub</title>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 40px auto;
             padding: 0 20px;
         }
@@ -22,6 +24,10 @@
         .subtitle {
             color: #666;
             margin-bottom: 30px;
+        }
+
+        .chart-container {
+            margin-bottom: 40px;
         }
 
         table {
@@ -56,6 +62,12 @@
         OMIE day-ahead electricity market data
     </p>
 
+    <h2>Daily Average Prices</h2>
+
+    <div class="chart-container">
+        <canvas id="price-chart"></canvas>
+    </div>
+
     <h2>Daily Market Summary</h2>
 
     <table>
@@ -74,6 +86,17 @@
     </table>
 
     <script>
+        function formatDate(dateString) {
+            return (
+                dateString.slice(0, 4)
+                + "-"
+                + dateString.slice(4, 6)
+                + "-"
+                + dateString.slice(6, 8)
+            );
+        }
+
+
         async function loadMarketData() {
 
             const response = await fetch(
@@ -86,22 +109,94 @@
                 "market-data"
             );
 
+            const dates = [];
+            const spanishPrices = [];
+            const portuguesePrices = [];
+
             for (const row of data) {
+
+                const formattedDate =
+                    formatDate(row.market_date);
+
+                dates.push(formattedDate);
+                spanishPrices.push(row.avg_price_es);
+                portuguesePrices.push(row.avg_price_pt);
 
                 const tableRow =
                     document.createElement("tr");
 
                 tableRow.innerHTML = `
-                    <td>${row.market_date}</td>
-                    <td>${row.avg_price_es}</td>
-                    <td>${row.avg_price_pt}</td>
+                    <td>${formattedDate}</td>
+                    <td>${row.avg_price_es.toFixed(2)}</td>
+                    <td>${row.avg_price_pt.toFixed(2)}</td>
                     <td>${row.split_periods}</td>
-                    <td>${row.max_spread}</td>
+                    <td>${row.max_spread.toFixed(2)}</td>
                 `;
 
                 tableBody.appendChild(tableRow);
             }
+
+
+            const chartContext =
+                document.getElementById("price-chart");
+
+            new Chart(
+                chartContext,
+                {
+                    type: "line",
+
+                    data: {
+                        labels: dates,
+
+                        datasets: [
+                            {
+                                label: "Spain",
+                                data: spanishPrices,
+                                tension: 0.2
+                            },
+                            {
+                                label: "Portugal",
+                                data: portuguesePrices,
+                                tension: 0.2
+                            }
+                        ]
+                    },
+
+                    options: {
+                        responsive: true,
+
+                        interaction: {
+                            mode: "index",
+                            intersect: false
+                        },
+
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: "OMIE Daily Average Day-Ahead Prices"
+                            }
+                        },
+
+                        scales: {
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: "€/MWh"
+                                }
+                            },
+
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: "Market date"
+                                }
+                            }
+                        }
+                    }
+                }
+            );
         }
+
 
         loadMarketData();
     </script>
