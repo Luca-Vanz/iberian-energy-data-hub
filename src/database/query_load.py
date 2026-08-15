@@ -11,7 +11,10 @@ DATABASE_PATH = (
 
 with sqlite3.connect(DATABASE_PATH) as connection:
 
-    # Total electricity load observations
+    # --------------------------------------------------
+    # QUERY 1: TOTAL LOAD OBSERVATIONS
+    # --------------------------------------------------
+
     total_rows = connection.execute(
         """
         SELECT COUNT(*)
@@ -26,7 +29,10 @@ with sqlite3.connect(DATABASE_PATH) as connection:
     )
 
 
-    # Rows by country
+    # --------------------------------------------------
+    # QUERY 2: ROWS BY COUNTRY
+    # --------------------------------------------------
+
     country_counts = connection.execute(
         """
         SELECT
@@ -49,7 +55,10 @@ with sqlite3.connect(DATABASE_PATH) as connection:
         print(row)
 
 
-    # First five Portuguese observations
+    # --------------------------------------------------
+    # QUERY 3: FIRST PORTUGUESE LOAD OBSERVATIONS
+    # --------------------------------------------------
+
     first_rows = connection.execute(
         """
         SELECT
@@ -75,3 +84,45 @@ with sqlite3.connect(DATABASE_PATH) as connection:
 
     for row in first_rows:
         print(row)
+
+
+    # --------------------------------------------------
+    # QUERY 4: JOIN OMIE PRICE + REN LOAD
+    # --------------------------------------------------
+
+    price_load = connection.execute(
+        """
+        SELECT
+            p.timestamp_market,
+            p.price_eur_mwh,
+            l.load_mw
+
+        FROM omie_day_ahead_prices AS p
+
+        INNER JOIN electricity_load AS l
+            ON p.timestamp_utc = l.timestamp_utc
+
+        WHERE
+            p.bidding_zone = 'PT'
+            AND l.country = 'PT'
+            AND p.market_date = '20260811'
+
+        ORDER BY p.timestamp_utc;
+        """
+    ).fetchall()
+
+
+    print()
+    print(
+        "Portuguese price + load:"
+    )
+
+    for row in price_load[:10]:
+        print(row)
+
+
+    print()
+    print(
+        f"Joined observations: "
+        f"{len(price_load)}"
+    )
