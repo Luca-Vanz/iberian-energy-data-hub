@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Iberian Energy Data Hub</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: right;
+        }
+
+        th:first-child,
+        td:first-child {
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Iberian Energy Data Hub</h1>
+
+    <p class="subtitle">
+        OMIE day-ahead electricity market data
+    </p>
+
+    <h2>Daily Market Summary</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Spain €/MWh</th>
+                <th>Portugal €/MWh</th>
+                <th>Split Periods</th>
+                <th>Max Spread €/MWh</th>
+            </tr>
+        </thead>
+
+        <tbody id="market-data">
+        </tbody>
+    </table>
+
+    <script>
+        async function loadMarketData() {
+
+            const response = await fetch(
+                "/omie/daily-summary"
+            );
+
+            const data = await response.json();
+
+            const tableBody = document.getElementById(
+                "market-data"
+            );
+
+            for (const row of data) {
+
+                const tableRow =
+                    document.createElement("tr");
+
+                tableRow.innerHTML = `
+                    <td>${row.market_date}</td>
+                    <td>${row.avg_price_es}</td>
+                    <td>${row.avg_price_pt}</td>
+                    <td>${row.split_periods}</td>
+                    <td>${row.max_spread}</td>
+                `;
+
+                tableBody.appendChild(tableRow);
+            }
+        }
+
+        loadMarketData();
+    </script>
+
+</body>
+
+</html>

@@ -1,12 +1,17 @@
 from datetime import datetime
+from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 
 from src.analytics.omie import (
     get_daily_market_summary,
     get_prices,
 )
+
+
+WEB_PATH = Path("src") / "web" / "index.html"
 
 
 app = FastAPI(
@@ -25,15 +30,16 @@ def validate_date(date: str | None) -> None:
     except ValueError as exc:
         raise HTTPException(
             status_code=400,
-            detail="Date must be a valid calendar date in YYYYMMDD format.",
+            detail=(
+                "Date must be a valid calendar date "
+                "in YYYYMMDD format."
+            ),
         ) from exc
 
 
 @app.get("/")
 def root():
-    return {
-        "message": "Iberian Energy Data Hub API"
-    }
+    return FileResponse(WEB_PATH)
 
 
 @app.get("/health")
