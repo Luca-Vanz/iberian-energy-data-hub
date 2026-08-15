@@ -1,6 +1,11 @@
+from typing import Literal
+
 from fastapi import FastAPI
 
-from src.analytics.omie import get_daily_market_summary
+from src.analytics.omie import (
+    get_daily_market_summary,
+    get_prices,
+)
 
 
 app = FastAPI(
@@ -27,6 +32,23 @@ def health_check():
 @app.get("/omie/daily-summary")
 def omie_daily_summary():
     df = get_daily_market_summary()
+
+    return df.to_dict(
+        orient="records"
+    )
+
+
+@app.get("/omie/prices")
+def omie_prices(
+    zone: Literal["ES", "PT"],
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
+    df = get_prices(
+        zone=zone,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
     return df.to_dict(
         orient="records"

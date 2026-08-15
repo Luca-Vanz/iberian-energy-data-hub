@@ -70,6 +70,52 @@ def get_daily_market_summary() -> pd.DataFrame:
 
     return df
 
+def get_prices(
+    zone: str,
+    start_date: str | None = None,
+    end_date: str | None = None,
+) -> pd.DataFrame:
+
+    query = """
+        SELECT
+            timestamp_utc,
+            timestamp_market,
+            market_date,
+            period,
+            bidding_zone,
+            price_eur_mwh
+
+        FROM omie_day_ahead_prices
+
+        WHERE bidding_zone = ?
+    """
+
+    parameters = [zone]
+
+    if start_date is not None:
+        query += """
+            AND market_date >= ?
+        """
+        parameters.append(start_date)
+
+    if end_date is not None:
+        query += """
+            AND market_date <= ?
+        """
+        parameters.append(end_date)
+
+    query += """
+        ORDER BY timestamp_utc;
+    """
+
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        df = pd.read_sql_query(
+            query,
+            connection,
+            params=parameters,
+        )
+
+    return df
 
 if __name__ == "__main__":
     summary = get_daily_market_summary()
