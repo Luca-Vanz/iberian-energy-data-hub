@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Literal
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 from src.analytics.omie import (
     get_daily_market_summary,
@@ -13,6 +14,19 @@ app = FastAPI(
     description="API for Iberian electricity market data and analytics.",
     version="0.1.0",
 )
+
+
+def validate_date(date: str | None) -> None:
+    if date is None:
+        return
+
+    try:
+        datetime.strptime(date, "%Y%m%d")
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="Date must be a valid calendar date in YYYYMMDD format.",
+        ) from exc
 
 
 @app.get("/")
@@ -44,6 +58,19 @@ def omie_prices(
     start_date: str | None = None,
     end_date: str | None = None,
 ):
+    validate_date(start_date)
+    validate_date(end_date)
+
+    if (
+        start_date is not None
+        and end_date is not None
+        and end_date < start_date
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="end_date cannot be before start_date.",
+        )
+
     df = get_prices(
         zone=zone,
         start_date=start_date,
