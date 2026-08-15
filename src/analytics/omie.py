@@ -7,7 +7,11 @@ import pandas as pd
 DATABASE_PATH = Path("data") / "database" / "iberian_energy.db"
 
 
-def get_daily_market_summary() -> pd.DataFrame:
+def get_daily_market_summary(
+    start_date: str | None = None,
+    end_date: str | None = None,
+) -> pd.DataFrame:
+
     query = """
         WITH period_prices AS (
             SELECT
@@ -30,6 +34,24 @@ def get_daily_market_summary() -> pd.DataFrame:
 
             FROM omie_day_ahead_prices
 
+            WHERE 1 = 1
+    """
+
+    parameters = []
+
+    if start_date is not None:
+        query += """
+            AND market_date >= ?
+        """
+        parameters.append(start_date)
+
+    if end_date is not None:
+        query += """
+            AND market_date <= ?
+        """
+        parameters.append(end_date)
+
+    query += """
             GROUP BY
                 market_date,
                 timestamp_market
@@ -38,9 +60,15 @@ def get_daily_market_summary() -> pd.DataFrame:
         SELECT
             market_date,
 
-            ROUND(AVG(price_es), 2) AS avg_price_es,
+            ROUND(
+                AVG(price_es),
+                2
+            ) AS avg_price_es,
 
-            ROUND(AVG(price_pt), 2) AS avg_price_pt,
+            ROUND(
+                AVG(price_pt),
+                2
+            ) AS avg_price_pt,
 
             SUM(
                 CASE
@@ -51,7 +79,9 @@ def get_daily_market_summary() -> pd.DataFrame:
             ) AS split_periods,
 
             ROUND(
-                MAX(ABS(price_pt - price_es)),
+                MAX(
+                    ABS(price_pt - price_es)
+                ),
                 2
             ) AS max_spread
 
@@ -66,9 +96,11 @@ def get_daily_market_summary() -> pd.DataFrame:
         df = pd.read_sql_query(
             query,
             connection,
+            params=parameters,
         )
 
     return df
+
 
 def get_prices(
     zone: str,
@@ -116,6 +148,7 @@ def get_prices(
         )
 
     return df
+
 
 if __name__ == "__main__":
     summary = get_daily_market_summary()

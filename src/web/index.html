@@ -26,6 +26,40 @@
             margin-bottom: 30px;
         }
 
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+
+            padding: 20px;
+            margin-bottom: 30px;
+
+            background-color: #f5f5f5;
+            border-radius: 8px;
+        }
+
+        .control {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input,
+        select,
+        button {
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
         .chart-container {
             margin-bottom: 40px;
         }
@@ -51,6 +85,11 @@
         th {
             background-color: #f4f4f4;
         }
+
+        #message {
+            margin: 15px 0;
+            color: #666;
+        }
     </style>
 </head>
 
@@ -62,31 +101,97 @@
         OMIE day-ahead electricity market data
     </p>
 
+
+    <div class="controls">
+
+        <div class="control">
+            <label for="start-date">
+                Start date
+            </label>
+
+            <input
+                type="date"
+                id="start-date"
+            >
+        </div>
+
+
+        <div class="control">
+            <label for="end-date">
+                End date
+            </label>
+
+            <input
+                type="date"
+                id="end-date"
+            >
+        </div>
+
+
+        <div class="control">
+            <label for="zone">
+                Market
+            </label>
+
+            <select id="zone">
+                <option value="ALL">
+                    Spain + Portugal
+                </option>
+
+                <option value="ES">
+                    Spain
+                </option>
+
+                <option value="PT">
+                    Portugal
+                </option>
+            </select>
+        </div>
+
+
+        <button id="apply-button">
+            Apply filters
+        </button>
+
+        <button id="reset-button">
+            Reset
+        </button>
+
+    </div>
+
+
+    <div id="message"></div>
+
+
     <h2>Daily Average Prices</h2>
 
     <div class="chart-container">
         <canvas id="price-chart"></canvas>
     </div>
 
+
     <h2>Daily Market Summary</h2>
 
     <table>
+
         <thead>
-            <tr>
-                <th>Date</th>
-                <th>Spain €/MWh</th>
-                <th>Portugal €/MWh</th>
-                <th>Split Periods</th>
-                <th>Max Spread €/MWh</th>
+            <tr id="table-header">
             </tr>
         </thead>
 
         <tbody id="market-data">
         </tbody>
+
     </table>
 
+
     <script>
+
+        let priceChart = null;
+
+
         function formatDate(dateString) {
+
             return (
                 dateString.slice(0, 4)
                 + "-"
@@ -97,69 +202,234 @@
         }
 
 
-        async function loadMarketData() {
+        function convertDateForApi(dateString) {
 
-            const response = await fetch(
-                "/omie/daily-summary"
-            );
+            if (!dateString) {
+                return null;
+            }
 
-            const data = await response.json();
+            return dateString.replaceAll("-", "");
+        }
 
-            const tableBody = document.getElementById(
-                "market-data"
-            );
 
-            const dates = [];
-            const spanishPrices = [];
-            const portuguesePrices = [];
+        function buildApiUrl() {
+
+            const startDate =
+                convertDateForApi(
+                    document.getElementById(
+                        "start-date"
+                    ).value
+                );
+
+            const endDate =
+                convertDateForApi(
+                    document.getElementById(
+                        "end-date"
+                    ).value
+                );
+
+
+            const parameters =
+                new URLSearchParams();
+
+
+            if (startDate) {
+                parameters.append(
+                    "start_date",
+                    startDate
+                );
+            }
+
+            if (endDate) {
+                parameters.append(
+                    "end_date",
+                    endDate
+                );
+            }
+
+
+            const queryString =
+                parameters.toString();
+
+
+            if (queryString) {
+                return (
+                    "/omie/daily-summary?"
+                    + queryString
+                );
+            }
+
+
+            return "/omie/daily-summary";
+        }
+
+
+        function createDatasets(
+            data,
+            zone
+        ) {
+
+            const datasets = [];
+
+
+            if (
+                zone === "ALL"
+                || zone === "ES"
+            ) {
+
+                datasets.push({
+                    label: "Spain",
+                    data: data.map(
+                        row => row.avg_price_es
+                    ),
+                    tension: 0.2
+                });
+            }
+
+
+            if (
+                zone === "ALL"
+                || zone === "PT"
+            ) {
+
+                datasets.push({
+                    label: "Portugal",
+                    data: data.map(
+                        row => row.avg_price_pt
+                    ),
+                    tension: 0.2
+                });
+            }
+
+
+            return datasets;
+        }
+
+
+        function renderTable(
+            data,
+            zone
+        ) {
+
+            const tableHeader =
+                document.getElementById(
+                    "table-header"
+                );
+
+            const tableBody =
+                document.getElementById(
+                    "market-data"
+                );
+
+
+            tableHeader.innerHTML = "";
+            tableBody.innerHTML = "";
+
+
+            if (zone === "ES") {
+
+                tableHeader.innerHTML = `
+                    <th>Date</th>
+                    <th>Spain €/MWh</th>
+                `;
+
+            } else if (zone === "PT") {
+
+                tableHeader.innerHTML = `
+                    <th>Date</th>
+                    <th>Portugal €/MWh</th>
+                `;
+
+            } else {
+
+                tableHeader.innerHTML = `
+                    <th>Date</th>
+                    <th>Spain €/MWh</th>
+                    <th>Portugal €/MWh</th>
+                    <th>Split Periods</th>
+                    <th>Max Spread €/MWh</th>
+                `;
+            }
+
 
             for (const row of data) {
-
-                const formattedDate =
-                    formatDate(row.market_date);
-
-                dates.push(formattedDate);
-                spanishPrices.push(row.avg_price_es);
-                portuguesePrices.push(row.avg_price_pt);
 
                 const tableRow =
                     document.createElement("tr");
 
-                tableRow.innerHTML = `
-                    <td>${formattedDate}</td>
-                    <td>${row.avg_price_es.toFixed(2)}</td>
-                    <td>${row.avg_price_pt.toFixed(2)}</td>
-                    <td>${row.split_periods}</td>
-                    <td>${row.max_spread.toFixed(2)}</td>
-                `;
 
-                tableBody.appendChild(tableRow);
+                if (zone === "ES") {
+
+                    tableRow.innerHTML = `
+                        <td>${formatDate(row.market_date)}</td>
+                        <td>${row.avg_price_es.toFixed(2)}</td>
+                    `;
+
+                } else if (zone === "PT") {
+
+                    tableRow.innerHTML = `
+                        <td>${formatDate(row.market_date)}</td>
+                        <td>${row.avg_price_pt.toFixed(2)}</td>
+                    `;
+
+                } else {
+
+                    tableRow.innerHTML = `
+                        <td>${formatDate(row.market_date)}</td>
+                        <td>${row.avg_price_es.toFixed(2)}</td>
+                        <td>${row.avg_price_pt.toFixed(2)}</td>
+                        <td>${row.split_periods}</td>
+                        <td>${row.max_spread.toFixed(2)}</td>
+                    `;
+                }
+
+
+                tableBody.appendChild(
+                    tableRow
+                );
+            }
+        }
+
+
+        function renderChart(
+            data,
+            zone
+        ) {
+
+            const dates =
+                data.map(
+                    row => formatDate(
+                        row.market_date
+                    )
+                );
+
+
+            const datasets =
+                createDatasets(
+                    data,
+                    zone
+                );
+
+
+            if (priceChart) {
+                priceChart.destroy();
             }
 
 
             const chartContext =
-                document.getElementById("price-chart");
+                document.getElementById(
+                    "price-chart"
+                );
 
-            new Chart(
+
+            priceChart = new Chart(
                 chartContext,
                 {
                     type: "line",
 
                     data: {
                         labels: dates,
-
-                        datasets: [
-                            {
-                                label: "Spain",
-                                data: spanishPrices,
-                                tension: 0.2
-                            },
-                            {
-                                label: "Portugal",
-                                data: portuguesePrices,
-                                tension: 0.2
-                            }
-                        ]
+                        datasets: datasets
                     },
 
                     options: {
@@ -173,11 +443,15 @@
                         plugins: {
                             title: {
                                 display: true,
-                                text: "OMIE Daily Average Day-Ahead Prices"
+                                text: (
+                                    "OMIE Daily Average "
+                                    + "Day-Ahead Prices"
+                                )
                             }
                         },
 
                         scales: {
+
                             y: {
                                 title: {
                                     display: true,
@@ -198,7 +472,148 @@
         }
 
 
+        async function loadMarketData() {
+
+            const message =
+                document.getElementById(
+                    "message"
+                );
+
+
+            message.textContent =
+                "Loading market data...";
+
+
+            const zone =
+                document.getElementById(
+                    "zone"
+                ).value;
+
+
+            const apiUrl =
+                buildApiUrl();
+
+
+            try {
+
+                const response =
+                    await fetch(apiUrl);
+
+
+                if (!response.ok) {
+
+                    const errorData =
+                        await response.json();
+
+                    throw new Error(
+                        errorData.detail
+                        || "Unable to load data."
+                    );
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                if (data.length === 0) {
+
+                    message.textContent =
+                        "No market data found "
+                        + "for this period.";
+
+                    return;
+                }
+
+
+                if (
+                    !document.getElementById(
+                        "start-date"
+                    ).value
+                ) {
+
+                    document.getElementById(
+                        "start-date"
+                    ).value =
+                        formatDate(
+                            data[0].market_date
+                        );
+                }
+
+
+                if (
+                    !document.getElementById(
+                        "end-date"
+                    ).value
+                ) {
+
+                    document.getElementById(
+                        "end-date"
+                    ).value =
+                        formatDate(
+                            data[
+                                data.length - 1
+                            ].market_date
+                        );
+                }
+
+
+                renderChart(
+                    data,
+                    zone
+                );
+
+
+                renderTable(
+                    data,
+                    zone
+                );
+
+
+                message.textContent =
+                    `${data.length} day(s) loaded.`;
+
+            } catch (error) {
+
+                message.textContent =
+                    "Error: " + error.message;
+            }
+        }
+
+
+        document.getElementById(
+            "apply-button"
+        ).addEventListener(
+            "click",
+            loadMarketData
+        );
+
+
+        document.getElementById(
+            "reset-button"
+        ).addEventListener(
+            "click",
+            function () {
+
+                document.getElementById(
+                    "start-date"
+                ).value = "";
+
+                document.getElementById(
+                    "end-date"
+                ).value = "";
+
+                document.getElementById(
+                    "zone"
+                ).value = "ALL";
+
+                loadMarketData();
+            }
+        );
+
+
         loadMarketData();
+
     </script>
 
 </body>
