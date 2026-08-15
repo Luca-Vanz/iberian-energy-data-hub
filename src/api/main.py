@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse
 
 from src.analytics.omie import (
     get_daily_market_summary,
+    get_intraday_prices,
     get_prices,
 )
 
@@ -103,6 +104,20 @@ def omie_prices(
         zone=zone,
         start_date=start_date,
         end_date=end_date,
+    )
+
+    return df.to_dict(
+        orient="records"
+    )
+
+@app.get("/omie/intraday")
+def omie_intraday(
+    date: str,
+):
+    validate_date(date)
+
+    df = get_intraday_prices(
+        date=date,
     )
 
     return df.to_dict(

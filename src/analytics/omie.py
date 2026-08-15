@@ -149,6 +149,63 @@ def get_prices(
 
     return df
 
+def get_intraday_prices(
+    date: str,
+) -> pd.DataFrame:
+
+    query = """
+        WITH period_prices AS (
+            SELECT
+                timestamp_market,
+                period,
+
+                MAX(
+                    CASE
+                        WHEN bidding_zone = 'ES'
+                        THEN price_eur_mwh
+                    END
+                ) AS price_es,
+
+                MAX(
+                    CASE
+                        WHEN bidding_zone = 'PT'
+                        THEN price_eur_mwh
+                    END
+                ) AS price_pt
+
+            FROM omie_day_ahead_prices
+
+            WHERE market_date = ?
+
+            GROUP BY
+                timestamp_market,
+                period
+        )
+
+        SELECT
+            timestamp_market,
+            period,
+            price_es,
+            price_pt,
+
+            ROUND(
+                price_pt - price_es,
+                2
+            ) AS pt_minus_es
+
+        FROM period_prices
+
+        ORDER BY period;
+    """
+
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        df = pd.read_sql_query(
+            query,
+            connection,
+            params=[date],
+        )
+
+    return df
 
 if __name__ == "__main__":
     summary = get_daily_market_summary()
