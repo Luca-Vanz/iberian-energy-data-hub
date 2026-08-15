@@ -4,28 +4,109 @@ from pathlib import Path
 import pandas as pd
 
 
-def process_omie_day_ahead(date: str, force: bool = False) -> Path:
-    raw_path = Path("data") / "raw" / "omie" / f"marginalpdbc_{date}.1"
+FILE_PREFIX = "marginalpdbc"
 
-    processed_dir = Path("data") / "processed" / "omie"
-    processed_dir.mkdir(parents=True, exist_ok=True)
 
-    output_path = (
-        processed_dir / f"day_ahead_prices_{date}.csv"
+def find_raw_file(
+    date: str,
+) -> Path:
+
+    raw_dir = (
+        Path("data")
+        / "raw"
+        / "omie"
     )
 
-    # Skip processing if the output already exists
-    if output_path.exists() and not force:
+
+    matching_files = list(
+        raw_dir.glob(
+            f"{FILE_PREFIX}_{date}.*"
+        )
+    )
+
+
+    valid_files = []
+
+
+    for path in matching_files:
+
+        try:
+            revision = int(
+                path.suffix[1:]
+            )
+
+        except ValueError:
+            continue
+
+
+        valid_files.append(
+            (revision, path)
+        )
+
+
+    if not valid_files:
+
+        raise FileNotFoundError(
+            f"No raw OMIE file found "
+            f"for {date}."
+        )
+
+
+    valid_files.sort(
+        key=lambda item: item[0],
+        reverse=True,
+    )
+
+
+    return valid_files[0][1]
+
+
+def process_omie_day_ahead(
+    date: str,
+    force: bool = False,
+) -> Path:
+
+    raw_path = find_raw_file(
+        date
+    )
+
+
+    processed_dir = (
+        Path("data")
+        / "processed"
+        / "omie"
+    )
+
+
+    processed_dir.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+
+    output_path = (
+        processed_dir
+        / f"day_ahead_prices_{date}.csv"
+    )
+
+
+    if (
+        output_path.exists()
+        and not force
+    ):
+
         print(
-            f"Processed file already exists, "
+            "Processed file already exists, "
             f"skipping processing: {output_path}"
         )
+
         return output_path
 
-    if not raw_path.exists():
-        raise FileNotFoundError(
-            f"Raw OMIE file not found: {raw_path}"
-        )
+
+    print(
+        f"Using raw OMIE file: {raw_path}"
+    )
+
 
     df = pd.read_csv(
         raw_path,
@@ -45,37 +126,80 @@ def process_omie_day_ahead(date: str, force: bool = False) -> Path:
         engine="python",
     )
 
+
     df["date"] = pd.to_datetime(
-        df[["year", "month", "day"]]
+        df[
+            [
+                "year",
+                "month",
+                "day",
+            ]
+        ]
     )
 
-    # Validation: missing values
+
+    # --------------------------------------------------
+    # VALIDATION
+    # --------------------------------------------------
+
     if df.isnull().any().any():
-        raise ValueError("Missing values found in OMIE data")
 
-    # Validation: duplicate periods
-    if df["period"].duplicated().any():
-        raise ValueError("Duplicate periods found")
-
-    # Validation: sequential periods
-    expected_periods = list(range(1, len(df) + 1))
-    actual_periods = df["period"].tolist()
-
-    if actual_periods != expected_periods:
-        raise ValueError("Periods are not sequential")
-
-    # Normal days have 96 periods.
-    # DST transition days can have 92 or 100.
-    valid_period_counts = {92, 96, 100}
-
-    if len(df) not in valid_period_counts:
         raise ValueError(
-            f"Unexpected number of periods: {len(df)}"
+            "Null values found in OMIE data."
         )
 
-    # Create timezone-aware timestamps
-    market_date = df["date"].iloc[0]
-    next_date = market_date + pd.Timedelta(days=1)
+
+    if df["period"].duplicated().any():
+
+        raise ValueError(
+            "Duplicate OMIE periods found."
+        )
+
+
+    expected_periods = list(
+        range(
+            1,
+            len(df) + 1,
+        )
+    )
+
+
+    if (
+        df["period"].tolist()
+        != expected_periods
+    ):
+
+        raise ValueError(
+            "OMIE periods are not sequential."
+        )
+
+
+    if len(df) not in {
+        92,
+        96,
+        100,
+    }:
+
+        raise ValueError(
+            "Unexpected number of OMIE periods: "
+            f"{len(df)}"
+        )
+
+
+    # --------------------------------------------------
+    # TIMESTAMPS
+    # --------------------------------------------------
+
+    market_date = df[
+        "date"
+    ].iloc[0]
+
+
+    next_date = (
+        market_date
+        + pd.Timedelta(days=1)
+    )
+
 
     timestamps = pd.date_range(
         start=market_date,
@@ -85,16 +209,30 @@ def process_omie_day_ahead(date: str, force: bool = False) -> Path:
         tz="Europe/Madrid",
     )
 
+
     if len(timestamps) != len(df):
+
         raise ValueError(
-            f"Timestamp count ({len(timestamps)}) "
-            f"does not match OMIE period count ({len(df)})"
+            "Timestamp count does not match "
+            "OMIE period count."
         )
 
-    df["timestamp_market"] = timestamps
-    df["timestamp_utc"] = (
-        df["timestamp_market"].dt.tz_convert("UTC")
+
+    df["timestamp_market"] = (
+        timestamps
     )
+
+
+    df["timestamp_utc"] = (
+        df["timestamp_market"]
+        .dt
+        .tz_convert("UTC")
+    )
+
+
+    # --------------------------------------------------
+    # STANDARDIZED OUTPUT
+    # --------------------------------------------------
 
     processed_df = df[
         [
@@ -104,39 +242,60 @@ def process_omie_day_ahead(date: str, force: bool = False) -> Path:
             "price_es_eur_mwh",
             "price_pt_eur_mwh",
         ]
-    ].copy()
+    ]
+
 
     processed_df.to_csv(
         output_path,
         index=False,
     )
 
-    print("Validation passed!")
-    print(f"Processed data saved to: {output_path}")
+
+    print(
+        "Validation passed!"
+    )
+
+
+    print(
+        f"Processed data saved to: "
+        f"{output_path}"
+    )
+
 
     return output_path
 
 
 def main():
+
     parser = argparse.ArgumentParser(
-        description="Process OMIE day-ahead electricity prices."
+        description=(
+            "Process OMIE day-ahead "
+            "electricity prices."
+        )
     )
+
 
     parser.add_argument(
         "date",
-        help="Market date in YYYYMMDD format, for example 20260813",
+        help="Market date in YYYYMMDD format.",
     )
+
 
     parser.add_argument(
         "--force",
         action="store_true",
-        help="Process the file again even if output already exists.",
+        help=(
+            "Process the file again "
+            "even if output already exists."
+        ),
     )
+
 
     args = parser.parse_args()
 
+
     process_omie_day_ahead(
-        args.date,
+        date=args.date,
         force=args.force,
     )
 
