@@ -4,6 +4,8 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 
 BASE_URL = (
@@ -30,8 +32,46 @@ def valid_date(value: str) -> str:
     return value
 
 
+def create_session() -> requests.Session:
+
+    retry_strategy = Retry(
+        total=5,
+        backoff_factor=2,
+        status_forcelist=[
+            429,
+            500,
+            502,
+            503,
+            504,
+        ],
+        allowed_methods=[
+            "POST",
+        ],
+        raise_on_status=False,
+    )
+
+    adapter = HTTPAdapter(
+        max_retries=retry_strategy
+    )
+
+    session = requests.Session()
+
+    session.mount(
+        "https://",
+        adapter,
+    )
+
+    session.mount(
+        "http://",
+        adapter,
+    )
+
+    return session
+
+
 def download_ren_demand(
     date: str,
+    force: bool = False,
 ) -> Path:
 
     market_date = datetime.strptime(
@@ -62,8 +102,20 @@ def download_ren_demand(
     )
 
 
-    # Keep the values directly inside the XML tags.
-    # REN expects StartDay and EndDay as yyyy-mm-dd strings.
+    # Skip download if the raw file already exists.
+    if (
+        output_path.exists()
+        and not force
+    ):
+
+        print(
+            "Raw REN file already exists, "
+            f"skipping download: {output_path}"
+        )
+
+        return output_path
+
+
     soap_body = (
         '<?xml version="1.0" encoding="utf-8"?>'
         '<soap:Envelope '
@@ -97,7 +149,10 @@ def download_ren_demand(
     )
 
 
-    response = requests.post(
+    session = create_session()
+
+
+    response = session.post(
         BASE_URL,
         data=soap_body.encode("utf-8"),
         headers=headers,
@@ -114,20 +169,8 @@ def download_ren_demand(
     response.raise_for_status()
 
 
-    # Save the complete raw SOAP response
-    output_path.write_bytes(
-        response.content
-    )
-
-
-    print(
-        f"Raw REN response saved to: "
-        f"{output_path}"
-    )
-
-
     # --------------------------------------------------
-    # PARSE SOAP RESPONSE
+    # CHECK SOAP RESPONSE BEFORE SAVING
     # --------------------------------------------------
 
     soap_root = ET.fromstring(
@@ -163,17 +206,15 @@ def download_ren_demand(
         )
 
 
-    inner_xml = result_element.text.strip()
+    inner_xml = (
+        result_element.text.strip()
+    )
 
 
     inner_root = ET.fromstring(
         inner_xml
     )
 
-
-    # --------------------------------------------------
-    # CHECK FOR REN APPLICATION ERROR
-    # --------------------------------------------------
 
     error = inner_root.find(
         ".//Error"
@@ -195,55 +236,36 @@ def download_ren_demand(
         )
 
 
-    # --------------------------------------------------
-    # INSPECT OBSERVATIONS
-    # --------------------------------------------------
-
     items = inner_root.findall(
         ".//Item"
     )
 
 
-    print()
+    if not items:
+
+        raise RuntimeError(
+            f"REN returned no observations "
+            f"for {date}."
+        )
+
+
+    # Only save a response after we know
+    # REN returned valid data.
+    output_path.write_bytes(
+        response.content
+    )
+
+
+    print(
+        f"Raw REN response saved to: "
+        f"{output_path}"
+    )
+
+
     print(
         f"Observations returned: "
         f"{len(items)}"
     )
-
-
-    if items:
-
-        first_item = items[0]
-
-        print()
-        print(
-            "First observation:"
-        )
-
-
-        for child in first_item:
-
-            print(
-                f"  {child.tag}: "
-                f"{child.text}"
-            )
-
-
-        print()
-        print(
-            "Last observation:"
-        )
-
-
-        last_item = items[-1]
-
-
-        for child in last_item:
-
-            print(
-                f"  {child.tag}: "
-                f"{child.text}"
-            )
 
 
     return output_path
@@ -270,11 +292,22 @@ def main():
     )
 
 
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help=(
+            "Download the raw REN file again "
+            "even if it already exists."
+        ),
+    )
+
+
     args = parser.parse_args()
 
 
     download_ren_demand(
         date=args.date,
+        force=args.force,
     )
 
 
