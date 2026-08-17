@@ -104,3 +104,7 @@ Interactive web dashboard
 ## Live Demo
 
 [Open the Iberian Energy Data Hub](https://iberian-energy-data-hub.onrender.com/)
+
+> **Public demo note:** The live deployment uses a sanitized OMIE-only dataset.
+> REN load and generation data are used in the local research environment and
+> are not redistributed through the public deployment.
