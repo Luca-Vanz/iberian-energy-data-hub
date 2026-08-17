@@ -3,43 +3,59 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Iberian Energy Data Hub</title>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
+
         body {
             font-family: Arial, sans-serif;
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 40px auto;
             padding: 0 20px;
         }
+
 
         h1 {
             margin-bottom: 5px;
         }
 
+
         h2 {
-            margin-top: 35px;
+            margin-top: 45px;
         }
+
+
+        h3 {
+            margin-top: 30px;
+        }
+
 
         .subtitle {
             color: #666;
             margin-bottom: 30px;
         }
 
+
         .controls {
             display: flex;
             gap: 15px;
             align-items: end;
             flex-wrap: wrap;
+
             padding: 20px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
+
             background-color: #f5f5f5;
             border-radius: 8px;
         }
+
 
         .control {
             display: flex;
@@ -47,9 +63,11 @@
             gap: 5px;
         }
 
+
         label {
             font-weight: bold;
         }
+
 
         input,
         select,
@@ -58,28 +76,39 @@
             font-size: 14px;
         }
 
+
         button {
             cursor: pointer;
         }
+
 
         .message {
             margin: 15px 0;
             color: #666;
         }
 
+
         .chart-container {
+            position: relative;
             margin-bottom: 40px;
+            min-height: 350px;
         }
+
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(
-                auto-fit,
-                minmax(160px, 1fr)
-            );
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(160px, 1fr)
+                );
+
             gap: 15px;
+
             margin: 20px 0 30px 0;
         }
+
 
         .stat-card {
             background-color: #f5f5f5;
@@ -87,23 +116,28 @@
             border-radius: 8px;
         }
 
+
         .stat-label {
             color: #666;
             font-size: 14px;
             margin-bottom: 5px;
         }
 
+
         .stat-value {
             font-size: 22px;
             font-weight: bold;
         }
 
+
         table {
             border-collapse: collapse;
             width: 100%;
+
             margin-top: 20px;
             margin-bottom: 50px;
         }
+
 
         th,
         td {
@@ -112,14 +146,17 @@
             text-align: right;
         }
 
+
         th:first-child,
         td:first-child {
             text-align: left;
         }
 
+
         th {
             background-color: #f4f4f4;
         }
+
     </style>
 </head>
 
@@ -129,12 +166,13 @@
     <h1>Iberian Energy Data Hub</h1>
 
     <p class="subtitle">
-        OMIE day-ahead electricity market data
+        Historical electricity-market data and analytics
+        for Spain and Portugal
     </p>
 
 
     <!-- ==================================================
-         DAILY FILTERS
+         DAILY OMIE FILTERS
          ================================================== -->
 
     <div class="controls">
@@ -196,6 +234,7 @@
             Apply filters
         </button>
 
+
         <button id="reset-button">
             Reset
         </button>
@@ -210,18 +249,87 @@
 
 
     <!-- ==================================================
-         DAILY PRICE CHART
+         DAILY AVERAGE PRICE CHART
          ================================================== -->
 
-    <h2>Daily Average Prices</h2>
+    <h2>Daily Average Day-Ahead Prices</h2>
 
     <div class="chart-container">
+
         <canvas id="price-chart"></canvas>
+
     </div>
 
 
     <!-- ==================================================
-         INTRADAY SECTION
+         HISTORICAL PORTUGAL FUNDAMENTALS
+         ================================================== -->
+
+    <h2>Historical Portugal Price + Electricity Load</h2>
+
+    <p>
+        Daily average Portuguese day-ahead electricity price
+        from OMIE and daily average market load from REN.
+    </p>
+
+
+    <div class="controls">
+
+        <div class="control">
+
+            <label for="historical-start-date">
+                Start date
+            </label>
+
+            <input
+                type="date"
+                id="historical-start-date"
+            >
+
+        </div>
+
+
+        <div class="control">
+
+            <label for="historical-end-date">
+                End date
+            </label>
+
+            <input
+                type="date"
+                id="historical-end-date"
+            >
+
+        </div>
+
+
+        <button id="historical-button">
+            Apply filters
+        </button>
+
+
+        <button id="historical-reset-button">
+            Reset
+        </button>
+
+    </div>
+
+
+    <div
+        id="historical-message"
+        class="message"
+    ></div>
+
+
+    <div class="chart-container">
+
+        <canvas id="historical-price-load-chart"></canvas>
+
+    </div>
+
+
+    <!-- ==================================================
+         INTRADAY OMIE
          ================================================== -->
 
     <h2>15-Minute Intraday Prices</h2>
@@ -255,35 +363,34 @@
     ></div>
 
 
-    <!-- INTRADAY STATISTICS -->
-
     <div
         id="intraday-stats"
         class="stats-grid"
     ></div>
 
 
-    <!-- INTRADAY PRICE CHART -->
-
     <div class="chart-container">
+
         <canvas id="intraday-chart"></canvas>
+
     </div>
 
 
-    <!-- SPREAD CHART -->
-
     <h3>Portugal - Spain Price Spread</h3>
 
+
     <div class="chart-container">
+
         <canvas id="spread-chart"></canvas>
+
     </div>
 
 
     <!-- ==================================================
-         PORTUGAL PRICE + LOAD
+         SINGLE-DAY PORTUGAL PRICE + LOAD
          ================================================== -->
 
-    <h2>Portugal Price + Electricity Load</h2>
+    <h2>Portugal 15-Minute Price + Electricity Load</h2>
 
     <div class="controls">
 
@@ -302,7 +409,7 @@
 
 
         <button id="price-load-button">
-            Load price + demand
+            Load price + load
         </button>
 
     </div>
@@ -315,21 +422,27 @@
 
 
     <div class="chart-container">
+
         <canvas id="price-load-chart"></canvas>
+
     </div>
 
 
     <!-- ==================================================
-         DAILY SUMMARY TABLE
+         DAILY MARKET SUMMARY
          ================================================== -->
 
     <h2>Daily Market Summary</h2>
 
+
     <table>
 
         <thead>
+
             <tr id="table-header"></tr>
+
         </thead>
+
 
         <tbody id="market-data"></tbody>
 
@@ -338,9 +451,18 @@
 
     <script>
 
+        // ==================================================
+        // CHART OBJECTS
+        // ==================================================
+
         let priceChart = null;
+
+        let historicalPriceLoadChart = null;
+
         let intradayChart = null;
+
         let spreadChart = null;
+
         let priceLoadChart = null;
 
 
@@ -348,7 +470,9 @@
         // DATE UTILITIES
         // ==================================================
 
-        function formatDate(dateString) {
+        function formatDate(
+            dateString
+        ) {
 
             return (
                 dateString.slice(0, 4)
@@ -360,18 +484,25 @@
         }
 
 
-        function convertDateForApi(dateString) {
+        function convertDateForApi(
+            dateString
+        ) {
 
             if (!dateString) {
+
                 return null;
             }
 
-            return dateString.replaceAll("-", "");
+
+            return dateString.replaceAll(
+                "-",
+                ""
+            );
         }
 
 
         // ==================================================
-        // DAILY API URL
+        // DAILY OMIE API URL
         // ==================================================
 
         function buildApiUrl() {
@@ -432,7 +563,7 @@
 
 
         // ==================================================
-        // DAILY CHART DATASETS
+        // DAILY PRICE DATASETS
         // ==================================================
 
         function createDatasets(
@@ -449,11 +580,17 @@
             ) {
 
                 datasets.push({
+
                     label: "Spain",
+
                     data: data.map(
-                        row => row.avg_price_es
+                        row =>
+                            row.avg_price_es
                     ),
-                    tension: 0.2
+
+                    tension: 0.2,
+
+                    pointRadius: 1
                 });
             }
 
@@ -464,11 +601,17 @@
             ) {
 
                 datasets.push({
+
                     label: "Portugal",
+
                     data: data.map(
-                        row => row.avg_price_pt
+                        row =>
+                            row.avg_price_pt
                     ),
-                    tension: 0.2
+
+                    tension: 0.2,
+
+                    pointRadius: 1
                 });
             }
 
@@ -478,7 +621,7 @@
 
 
         // ==================================================
-        // DAILY TABLE
+        // DAILY MARKET TABLE
         // ==================================================
 
         function renderTable(
@@ -499,6 +642,7 @@
 
 
             tableHeader.innerHTML = "";
+
             tableBody.innerHTML = "";
 
 
@@ -509,7 +653,9 @@
                     <th>Spain €/MWh</th>
                 `;
 
-            } else if (zone === "PT") {
+            } else if (
+                zone === "PT"
+            ) {
 
                 tableHeader.innerHTML = `
                     <th>Date</th>
@@ -528,17 +674,23 @@
             }
 
 
-            for (const row of data) {
+            for (
+                const row of data
+            ) {
 
                 const tableRow =
-                    document.createElement("tr");
+                    document.createElement(
+                        "tr"
+                    );
 
 
                 if (zone === "ES") {
 
                     tableRow.innerHTML = `
                         <td>
-                            ${formatDate(row.market_date)}
+                            ${formatDate(
+                                row.market_date
+                            )}
                         </td>
 
                         <td>
@@ -546,11 +698,15 @@
                         </td>
                     `;
 
-                } else if (zone === "PT") {
+                } else if (
+                    zone === "PT"
+                ) {
 
                     tableRow.innerHTML = `
                         <td>
-                            ${formatDate(row.market_date)}
+                            ${formatDate(
+                                row.market_date
+                            )}
                         </td>
 
                         <td>
@@ -562,7 +718,9 @@
 
                     tableRow.innerHTML = `
                         <td>
-                            ${formatDate(row.market_date)}
+                            ${formatDate(
+                                row.market_date
+                            )}
                         </td>
 
                         <td>
@@ -592,7 +750,7 @@
 
 
         // ==================================================
-        // DAILY CHART
+        // DAILY OMIE CHART
         // ==================================================
 
         function renderChart(
@@ -610,6 +768,7 @@
 
 
             if (priceChart) {
+
                 priceChart.destroy();
             }
 
@@ -642,15 +801,22 @@
 
                             responsive: true,
 
+                            maintainAspectRatio:
+                                false,
+
                             interaction: {
+
                                 mode: "index",
+
                                 intersect: false
                             },
 
                             plugins: {
 
                                 title: {
+
                                     display: true,
+
                                     text:
                                         "OMIE Daily Average Day-Ahead Prices"
                                 }
@@ -661,16 +827,22 @@
                                 y: {
 
                                     title: {
+
                                         display: true,
-                                        text: "€/MWh"
+
+                                        text:
+                                            "Price (€/MWh)"
                                     }
                                 },
 
                                 x: {
 
                                     title: {
+
                                         display: true,
-                                        text: "Market date"
+
+                                        text:
+                                            "Market date"
                                     }
                                 }
                             }
@@ -681,7 +853,7 @@
 
 
         // ==================================================
-        // LOAD DAILY DATA
+        // LOAD DAILY OMIE DATA
         // ==================================================
 
         async function loadMarketData() {
@@ -727,7 +899,9 @@
                     await response.json();
 
 
-                if (data.length === 0) {
+                if (
+                    data.length === 0
+                ) {
 
                     message.textContent =
                         "No market data found for this period.";
@@ -751,53 +925,69 @@
 
 
                 if (
-                    !document.getElementById(
-                        "start-date"
-                    ).value
+                    !document
+                        .getElementById(
+                            "start-date"
+                        )
+                        .value
                 ) {
 
-                    document.getElementById(
-                        "start-date"
-                    ).value =
+                    document
+                        .getElementById(
+                            "start-date"
+                        )
+                        .value =
                         firstDate;
                 }
 
 
                 if (
-                    !document.getElementById(
-                        "end-date"
-                    ).value
+                    !document
+                        .getElementById(
+                            "end-date"
+                        )
+                        .value
                 ) {
 
-                    document.getElementById(
-                        "end-date"
-                    ).value =
+                    document
+                        .getElementById(
+                            "end-date"
+                        )
+                        .value =
                         lastDate;
                 }
 
 
                 if (
-                    !document.getElementById(
-                        "intraday-date"
-                    ).value
+                    !document
+                        .getElementById(
+                            "intraday-date"
+                        )
+                        .value
                 ) {
 
-                    document.getElementById(
-                        "intraday-date"
-                    ).value =
+                    document
+                        .getElementById(
+                            "intraday-date"
+                        )
+                        .value =
                         lastDate;
                 }
 
 
                 if (
-                    !document.getElementById(
-                        "price-load-date"
-                    ).value
+                    !document
+                        .getElementById(
+                            "price-load-date"
+                        )
+                        .value
                 ) {
 
-                    document.getElementById(
-                        "price-load-date"
-                    ).value =
+                    document
+                        .getElementById(
+                            "price-load-date"
+                        )
+                        .value =
                         lastDate;
                 }
 
@@ -817,16 +1007,365 @@
                 message.textContent =
                     `${data.length} day(s) loaded.`;
 
-            } catch (error) {
+            } catch (
+                error
+            ) {
 
                 message.textContent =
-                    "Error: " + error.message;
+                    "Error: "
+                    + error.message;
             }
         }
 
 
         // ==================================================
-        // LOAD INTRADAY DATA
+        // HISTORICAL PRICE + LOAD
+        // ==================================================
+
+        async function loadHistoricalPriceLoadData() {
+
+            const message =
+                document.getElementById(
+                    "historical-message"
+                );
+
+
+            const startDate =
+                convertDateForApi(
+                    document.getElementById(
+                        "historical-start-date"
+                    ).value
+                );
+
+
+            const endDate =
+                convertDateForApi(
+                    document.getElementById(
+                        "historical-end-date"
+                    ).value
+                );
+
+
+            const parameters =
+                new URLSearchParams();
+
+
+            parameters.append(
+                "country",
+                "PT"
+            );
+
+
+            if (startDate) {
+
+                parameters.append(
+                    "start_date",
+                    startDate
+                );
+            }
+
+
+            if (endDate) {
+
+                parameters.append(
+                    "end_date",
+                    endDate
+                );
+            }
+
+
+            message.textContent =
+                "Loading historical price and load data...";
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/market/daily-price-load?"
+                        + parameters.toString()
+                    );
+
+
+                if (!response.ok) {
+
+                    const errorData =
+                        await response.json();
+
+
+                    throw new Error(
+                        errorData.detail
+                        || "Unable to load historical data."
+                    );
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                if (
+                    data.length === 0
+                ) {
+
+                    message.textContent =
+                        "No historical price/load data found.";
+
+                    if (
+                        historicalPriceLoadChart
+                    ) {
+
+                        historicalPriceLoadChart
+                            .destroy();
+
+                        historicalPriceLoadChart =
+                            null;
+                    }
+
+                    return;
+                }
+
+
+                const dates =
+                    data.map(
+                        row =>
+                            formatDate(
+                                row.market_date
+                            )
+                    );
+
+
+                const averagePrices =
+                    data.map(
+                        row =>
+                            row.avg_price_eur_mwh
+                    );
+
+
+                const averageLoads =
+                    data.map(
+                        row =>
+                            row.avg_load_mw
+                    );
+
+
+                const firstDate =
+                    dates[0];
+
+
+                const lastDate =
+                    dates[
+                        dates.length - 1
+                    ];
+
+
+                if (
+                    !document
+                        .getElementById(
+                            "historical-start-date"
+                        )
+                        .value
+                ) {
+
+                    document
+                        .getElementById(
+                            "historical-start-date"
+                        )
+                        .value =
+                        firstDate;
+                }
+
+
+                if (
+                    !document
+                        .getElementById(
+                            "historical-end-date"
+                        )
+                        .value
+                ) {
+
+                    document
+                        .getElementById(
+                            "historical-end-date"
+                        )
+                        .value =
+                        lastDate;
+                }
+
+
+                if (
+                    historicalPriceLoadChart
+                ) {
+
+                    historicalPriceLoadChart
+                        .destroy();
+                }
+
+
+                const chartContext =
+                    document.getElementById(
+                        "historical-price-load-chart"
+                    );
+
+
+                historicalPriceLoadChart =
+                    new Chart(
+                        chartContext,
+                        {
+
+                            type: "line",
+
+                            data: {
+
+                                labels: dates,
+
+                                datasets: [
+
+                                    {
+
+                                        label:
+                                            "Portugal Daily Average Price",
+
+                                        data:
+                                            averagePrices,
+
+                                        yAxisID:
+                                            "yPrice",
+
+                                        tension: 0.15,
+
+                                        pointRadius: 0,
+
+                                        borderWidth: 2
+                                    },
+
+
+                                    {
+
+                                        label:
+                                            "Portugal Daily Average Load",
+
+                                        data:
+                                            averageLoads,
+
+                                        yAxisID:
+                                            "yLoad",
+
+                                        tension: 0.15,
+
+                                        pointRadius: 0,
+
+                                        borderWidth: 2
+                                    }
+                                ]
+                            },
+
+
+                            options: {
+
+                                responsive: true,
+
+                                maintainAspectRatio:
+                                    false,
+
+                                interaction: {
+
+                                    mode: "index",
+
+                                    intersect: false
+                                },
+
+
+                                plugins: {
+
+                                    title: {
+
+                                        display: true,
+
+                                        text:
+                                            "Portugal Historical Day-Ahead Price and Electricity Load"
+                                    }
+                                },
+
+
+                                scales: {
+
+                                    x: {
+
+                                        title: {
+
+                                            display: true,
+
+                                            text:
+                                                "Market date"
+                                        }
+                                    },
+
+
+                                    yPrice: {
+
+                                        type:
+                                            "linear",
+
+                                        position:
+                                            "left",
+
+                                        title: {
+
+                                            display:
+                                                true,
+
+                                            text:
+                                                "Average Price (€/MWh)"
+                                        }
+                                    },
+
+
+                                    yLoad: {
+
+                                        type:
+                                            "linear",
+
+                                        position:
+                                            "right",
+
+                                        title: {
+
+                                            display:
+                                                true,
+
+                                            text:
+                                                "Average Load (MW)"
+                                        },
+
+                                        grid: {
+
+                                            drawOnChartArea:
+                                                false
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    );
+
+
+                message.textContent =
+                    `${data.length} daily observations loaded.`;
+
+            } catch (
+                error
+            ) {
+
+                message.textContent =
+                    "Error: "
+                    + error.message;
+            }
+        }
+
+
+        // ==================================================
+        // INTRADAY DATA
         // ==================================================
 
         async function loadIntradayData() {
@@ -893,22 +1432,15 @@
                     await response.json();
 
 
-                if (data.length === 0) {
+                if (
+                    data.length === 0
+                ) {
 
                     message.textContent =
                         "No intraday data found for this date.";
 
-                    statsContainer.innerHTML = "";
-
-                    if (intradayChart) {
-                        intradayChart.destroy();
-                        intradayChart = null;
-                    }
-
-                    if (spreadChart) {
-                        spreadChart.destroy();
-                        spreadChart = null;
-                    }
+                    statsContainer.innerHTML =
+                        "";
 
                     return;
                 }
@@ -917,39 +1449,43 @@
                 const times =
                     data.map(
                         row =>
-                            row.timestamp_market.slice(
-                                11,
-                                16
-                            )
+                            row.timestamp_market
+                                .slice(
+                                    11,
+                                    16
+                                )
                     );
 
 
                 const spanishPrices =
                     data.map(
-                        row => row.price_es
+                        row =>
+                            row.price_es
                     );
 
 
                 const portuguesePrices =
                     data.map(
-                        row => row.price_pt
+                        row =>
+                            row.price_pt
                     );
 
 
                 const spreads =
                     data.map(
-                        row => row.pt_minus_es
+                        row =>
+                            row.pt_minus_es
                     );
 
 
-                // ------------------------------------------
-                // STATISTICS
-                // ------------------------------------------
-
                 const averageSpain =
                     spanishPrices.reduce(
-                        (sum, value) =>
-                            sum + value,
+                        (
+                            sum,
+                            value
+                        ) =>
+                            sum
+                            + value,
                         0
                     )
                     /
@@ -958,8 +1494,12 @@
 
                 const averagePortugal =
                     portuguesePrices.reduce(
-                        (sum, value) =>
-                            sum + value,
+                        (
+                            sum,
+                            value
+                        ) =>
+                            sum
+                            + value,
                         0
                     )
                     /
@@ -993,7 +1533,9 @@
                 const splitPeriods =
                     spreads.filter(
                         value =>
-                            Math.abs(value) > 0.001
+                            Math.abs(
+                                value
+                            ) > 0.001
                     ).length;
 
 
@@ -1001,26 +1543,26 @@
                     Math.max(
                         ...spreads.map(
                             value =>
-                                Math.abs(value)
+                                Math.abs(
+                                    value
+                                )
                         )
                     );
 
 
                 const negativeSpain =
                     spanishPrices.filter(
-                        value => value < 0
+                        value =>
+                            value < 0
                     ).length;
 
 
                 const negativePortugal =
                     portuguesePrices.filter(
-                        value => value < 0
+                        value =>
+                            value < 0
                     ).length;
 
-
-                // ------------------------------------------
-                // STATISTIC CARDS
-                // ------------------------------------------
 
                 statsContainer.innerHTML = `
 
@@ -1133,28 +1675,22 @@
                         </div>
 
                     </div>
-
                 `;
 
 
-                // ------------------------------------------
-                // INTRADAY PRICE CHART
-                // ------------------------------------------
+                if (
+                    intradayChart
+                ) {
 
-                if (intradayChart) {
                     intradayChart.destroy();
                 }
 
 
-                const chartContext =
-                    document.getElementById(
-                        "intraday-chart"
-                    );
-
-
                 intradayChart =
                     new Chart(
-                        chartContext,
+                        document.getElementById(
+                            "intraday-chart"
+                        ),
                         {
 
                             type: "line",
@@ -1166,54 +1702,93 @@
                                 datasets: [
 
                                     {
-                                        label: "Spain",
-                                        data: spanishPrices,
-                                        tension: 0.1,
-                                        pointRadius: 2
+
+                                        label:
+                                            "Spain",
+
+                                        data:
+                                            spanishPrices,
+
+                                        tension:
+                                            0.1,
+
+                                        pointRadius:
+                                            2
                                     },
 
+
                                     {
-                                        label: "Portugal",
-                                        data: portuguesePrices,
-                                        tension: 0.1,
-                                        pointRadius: 2
+
+                                        label:
+                                            "Portugal",
+
+                                        data:
+                                            portuguesePrices,
+
+                                        tension:
+                                            0.1,
+
+                                        pointRadius:
+                                            2
                                     }
                                 ]
                             },
+
 
                             options: {
 
                                 responsive: true,
 
+                                maintainAspectRatio:
+                                    false,
+
                                 interaction: {
-                                    mode: "index",
-                                    intersect: false
+
+                                    mode:
+                                        "index",
+
+                                    intersect:
+                                        false
                                 },
+
 
                                 plugins: {
 
                                     title: {
-                                        display: true,
+
+                                        display:
+                                            true,
+
                                         text:
                                             "15-Minute OMIE Day-Ahead Prices"
                                     }
                                 },
+
 
                                 scales: {
 
                                     y: {
 
                                         title: {
-                                            display: true,
-                                            text: "€/MWh"
+
+                                            display:
+                                                true,
+
+                                            text:
+                                                "Price (€/MWh)"
                                         }
                                     },
+
 
                                     x: {
 
                                         title: {
-                                            display: true,
-                                            text: "Market time"
+
+                                            display:
+                                                true,
+
+                                            text:
+                                                "Market time"
                                         }
                                     }
                                 }
@@ -1222,24 +1797,19 @@
                     );
 
 
-                // ------------------------------------------
-                // SPREAD CHART
-                // ------------------------------------------
+                if (
+                    spreadChart
+                ) {
 
-                if (spreadChart) {
                     spreadChart.destroy();
                 }
 
 
-                const spreadContext =
-                    document.getElementById(
-                        "spread-chart"
-                    );
-
-
                 spreadChart =
                     new Chart(
-                        spreadContext,
+                        document.getElementById(
+                            "spread-chart"
+                        ),
                         {
 
                             type: "line",
@@ -1251,52 +1821,77 @@
                                 datasets: [
 
                                     {
+
                                         label:
                                             "Portugal - Spain",
 
-                                        data: spreads,
+                                        data:
+                                            spreads,
 
-                                        tension: 0.1,
+                                        tension:
+                                            0.1,
 
-                                        pointRadius: 2
+                                        pointRadius:
+                                            2
                                     }
                                 ]
                             },
+
 
                             options: {
 
                                 responsive: true,
 
+                                maintainAspectRatio:
+                                    false,
+
                                 interaction: {
-                                    mode: "index",
-                                    intersect: false
+
+                                    mode:
+                                        "index",
+
+                                    intersect:
+                                        false
                                 },
+
 
                                 plugins: {
 
                                     title: {
-                                        display: true,
+
+                                        display:
+                                            true,
+
                                         text:
-                                            "ES-PT Day-Ahead Price Spread"
+                                            "Portugal - Spain Day-Ahead Price Spread"
                                     }
                                 },
+
 
                                 scales: {
 
                                     y: {
 
                                         title: {
-                                            display: true,
+
+                                            display:
+                                                true,
+
                                             text:
                                                 "PT - ES (€/MWh)"
                                         }
                                     },
 
+
                                     x: {
 
                                         title: {
-                                            display: true,
-                                            text: "Market time"
+
+                                            display:
+                                                true,
+
+                                            text:
+                                                "Market time"
                                         }
                                     }
                                 }
@@ -1308,16 +1903,19 @@
                 message.textContent =
                     `${data.length} market periods loaded.`;
 
-            } catch (error) {
+            } catch (
+                error
+            ) {
 
                 message.textContent =
-                    "Error: " + error.message;
+                    "Error: "
+                    + error.message;
             }
         }
 
 
         // ==================================================
-        // PORTUGAL PRICE + LOAD
+        // SINGLE-DAY PRICE + LOAD
         // ==================================================
 
         async function loadPriceLoadData() {
@@ -1350,7 +1948,7 @@
 
 
             message.textContent =
-                "Loading price and demand data...";
+                "Loading price and load data...";
 
 
             try {
@@ -1378,15 +1976,12 @@
                     await response.json();
 
 
-                if (data.length === 0) {
+                if (
+                    data.length === 0
+                ) {
 
                     message.textContent =
                         "No price/load data found for this date.";
-
-                    if (priceLoadChart) {
-                        priceLoadChart.destroy();
-                        priceLoadChart = null;
-                    }
 
                     return;
                 }
@@ -1395,117 +1990,151 @@
                 const times =
                     data.map(
                         row =>
-                            row.timestamp_market.slice(
-                                11,
-                                16
-                            )
+                            row.timestamp_market
+                                .slice(
+                                    11,
+                                    16
+                                )
                     );
 
 
                 const prices =
                     data.map(
-                        row => row.price_eur_mwh
+                        row =>
+                            row.price_eur_mwh
                     );
 
 
                 const loads =
                     data.map(
-                        row => row.load_mw
+                        row =>
+                            row.load_mw
                     );
 
 
-                if (priceLoadChart) {
+                if (
+                    priceLoadChart
+                ) {
+
                     priceLoadChart.destroy();
                 }
 
 
-                const chartContext =
-                    document.getElementById(
-                        "price-load-chart"
-                    );
-
-
                 priceLoadChart =
                     new Chart(
-                        chartContext,
+                        document.getElementById(
+                            "price-load-chart"
+                        ),
                         {
 
                             type: "line",
 
                             data: {
 
-                                labels: times,
+                                labels:
+                                    times,
 
                                 datasets: [
 
                                     {
+
                                         label:
                                             "Portugal Day-Ahead Price",
 
-                                        data: prices,
+                                        data:
+                                            prices,
 
                                         yAxisID:
                                             "yPrice",
 
-                                        tension: 0.1,
+                                        tension:
+                                            0.1,
 
-                                        pointRadius: 2
+                                        pointRadius:
+                                            2
                                     },
 
 
                                     {
+
                                         label:
                                             "Portugal Electricity Load",
 
-                                        data: loads,
+                                        data:
+                                            loads,
 
                                         yAxisID:
                                             "yLoad",
 
-                                        tension: 0.1,
+                                        tension:
+                                            0.1,
 
-                                        pointRadius: 2
+                                        pointRadius:
+                                            2
                                     }
                                 ]
                             },
 
+
                             options: {
 
-                                responsive: true,
+                                responsive:
+                                    true,
+
+                                maintainAspectRatio:
+                                    false,
 
                                 interaction: {
-                                    mode: "index",
-                                    intersect: false
+
+                                    mode:
+                                        "index",
+
+                                    intersect:
+                                        false
                                 },
+
 
                                 plugins: {
 
                                     title: {
-                                        display: true,
+
+                                        display:
+                                            true,
+
                                         text:
-                                            "Portugal Day-Ahead Price and Electricity Load"
+                                            "Portugal 15-Minute Day-Ahead Price and Electricity Load"
                                     }
                                 },
+
 
                                 scales: {
 
                                     x: {
 
                                         title: {
-                                            display: true,
-                                            text: "Market time"
+
+                                            display:
+                                                true,
+
+                                            text:
+                                                "Market time"
                                         }
                                     },
 
 
                                     yPrice: {
 
-                                        type: "linear",
+                                        type:
+                                            "linear",
 
-                                        position: "left",
+                                        position:
+                                            "left",
 
                                         title: {
-                                            display: true,
+
+                                            display:
+                                                true,
+
                                             text:
                                                 "Price (€/MWh)"
                                         }
@@ -1514,17 +2143,23 @@
 
                                     yLoad: {
 
-                                        type: "linear",
+                                        type:
+                                            "linear",
 
-                                        position: "right",
+                                        position:
+                                            "right",
 
                                         title: {
-                                            display: true,
+
+                                            display:
+                                                true,
+
                                             text:
                                                 "Load (MW)"
                                         },
 
                                         grid: {
+
                                             drawOnChartArea:
                                                 false
                                         }
@@ -1538,10 +2173,13 @@
                 message.textContent =
                     `${data.length} joined observations loaded.`;
 
-            } catch (error) {
+            } catch (
+                error
+            ) {
 
                 message.textContent =
-                    "Error: " + error.message;
+                    "Error: "
+                    + error.message;
             }
         }
 
@@ -1550,54 +2188,106 @@
         // BUTTONS
         // ==================================================
 
-        document.getElementById(
-            "apply-button"
-        ).addEventListener(
-            "click",
-            loadMarketData
-        );
+        document
+            .getElementById(
+                "apply-button"
+            )
+            .addEventListener(
+                "click",
+                loadMarketData
+            );
 
 
-        document.getElementById(
-            "reset-button"
-        ).addEventListener(
-            "click",
-            function () {
+        document
+            .getElementById(
+                "reset-button"
+            )
+            .addEventListener(
+                "click",
+                function () {
 
-                document.getElementById(
-                    "start-date"
-                ).value = "";
-
-
-                document.getElementById(
-                    "end-date"
-                ).value = "";
-
-
-                document.getElementById(
-                    "zone"
-                ).value = "ALL";
+                    document
+                        .getElementById(
+                            "start-date"
+                        )
+                        .value = "";
 
 
-                loadMarketData();
-            }
-        );
+                    document
+                        .getElementById(
+                            "end-date"
+                        )
+                        .value = "";
 
 
-        document.getElementById(
-            "intraday-button"
-        ).addEventListener(
-            "click",
-            loadIntradayData
-        );
+                    document
+                        .getElementById(
+                            "zone"
+                        )
+                        .value =
+                        "ALL";
 
 
-        document.getElementById(
-            "price-load-button"
-        ).addEventListener(
-            "click",
-            loadPriceLoadData
-        );
+                    loadMarketData();
+                }
+            );
+
+
+        document
+            .getElementById(
+                "historical-button"
+            )
+            .addEventListener(
+                "click",
+                loadHistoricalPriceLoadData
+            );
+
+
+        document
+            .getElementById(
+                "historical-reset-button"
+            )
+            .addEventListener(
+                "click",
+                function () {
+
+                    document
+                        .getElementById(
+                            "historical-start-date"
+                        )
+                        .value = "";
+
+
+                    document
+                        .getElementById(
+                            "historical-end-date"
+                        )
+                        .value = "";
+
+
+                    loadHistoricalPriceLoadData();
+                }
+            );
+
+
+        document
+            .getElementById(
+                "intraday-button"
+            )
+            .addEventListener(
+                "click",
+                loadIntradayData
+            );
+
+
+        document
+            .getElementById(
+                "price-load-button"
+            )
+            .addEventListener(
+                "click",
+                loadPriceLoadData
+            );
 
 
         // ==================================================
@@ -1605,6 +2295,8 @@
         // ==================================================
 
         loadMarketData();
+
+        loadHistoricalPriceLoadData();
 
     </script>
 
