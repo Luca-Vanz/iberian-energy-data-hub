@@ -1,15 +1,13 @@
-import sqlite3
-from pathlib import Path
-
 import pandas as pd
 
-
-DATABASE_PATH = (
-    Path("data")
-    / "database"
-    / "iberian_energy.db"
+from src.database.connection import (
+    get_database_connection,
 )
 
+
+# ==================================================
+# SINGLE-DAY PRICE + LOAD
+# ==================================================
 
 def get_price_load(
     country: str,
@@ -39,6 +37,30 @@ def get_price_load(
 
         ORDER BY p.timestamp_utc;
     """
+
+
+    parameters = [
+        country,
+        country,
+        date,
+    ]
+
+
+    with get_database_connection() as connection:
+
+        df = pd.read_sql_query(
+            query,
+            connection,
+            params=parameters,
+        )
+
+
+    return df
+
+
+# ==================================================
+# HISTORICAL DAILY PRICE + LOAD SUMMARY
+# ==================================================
 
 def get_daily_price_load_summary(
     start_date: str | None = None,
@@ -122,9 +144,7 @@ def get_daily_price_load_summary(
     """
 
 
-    with sqlite3.connect(
-        DATABASE_PATH
-    ) as connection:
+    with get_database_connection() as connection:
 
         df = pd.read_sql_query(
             query,
@@ -135,40 +155,62 @@ def get_daily_price_load_summary(
 
     return df
 
-    parameters = [
-        country,
-        country,
-        date,
-    ]
 
-
-    with sqlite3.connect(DATABASE_PATH) as connection:
-
-        df = pd.read_sql_query(
-            query,
-            connection,
-            params=parameters,
-        )
-
-
-    return df
-
+# ==================================================
+# QUICK LOCAL TEST
+# ==================================================
 
 if __name__ == "__main__":
 
-    result = get_price_load(
+    print(
+        "Single-day Portuguese price + load:"
+    )
+
+
+    daily_data = get_price_load(
         country="PT",
         date="20260811",
     )
 
+
     print(
-        result.head(10)
-        .to_string(index=False)
+        daily_data.head(10)
+        .to_string(
+            index=False
+        )
     )
+
 
     print()
 
     print(
         f"Joined observations: "
-        f"{len(result)}"
+        f"{len(daily_data)}"
+    )
+
+
+    print()
+    print(
+        "Historical daily price + load summary:"
+    )
+
+
+    historical_data = (
+        get_daily_price_load_summary()
+    )
+
+
+    print(
+        historical_data.head()
+        .to_string(
+            index=False
+        )
+    )
+
+
+    print()
+
+    print(
+        f"Market days: "
+        f"{len(historical_data)}"
     )

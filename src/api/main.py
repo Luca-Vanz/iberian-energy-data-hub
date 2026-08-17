@@ -1,5 +1,4 @@
 from datetime import datetime
-from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException
@@ -11,16 +10,11 @@ from src.analytics.omie import (
     get_prices,
 )
 
-from src.analytics.price_load import (
-    get_daily_price_load_summary,
-    get_price_load,
-)
-
-
-WEB_PATH = (
-    Path("src")
-    / "web"
-    / "index.html"
+from src.config import (
+    APP_MODE,
+    DATABASE_PATH,
+    IS_PUBLIC,
+    WEB_PATH,
 )
 
 
@@ -111,7 +105,27 @@ def root():
 def health_check():
 
     return {
-        "status": "ok"
+        "status": "ok",
+        "mode": APP_MODE,
+    }
+
+
+# ==================================================
+# DEPLOYMENT INFORMATION
+# ==================================================
+
+@app.get("/about")
+def about():
+
+    return {
+        "project": (
+            "Iberian Energy Data Hub"
+        ),
+        "mode": APP_MODE,
+        "database": (
+            DATABASE_PATH.name
+        ),
+        "public_demo": IS_PUBLIC,
     }
 
 
@@ -196,54 +210,58 @@ def omie_intraday(
 
 
 # ==================================================
-# SINGLE-DAY PRICE + LOAD
+# LOCAL-ONLY REN / FUNDAMENTALS ENDPOINTS
 # ==================================================
 
-@app.get("/market/price-load")
-def market_price_load(
-    country: Literal["PT"],
-    date: str,
-):
+if not IS_PUBLIC:
 
-    validate_date(
-        date
+    from src.analytics.price_load import (
+        get_daily_price_load_summary,
+        get_price_load,
     )
 
 
-    df = get_price_load(
-        country=country,
-        date=date,
-    )
+    @app.get("/market/price-load")
+    def market_price_load(
+        country: Literal["PT"],
+        date: str,
+    ):
+
+        validate_date(
+            date
+        )
 
 
-    return df.to_dict(
-        orient="records"
-    )
+        df = get_price_load(
+            country=country,
+            date=date,
+        )
 
 
-# ==================================================
-# HISTORICAL DAILY PRICE + LOAD
-# ==================================================
-
-@app.get("/market/daily-price-load")
-def market_daily_price_load(
-    country: Literal["PT"],
-    start_date: str | None = None,
-    end_date: str | None = None,
-):
-
-    validate_date_range(
-        start_date,
-        end_date,
-    )
+        return df.to_dict(
+            orient="records"
+        )
 
 
-    df = get_daily_price_load_summary(
-        start_date=start_date,
-        end_date=end_date,
-    )
+    @app.get("/market/daily-price-load")
+    def market_daily_price_load(
+        country: Literal["PT"],
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ):
+
+        validate_date_range(
+            start_date,
+            end_date,
+        )
 
 
-    return df.to_dict(
-        orient="records"
-    )
+        df = get_daily_price_load_summary(
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+
+        return df.to_dict(
+            orient="records"
+        )

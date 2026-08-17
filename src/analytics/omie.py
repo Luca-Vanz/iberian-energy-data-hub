@@ -1,11 +1,13 @@
-import sqlite3
-from pathlib import Path
-
 import pandas as pd
 
+from src.database.connection import (
+    get_database_connection,
+)
 
-DATABASE_PATH = Path("data") / "database" / "iberian_energy.db"
 
+# ==================================================
+# DAILY MARKET SUMMARY
+# ==================================================
 
 def get_daily_market_summary(
     start_date: str | None = None,
@@ -14,9 +16,10 @@ def get_daily_market_summary(
 
     query = """
         WITH period_prices AS (
+
             SELECT
+                timestamp_utc,
                 market_date,
-                timestamp_market,
 
                 MAX(
                     CASE
@@ -34,27 +37,9 @@ def get_daily_market_summary(
 
             FROM omie_day_ahead_prices
 
-            WHERE 1 = 1
-    """
-
-    parameters = []
-
-    if start_date is not None:
-        query += """
-            AND market_date >= ?
-        """
-        parameters.append(start_date)
-
-    if end_date is not None:
-        query += """
-            AND market_date <= ?
-        """
-        parameters.append(end_date)
-
-    query += """
             GROUP BY
-                market_date,
-                timestamp_market
+                timestamp_utc,
+                market_date
         )
 
         SELECT
@@ -72,7 +57,9 @@ def get_daily_market_summary(
 
             SUM(
                 CASE
-                    WHEN ABS(price_pt - price_es) > 0.001
+                    WHEN ABS(
+                        price_pt - price_es
+                    ) > 0.001
                     THEN 1
                     ELSE 0
                 END
@@ -80,27 +67,66 @@ def get_daily_market_summary(
 
             ROUND(
                 MAX(
-                    ABS(price_pt - price_es)
+                    ABS(
+                        price_pt - price_es
+                    )
                 ),
                 2
             ) AS max_spread
 
         FROM period_prices
 
+        WHERE 1 = 1
+    """
+
+
+    parameters = []
+
+
+    if start_date is not None:
+
+        query += """
+            AND market_date >= ?
+        """
+
+        parameters.append(
+            start_date
+        )
+
+
+    if end_date is not None:
+
+        query += """
+            AND market_date <= ?
+        """
+
+        parameters.append(
+            end_date
+        )
+
+
+    query += """
         GROUP BY market_date
 
         ORDER BY market_date;
     """
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+
+    with get_database_connection() as connection:
+
         df = pd.read_sql_query(
             query,
             connection,
             params=parameters,
         )
 
+
     return df
 
+
+# ==================================================
+# PRICE OBSERVATIONS BY BIDDING ZONE
+# ==================================================
 
 def get_prices(
     zone: str,
@@ -122,32 +148,54 @@ def get_prices(
         WHERE bidding_zone = ?
     """
 
-    parameters = [zone]
+
+    parameters = [
+        zone
+    ]
+
 
     if start_date is not None:
+
         query += """
             AND market_date >= ?
         """
-        parameters.append(start_date)
+
+        parameters.append(
+            start_date
+        )
+
 
     if end_date is not None:
+
         query += """
             AND market_date <= ?
         """
-        parameters.append(end_date)
+
+        parameters.append(
+            end_date
+        )
+
 
     query += """
         ORDER BY timestamp_utc;
     """
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+
+    with get_database_connection() as connection:
+
         df = pd.read_sql_query(
             query,
             connection,
             params=parameters,
         )
 
+
     return df
+
+
+# ==================================================
+# INTRADAY ES / PT PRICE COMPARISON
+# ==================================================
 
 def get_intraday_prices(
     date: str,
@@ -155,8 +203,11 @@ def get_intraday_prices(
 
     query = """
         WITH period_prices AS (
+
             SELECT
+                timestamp_utc,
                 timestamp_market,
+                market_date,
                 period,
 
                 MAX(
@@ -178,12 +229,16 @@ def get_intraday_prices(
             WHERE market_date = ?
 
             GROUP BY
+                timestamp_utc,
                 timestamp_market,
+                market_date,
                 period
         )
 
         SELECT
+            timestamp_utc,
             timestamp_market,
+            market_date,
             period,
             price_es,
             price_pt,
@@ -195,18 +250,67 @@ def get_intraday_prices(
 
         FROM period_prices
 
-        ORDER BY period;
+        ORDER BY timestamp_utc;
     """
 
-    with sqlite3.connect(DATABASE_PATH) as connection:
+
+    with get_database_connection() as connection:
+
         df = pd.read_sql_query(
             query,
             connection,
-            params=[date],
+            params=[
+                date
+            ],
         )
+
 
     return df
 
+
+# ==================================================
+# QUICK LOCAL TEST
+# ==================================================
+
 if __name__ == "__main__":
-    summary = get_daily_market_summary()
-    print(summary)
+
+    print(
+        "Daily market summary:"
+    )
+
+    daily_summary = (
+        get_daily_market_summary()
+    )
+
+    print(
+        daily_summary.head()
+        .to_string(
+            index=False
+        )
+    )
+
+
+    print()
+    print(
+        f"Market days: "
+        f"{len(daily_summary)}"
+    )
+
+
+    print()
+    print(
+        "Example intraday data:"
+    )
+
+    intraday = (
+        get_intraday_prices(
+            "20260811"
+        )
+    )
+
+    print(
+        intraday.head()
+        .to_string(
+            index=False
+        )
+    )
