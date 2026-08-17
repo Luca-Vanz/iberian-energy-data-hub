@@ -74,6 +74,18 @@ Validation confirmed:
 - No market-date mismatches
 - No period-number mismatches
 
+### Source-level verification
+
+The public OMIE database was independently compared against the original
+downloaded OMIE source files for the full validated period.
+
+- 318 market days checked
+- 30,528 quarter-hour periods
+- 61,056 ES/PT prices compared
+- 0 price mismatches
+- 0 timestamp mismatches
+- 0 missing or duplicate database rows
+
 ## Architecture
 
 ```text
