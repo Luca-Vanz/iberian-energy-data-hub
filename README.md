@@ -99,7 +99,8 @@ FastAPI
         |
         v
 Interactive web dashboard
+```
 
-## URL
+## Live Demo
 
-https://iberian-energy-data-hub.onrender.com/
+[Open the Iberian Energy Data Hub](https://iberian-energy-data-hub.onrender.com/)
