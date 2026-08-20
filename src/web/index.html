@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta
@@ -13,2313 +12,1980 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
+        :root {
+            --background: #f5f7fa;
+            --surface: #ffffff;
+            --border: #d9e0e8;
+            --text: #172033;
+            --muted: #687386;
+            --primary: #1769aa;
+            --primary-dark: #0e4f82;
+            --danger: #b42318;
+            --success: #18794e;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
 
         body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 20px;
+            margin: 0;
+            font-family:
+                Inter,
+                ui-sans-serif,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+            background: var(--background);
+            color: var(--text);
         }
 
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-inner {
+            max-width: 1450px;
+            margin: 0 auto;
+            padding: 24px 28px;
+        }
 
         h1 {
-            margin-bottom: 5px;
+            margin: 0;
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
         }
-
-
-        h2 {
-            margin-top: 45px;
-        }
-
-
-        h3 {
-            margin-top: 30px;
-        }
-
 
         .subtitle {
-            color: #666;
-            margin-bottom: 30px;
+            margin-top: 7px;
+            color: var(--muted);
+            font-size: 15px;
         }
 
+        main {
+            max-width: 1450px;
+            margin: 0 auto;
+            padding: 28px;
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 22px;
+            margin-bottom: 22px;
+        }
+
+        .panel-title {
+            margin: 0 0 18px 0;
+            font-size: 19px;
+            font-weight: 650;
+        }
 
         .controls {
-            display: flex;
-            gap: 15px;
+            display: grid;
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(170px, 1fr)
+                );
+            gap: 16px;
             align-items: end;
-            flex-wrap: wrap;
-
-            padding: 20px;
-            margin-bottom: 20px;
-
-            background-color: #f5f5f5;
-            border-radius: 8px;
         }
-
 
         .control {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 7px;
         }
-
 
         label {
-            font-weight: bold;
+            font-size: 13px;
+            font-weight: 600;
+            color: #3c4758;
         }
 
-
-        input,
         select,
+        input,
         button {
-            padding: 8px;
+            min-height: 42px;
+            border-radius: 7px;
             font-size: 14px;
         }
 
+        select,
+        input {
+            border: 1px solid #cbd3dd;
+            padding: 0 11px;
+            background: white;
+            color: var(--text);
+        }
+
+        select:focus,
+        input:focus {
+            outline: 2px solid rgba(23, 105, 170, 0.2);
+            border-color: var(--primary);
+        }
 
         button {
+            border: none;
+            padding: 0 20px;
+            background: var(--primary);
+            color: white;
+            font-weight: 650;
             cursor: pointer;
         }
 
-
-        .message {
-            margin: 15px 0;
-            color: #666;
+        button:hover {
+            background: var(--primary-dark);
         }
 
-
-        .chart-container {
-            position: relative;
-            margin-bottom: 40px;
-            min-height: 350px;
+        button:disabled {
+            opacity: 0.65;
+            cursor: wait;
         }
 
-
-        .stats-grid {
-            display: grid;
-
-            grid-template-columns:
-                repeat(
-                    auto-fit,
-                    minmax(160px, 1fr)
-                );
-
-            gap: 15px;
-
-            margin: 20px 0 30px 0;
+        .hidden {
+            display: none !important;
         }
 
-
-        .stat-card {
-            background-color: #f5f5f5;
-            padding: 18px;
-            border-radius: 8px;
-        }
-
-
-        .stat-label {
-            color: #666;
+        .status {
+            margin-top: 17px;
+            padding: 11px 14px;
+            border-radius: 7px;
             font-size: 14px;
-            margin-bottom: 5px;
+            background: #f1f4f8;
+            color: var(--muted);
         }
 
-
-        .stat-value {
-            font-size: 22px;
-            font-weight: bold;
+        .status.error {
+            background: #fff0ee;
+            color: var(--danger);
         }
 
+        .status.success {
+            background: #edf8f2;
+            color: var(--success);
+        }
 
-        table {
-            border-collapse: collapse;
+        .summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 9px;
+            margin-bottom: 16px;
+        }
+
+        .summary-chip {
+            padding: 7px 11px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 12px;
+            background: #fafbfd;
+            color: #4b5668;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 590px;
             width: 100%;
-
-            margin-top: 20px;
-            margin-bottom: 50px;
         }
 
-
-        th,
-        td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: right;
+        #emptyMessage {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--muted);
+            text-align: center;
+            padding: 30px;
+            pointer-events: none;
         }
 
-
-        th:first-child,
-        td:first-child {
-            text-align: left;
+        .note {
+            margin-top: 16px;
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--muted);
         }
 
-
-        th {
-            background-color: #f4f4f4;
+        .events {
+            margin-top: 18px;
         }
 
+        .event {
+            padding: 10px 0;
+            border-top: 1px solid #edf0f4;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .event:first-child {
+            border-top: 0;
+        }
+
+        .event-date {
+            font-weight: 650;
+        }
+
+        .event-title {
+            font-weight: 600;
+        }
+
+        @media (max-width: 700px) {
+            main {
+                padding: 14px;
+            }
+
+            .header-inner {
+                padding: 20px 16px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .chart-wrapper {
+                height: 430px;
+            }
+        }
     </style>
 </head>
 
-<footer
-    style="
-        margin-top: 60px;
-        padding-top: 20px;
-        padding-bottom: 30px;
-        border-top: 1px solid #ddd;
-        color: #666;
-        font-size: 14px;
-    "
->
-    <p>
-        Data sources: OMIE (Iberian electricity market prices)
-        and REN (Portuguese electricity-system data).
-    </p>
-
-    <p>
-        This is an independent personal project and is not
-        affiliated with or endorsed by OMIE or REN.
-    </p>
-</footer>
-
 <body>
 
-    <h1>Iberian Energy Data Hub</h1>
+<header>
+    <div class="header-inner">
+        <h1>Iberian Energy Data Hub</h1>
 
-    <p class="subtitle">
-        Historical electricity-market data and analytics
-        for Spain and Portugal
-    </p>
+        <div class="subtitle">
+            Historical electricity-market prices for Spain and Portugal
+        </div>
+    </div>
+</header>
+
+<main>
+
+    <section class="panel">
+
+        <h2 class="panel-title">
+            Price explorer
+        </h2>
+
+        <div class="controls">
+
+            <div class="control">
+                <label for="market">
+                    Price series
+                </label>
+
+                <select id="market">
+                    <option value="day_ahead">
+                        Day-ahead
+                    </option>
+
+                    <option value="intraday_auction">
+                        Intraday auction
+                    </option>
+
+                    <option value="intraday_continuous">
+                        Continuous intraday
+                    </option>
+
+                    <option value="afrr_energy">
+                        aFRR energy
+                    </option>
+
+                    <option value="afrr_capacity">
+                        aFRR capacity — marginal
+                    </option>
+
+                    <option value="mfrr_scheduled">
+                        mFRR scheduled activation
+                    </option>
+
+                    <option value="rr">
+                        Replacement reserve (RR)
+                    </option>
+                </select>
+            </div>
 
 
-    <!-- ==================================================
-         DAILY OMIE FILTERS
-         ================================================== -->
+            <div class="control">
+                <label for="country">
+                    Country
+                </label>
 
-    <div class="controls">
+                <select id="country">
+                    <option value="both">
+                        Spain + Portugal
+                    </option>
 
-        <div class="control">
+                    <option value="ES">
+                        Spain
+                    </option>
 
-            <label for="start-date">
-                Start date
-            </label>
+                    <option value="PT">
+                        Portugal
+                    </option>
+                </select>
+            </div>
 
-            <input
-                type="date"
-                id="start-date"
+
+            <div
+                class="control hidden"
+                id="directionControl"
             >
+                <label for="direction">
+                    Direction
+                </label>
 
-        </div>
+                <select id="direction">
+                    <option value="both">
+                        UP + DOWN
+                    </option>
+
+                    <option value="up">
+                        UP
+                    </option>
+
+                    <option value="down">
+                        DOWN
+                    </option>
+                </select>
+            </div>
 
 
-        <div class="control">
-
-            <label for="end-date">
-                End date
-            </label>
-
-            <input
-                type="date"
-                id="end-date"
+            <div
+                class="control hidden"
+                id="sessionControl"
             >
+                <label for="session">
+                    Auction session
+                </label>
+
+                <select id="session">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                </select>
+            </div>
+
+
+            <div class="control">
+                <label for="frequency">
+                    Display frequency
+                </label>
+
+                <select id="frequency">
+                    <option value="15min">
+                        15 minutes
+                    </option>
+
+                    <option
+                        value="1h"
+                        selected
+                    >
+                        Hourly
+                    </option>
+
+                    <option value="daily">
+                        Daily
+                    </option>
+
+                    <option value="weekly">
+                        Weekly
+                    </option>
+
+                    <option value="monthly">
+                        Monthly
+                    </option>
+
+                    <option value="yearly">
+                        Yearly
+                    </option>
+                </select>
+            </div>
+
+
+            <div class="control">
+                <label for="startDate">
+                    Start date
+                </label>
+
+                <input
+                    id="startDate"
+                    type="date"
+                >
+            </div>
+
+
+            <div class="control">
+                <label for="endDate">
+                    End date
+                </label>
+
+                <input
+                    id="endDate"
+                    type="date"
+                >
+            </div>
+
+
+            <div class="control">
+                <button id="loadButton">
+                    Load prices
+                </button>
+            </div>
 
         </div>
 
-
-        <div class="control">
-
-            <label for="zone">
-                Market
-            </label>
-
-            <select id="zone">
-
-                <option value="ALL">
-                    Spain + Portugal
-                </option>
-
-                <option value="ES">
-                    Spain
-                </option>
-
-                <option value="PT">
-                    Portugal
-                </option>
-
-            </select>
-
+        <div
+            id="status"
+            class="status"
+        >
+            Select a price series and load the data.
         </div>
 
-
-        <button id="apply-button">
-            Apply filters
-        </button>
+    </section>
 
 
-        <button id="reset-button">
-            Reset
-        </button>
+    <section class="panel">
 
-    </div>
+        <h2 class="panel-title">
+            Electricity price
+        </h2>
 
+        <div
+            id="summary"
+            class="summary"
+        ></div>
 
-    <div
-        id="message"
-        class="message"
-    ></div>
+        <div class="chart-wrapper">
 
+            <canvas id="priceChart"></canvas>
 
-    <!-- ==================================================
-         DAILY AVERAGE PRICE CHART
-         ================================================== -->
-
-    <h2>Daily Average Day-Ahead Prices</h2>
-
-    <div class="chart-container">
-
-        <canvas id="price-chart"></canvas>
-
-    </div>
-
-
-    <!-- ==================================================
-         HISTORICAL PORTUGAL FUNDAMENTALS
-         ================================================== -->
-
-    <h2>Historical Portugal Price + Electricity Load</h2>
-
-    <p>
-        Daily average Portuguese day-ahead electricity price
-        from OMIE and daily average market load from REN.
-    </p>
-
-
-    <div class="controls">
-
-        <div class="control">
-
-            <label for="historical-start-date">
-                Start date
-            </label>
-
-            <input
-                type="date"
-                id="historical-start-date"
+            <div
+                id="emptyMessage"
+                class="hidden"
             >
+                No official data are available for this selection.
+            </div>
 
         </div>
 
+        <div
+            id="resolutionNote"
+            class="note hidden"
+        ></div>
 
-        <div class="control">
+        <div
+            id="events"
+            class="events"
+        ></div>
 
-            <label for="historical-end-date">
-                End date
-            </label>
+    </section>
 
-            <input
-                type="date"
-                id="historical-end-date"
-            >
+</main>
 
-        </div>
 
+<script>
+    // ==================================================
+    // ELEMENTS
+    // ==================================================
 
-        <button id="historical-button">
-            Apply filters
-        </button>
+    const marketElement =
+        document.getElementById("market");
 
+    const countryElement =
+        document.getElementById("country");
 
-        <button id="historical-reset-button">
-            Reset
-        </button>
+    const directionElement =
+        document.getElementById("direction");
 
-    </div>
+    const directionControl =
+        document.getElementById("directionControl");
 
+    const sessionElement =
+        document.getElementById("session");
 
-    <div
-        id="historical-message"
-        class="message"
-    ></div>
+    const sessionControl =
+        document.getElementById("sessionControl");
 
+    const frequencyElement =
+        document.getElementById("frequency");
 
-    <div class="chart-container">
+    const startDateElement =
+        document.getElementById("startDate");
 
-        <canvas id="historical-price-load-chart"></canvas>
+    const endDateElement =
+        document.getElementById("endDate");
 
-    </div>
+    const loadButton =
+        document.getElementById("loadButton");
 
+    const statusElement =
+        document.getElementById("status");
 
-    <!-- ==================================================
-         INTRADAY OMIE
-         ================================================== -->
+    const summaryElement =
+        document.getElementById("summary");
 
-    <h2>15-Minute Intraday Prices</h2>
+    const emptyMessage =
+        document.getElementById("emptyMessage");
 
-    <div class="controls">
+    const resolutionNote =
+        document.getElementById("resolutionNote");
 
-        <div class="control">
+    const eventsElement =
+        document.getElementById("events");
 
-            <label for="intraday-date">
-                Market date
-            </label>
 
-            <input
-                type="date"
-                id="intraday-date"
-            >
+    // ==================================================
+    // DEFAULT DATES
+    // ==================================================
 
-        </div>
+    function formatDateInput(date) {
+        return date
+            .toISOString()
+            .slice(0, 10);
+    }
 
 
-        <button id="intraday-button">
-            Load intraday prices
-        </button>
+    const defaultEnd = new Date();
 
-    </div>
+    defaultEnd.setDate(
+        defaultEnd.getDate() - 1
+    );
 
+    const defaultStart =
+        new Date(defaultEnd);
 
-    <div
-        id="intraday-message"
-        class="message"
-    ></div>
+    defaultStart.setDate(
+        defaultStart.getDate() - 7
+    );
 
+    startDateElement.value =
+        formatDateInput(defaultStart);
 
-    <div
-        id="intraday-stats"
-        class="stats-grid"
-    ></div>
+    endDateElement.value =
+        formatDateInput(defaultEnd);
 
 
-    <div class="chart-container">
-
-        <canvas id="intraday-chart"></canvas>
-
-    </div>
-
-
-    <h3>Portugal - Spain Price Spread</h3>
-
-
-    <div class="chart-container">
-
-        <canvas id="spread-chart"></canvas>
-
-    </div>
-
-
-    <!-- ==================================================
-         SINGLE-DAY PORTUGAL PRICE + LOAD
-         ================================================== -->
-
-    <h2>Portugal 15-Minute Price + Electricity Load</h2>
-
-    <div class="controls">
-
-        <div class="control">
-
-            <label for="price-load-date">
-                Market date
-            </label>
-
-            <input
-                type="date"
-                id="price-load-date"
-            >
-
-        </div>
-
-
-        <button id="price-load-button">
-            Load price + load
-        </button>
-
-    </div>
-
-
-    <div
-        id="price-load-message"
-        class="message"
-    ></div>
-
-
-    <div class="chart-container">
-
-        <canvas id="price-load-chart"></canvas>
-
-    </div>
-
-
-    <!-- ==================================================
-         DAILY MARKET SUMMARY
-         ================================================== -->
-
-    <h2>Daily Market Summary</h2>
-
-
-    <table>
-
-        <thead>
-
-            <tr id="table-header"></tr>
-
-        </thead>
-
-
-        <tbody id="market-data"></tbody>
-
-    </table>
-
-
-    <script>
-
-        // ==================================================
-        // CHART OBJECTS
-        // ==================================================
-
-        let priceChart = null;
-
-        let historicalPriceLoadChart = null;
-
-        let intradayChart = null;
-
-        let spreadChart = null;
-
-        let priceLoadChart = null;
-
-
-        // ==================================================
-        // DATE UTILITIES
-        // ==================================================
-
-        function formatDate(
-            dateString
-        ) {
-
-            return (
-                dateString.slice(0, 4)
-                + "-"
-                + dateString.slice(4, 6)
-                + "-"
-                + dateString.slice(6, 8)
+    // ==================================================
+    // MARKET CONFIGURATION
+    //
+    // The dashboard uses economic labels.
+    // The backend still preserves exact source fields.
+    // ==================================================
+
+    const SERIES_CONFIG = {
+
+        day_ahead: {
+            market: "day_ahead",
+            balancing: false
+        },
+
+        intraday_auction: {
+            market: "intraday_auction",
+            balancing: false,
+            session: true
+        },
+
+        intraday_continuous: {
+            market: "intraday_continuous",
+            balancing: false
+        },
+
+        afrr_energy: {
+            market: "afrr",
+            balancing: true,
+            direction: true,
+            stage: "energy",
+            metric: "marginal_price"
+        },
+
+        afrr_capacity: {
+            market: "afrr",
+            balancing: true,
+            direction: true,
+            stage: "capacity",
+            metric: "marginal_price"
+        },
+
+        mfrr_scheduled: {
+            market: "mfrr",
+            balancing: true,
+            direction: true,
+            special: "mfrr_scheduled"
+        },
+
+        rr: {
+            market: "rr",
+            balancing: true,
+            direction: false,
+            stage: null,
+            metric: "activation_price"
+        }
+    };
+
+
+    // ==================================================
+    // CONTROL VISIBILITY
+    // ==================================================
+
+    function updateControls() {
+
+        const config =
+            SERIES_CONFIG[
+                marketElement.value
+            ];
+
+        directionControl.classList.toggle(
+            "hidden",
+            !config.direction
+        );
+
+        sessionControl.classList.toggle(
+            "hidden",
+            !config.session
+        );
+    }
+
+
+    marketElement.addEventListener(
+        "change",
+        updateControls
+    );
+
+    updateControls();
+
+
+    // ==================================================
+    // STATUS
+    // ==================================================
+
+    function setStatus(
+        message,
+        type = "normal"
+    ) {
+
+        statusElement.textContent =
+            message;
+
+        statusElement.className =
+            "status";
+
+        if (type === "error") {
+            statusElement.classList.add(
+                "error"
             );
         }
 
+        if (type === "success") {
+            statusElement.classList.add(
+                "success"
+            );
+        }
+    }
 
-        function convertDateForApi(
-            dateString
+
+    // ==================================================
+    // API QUERY
+    // ==================================================
+
+    function buildUrl(
+        config,
+        country,
+        overrides = {}
+    ) {
+
+        const params =
+            new URLSearchParams();
+
+        params.set(
+            "market",
+            config.market
+        );
+
+        params.set(
+            "country",
+            country
+        );
+
+        params.set(
+            "start_date",
+            startDateElement.value
+        );
+
+        params.set(
+            "end_date",
+            endDateElement.value
+        );
+
+        params.set(
+            "frequency",
+            frequencyElement.value
+        );
+
+        if (
+            config.direction
+            && directionElement.value
         ) {
-
-            if (!dateString) {
-
-                return null;
-            }
-
-
-            return dateString.replaceAll(
-                "-",
-                ""
+            params.set(
+                "direction",
+                directionElement.value
             );
         }
 
-
-        // ==================================================
-        // DAILY OMIE API URL
-        // ==================================================
-
-        function buildApiUrl() {
-
-            const startDate =
-                convertDateForApi(
-                    document.getElementById(
-                        "start-date"
-                    ).value
-                );
-
-
-            const endDate =
-                convertDateForApi(
-                    document.getElementById(
-                        "end-date"
-                    ).value
-                );
-
-
-            const parameters =
-                new URLSearchParams();
-
-
-            if (startDate) {
-
-                parameters.append(
-                    "start_date",
-                    startDate
-                );
-            }
-
-
-            if (endDate) {
-
-                parameters.append(
-                    "end_date",
-                    endDate
-                );
-            }
-
-
-            const queryString =
-                parameters.toString();
-
-
-            if (queryString) {
-
-                return (
-                    "/omie/daily-summary?"
-                    + queryString
-                );
-            }
-
-
-            return "/omie/daily-summary";
+        if (config.session) {
+            params.set(
+                "session",
+                sessionElement.value
+            );
         }
 
-
-        // ==================================================
-        // DAILY PRICE DATASETS
-        // ==================================================
-
-        function createDatasets(
-            data,
-            zone
-        ) {
-
-            const datasets = [];
-
-
-            if (
-                zone === "ALL"
-                || zone === "ES"
-            ) {
-
-                datasets.push({
-
-                    label: "Spain",
-
-                    data: data.map(
-                        row =>
-                            row.avg_price_es
-                    ),
-
-                    tension: 0.2,
-
-                    pointRadius: 1
-                });
-            }
-
-
-            if (
-                zone === "ALL"
-                || zone === "PT"
-            ) {
-
-                datasets.push({
-
-                    label: "Portugal",
-
-                    data: data.map(
-                        row =>
-                            row.avg_price_pt
-                    ),
-
-                    tension: 0.2,
-
-                    pointRadius: 1
-                });
-            }
-
-
-            return datasets;
+        if (config.stage) {
+            params.set(
+                "stage",
+                config.stage
+            );
         }
 
+        if (config.metric) {
+            params.set(
+                "metric",
+                config.metric
+            );
+        }
 
-        // ==================================================
-        // DAILY MARKET TABLE
-        // ==================================================
-
-        function renderTable(
-            data,
-            zone
+        for (
+            const [key, value]
+            of Object.entries(overrides)
         ) {
 
-            const tableHeader =
-                document.getElementById(
-                    "table-header"
-                );
-
-
-            const tableBody =
-                document.getElementById(
-                    "market-data"
-                );
-
-
-            tableHeader.innerHTML = "";
-
-            tableBody.innerHTML = "";
-
-
-            if (zone === "ES") {
-
-                tableHeader.innerHTML = `
-                    <th>Date</th>
-                    <th>Spain €/MWh</th>
-                `;
-
-            } else if (
-                zone === "PT"
+            if (
+                value !== null
+                && value !== undefined
             ) {
 
-                tableHeader.innerHTML = `
-                    <th>Date</th>
-                    <th>Portugal €/MWh</th>
-                `;
+                params.set(
+                    key,
+                    value
+                );
+            }
+        }
 
-            } else {
+        return (
+            "/market/prices?"
+            + params.toString()
+        );
+    }
 
-                tableHeader.innerHTML = `
-                    <th>Date</th>
-                    <th>Spain €/MWh</th>
-                    <th>Portugal €/MWh</th>
-                    <th>Split Periods</th>
-                    <th>Max Spread €/MWh</th>
-                `;
+
+    async function fetchJson(url) {
+
+        const response =
+            await fetch(url);
+
+        const payload =
+            await response.json();
+
+        if (!response.ok) {
+
+            const detail =
+                payload.detail
+                || `HTTP ${response.status}`;
+
+            throw new Error(
+                detail
+            );
+        }
+
+        return payload;
+    }
+
+
+    // ==================================================
+    // mFRR
+    //
+    // Spain and Portugal currently expose the
+    // official scheduled-activation series under
+    // different source metric names.
+    //
+    // We therefore request each country separately
+    // instead of pretending their raw schemas are
+    // identical.
+    // ==================================================
+
+    async function fetchMfrrScheduled(
+        requestedCountry,
+        config
+    ) {
+
+        const countries =
+            requestedCountry === "both"
+                ? ["ES", "PT"]
+                : [requestedCountry];
+
+        const requests =
+            countries.map(
+                async country => {
+
+                    const overrides =
+                        country === "ES"
+                            ? {
+                                stage:
+                                    "energy_scheduled",
+
+                                metric:
+                                    "weighted_average_price"
+                            }
+                            : {
+                                stage:
+                                    "energy_scheduled",
+
+                                metric:
+                                    "scheduled_activation_price"
+                            };
+
+                    const url =
+                        buildUrl(
+                            config,
+                            country,
+                            overrides
+                        );
+
+                    return fetchJson(
+                        url
+                    );
+                }
+            );
+
+        const results =
+            await Promise.all(
+                requests
+            );
+
+        const data =
+            results.flatMap(
+                result =>
+                    result.data || []
+            );
+
+        const events =
+            results.flatMap(
+                result =>
+                    result.events || []
+            );
+
+        const upsampledPoints =
+            data.filter(
+                row =>
+                    row.is_upsampled
+            ).length;
+
+        return {
+            metadata: {
+                market:
+                    "mfrr",
+
+                countries:
+                    countries,
+
+                start_date:
+                    startDateElement.value,
+
+                end_date:
+                    endDateElement.value,
+
+                frequency:
+                    frequencyElement.value,
+
+                rows:
+                    data.length,
+
+                series:
+                    new Set(
+                        data.map(
+                            row =>
+                                row.series_id
+                        )
+                    ).size,
+
+                upsampled_points:
+                    upsampledPoints
+            },
+
+            events:
+                events,
+
+            data:
+                data
+        };
+    }
+
+
+    async function loadData() {
+
+        const config =
+            SERIES_CONFIG[
+                marketElement.value
+            ];
+
+        const requestedCountry =
+            countryElement.value;
+
+        if (
+            !startDateElement.value
+            || !endDateElement.value
+        ) {
+
+            throw new Error(
+                "Select both start and end dates."
+            );
+        }
+
+        if (
+            startDateElement.value
+            > endDateElement.value
+        ) {
+
+            throw new Error(
+                "Start date must be before end date."
+            );
+        }
+
+        if (
+            config.special
+            === "mfrr_scheduled"
+        ) {
+
+            return fetchMfrrScheduled(
+                requestedCountry,
+                config
+            );
+        }
+
+        const url =
+            buildUrl(
+                config,
+                requestedCountry
+            );
+
+        return fetchJson(
+            url
+        );
+    }
+
+
+    // ==================================================
+    // LABELS
+    // ==================================================
+
+    function marketLabel(value) {
+
+        const labels = {
+            day_ahead:
+                "Day-ahead",
+
+            intraday_auction:
+                "Intraday auction",
+
+            intraday_continuous:
+                "Continuous intraday",
+
+            afrr_energy:
+                "aFRR energy",
+
+            afrr_capacity:
+                "aFRR capacity",
+
+            mfrr_scheduled:
+                "mFRR scheduled activation",
+
+            rr:
+                "Replacement reserve"
+        };
+
+        return (
+            labels[value]
+            || value
+        );
+    }
+
+
+    function seriesLabel(row) {
+
+        const pieces = [
+            row.country
+        ];
+
+        if (
+            row.direction
+            && row.direction !== "none"
+        ) {
+
+            pieces.push(
+                row.direction.toUpperCase()
+            );
+        }
+
+        if (
+            row.session !== null
+            && row.session !== undefined
+            && row.market
+                === "intraday_auction"
+        ) {
+
+            pieces.push(
+                `Session ${row.session}`
+            );
+        }
+
+        if (
+            row.metric
+            && ![
+                "price",
+                "marginal_price"
+            ].includes(
+                row.metric
+            )
+        ) {
+
+            pieces.push(
+                row.metric
+                    .replaceAll("_", " ")
+            );
+        }
+
+        return pieces.join(
+            " — "
+        );
+    }
+
+
+    // ==================================================
+    // COLORS
+    // ==================================================
+
+    const SERIES_COLORS = [
+        "#1769aa",
+        "#d1495b",
+        "#2a9d8f",
+        "#7b2cbf",
+        "#e07a5f",
+        "#4f772d",
+        "#bc6c25",
+        "#495057"
+    ];
+
+
+    // ==================================================
+    // CHART EVENT MARKERS
+    // ==================================================
+
+    const marketEventsPlugin = {
+
+        id: "marketEvents",
+
+        afterDatasetsDraw(
+            chart,
+            args,
+            pluginOptions
+        ) {
+
+            const events =
+                pluginOptions.events
+                || [];
+
+            if (!events.length) {
+                return;
             }
 
+            const {
+                ctx,
+                chartArea,
+                scales
+            } = chart;
+
+            ctx.save();
 
             for (
-                const row of data
+                const event
+                of events
             ) {
 
-                const tableRow =
-                    document.createElement(
-                        "tr"
+                const x =
+                    scales.x.getPixelForValue(
+                        event.x
                     );
 
+                if (
+                    x < chartArea.left
+                    || x > chartArea.right
+                ) {
+                    continue;
+                }
 
-                if (zone === "ES") {
+                ctx.beginPath();
 
-                    tableRow.innerHTML = `
-                        <td>
-                            ${formatDate(
-                                row.market_date
-                            )}
-                        </td>
+                ctx.setLineDash(
+                    [5, 5]
+                );
 
-                        <td>
-                            ${row.avg_price_es.toFixed(2)}
-                        </td>
-                    `;
+                ctx.strokeStyle =
+                    "#8a94a5";
 
-                } else if (
-                    zone === "PT"
+                ctx.lineWidth = 1;
+
+                ctx.moveTo(
+                    x,
+                    chartArea.top
+                );
+
+                ctx.lineTo(
+                    x,
+                    chartArea.bottom
+                );
+
+                ctx.stroke();
+
+                ctx.setLineDash([]);
+
+                ctx.fillStyle =
+                    "#5f6b7a";
+
+                ctx.font =
+                    "11px sans-serif";
+
+                ctx.save();
+
+                ctx.translate(
+                    x + 4,
+                    chartArea.top + 8
+                );
+
+                ctx.rotate(
+                    Math.PI / 2
+                );
+
+                ctx.fillText(
+                    event.title,
+                    0,
+                    0
+                );
+
+                ctx.restore();
+            }
+
+            ctx.restore();
+        }
+    };
+
+
+    Chart.register(
+        marketEventsPlugin
+    );
+
+
+    // ==================================================
+    // CHART
+    // ==================================================
+
+    let chart = null;
+
+
+    function timestampLabel(
+        timestamp
+    ) {
+
+        const date =
+            new Date(timestamp);
+
+        return new Intl.DateTimeFormat(
+            "en-GB",
+            {
+                year: "numeric",
+                month: "short",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        ).format(date);
+    }
+
+
+    function buildEventMarkers(
+        events,
+        data
+    ) {
+
+        if (!events?.length) {
+            return [];
+        }
+
+        const result = [];
+
+        for (
+            const event
+            of events
+        ) {
+
+            const matchingPoint =
+                data.find(
+                    row =>
+                        row.timestamp_market
+                            ?.startsWith(
+                                event.event_date
+                            )
+                );
+
+            if (!matchingPoint) {
+                continue;
+            }
+
+            result.push(
+                {
+                    x:
+                        new Date(
+                            matchingPoint
+                                .timestamp_utc
+                        ).getTime(),
+
+                    title:
+                        event.title,
+
+                    date:
+                        event.event_date
+                }
+            );
+        }
+
+        return result;
+    }
+
+
+    function drawChart(result) {
+
+        const rows =
+            result.data || [];
+
+        if (chart) {
+
+            chart.destroy();
+
+            chart = null;
+        }
+
+        if (!rows.length) {
+
+            emptyMessage.classList.remove(
+                "hidden"
+            );
+
+            return;
+        }
+
+        emptyMessage.classList.add(
+            "hidden"
+        );
+
+        const grouped =
+            new Map();
+
+        for (
+            const row
+            of rows
+        ) {
+
+            if (
+                !grouped.has(
+                    row.series_id
+                )
+            ) {
+
+                grouped.set(
+                    row.series_id,
+                    []
+                );
+            }
+
+            grouped.get(
+                row.series_id
+            ).push(
+                row
+            );
+        }
+
+        const datasets = [];
+
+        let colorIndex = 0;
+
+        for (
+            const [
+                seriesId,
+                seriesRows
+            ]
+            of grouped.entries()
+        ) {
+
+            seriesRows.sort(
+                (a, b) =>
+                    new Date(
+                        a.timestamp_utc
+                    )
+                    -
+                    new Date(
+                        b.timestamp_utc
+                    )
+            );
+
+            const first =
+                seriesRows[0];
+
+            const color =
+                SERIES_COLORS[
+                    colorIndex
+                    % SERIES_COLORS.length
+                ];
+
+            colorIndex += 1;
+
+            datasets.push(
+                {
+                    label:
+                        seriesLabel(
+                            first
+                        ),
+
+                    data:
+                        seriesRows.map(
+                            row => ({
+                                x:
+                                    new Date(
+                                        row.timestamp_utc
+                                    ).getTime(),
+
+                                y:
+                                    row.value,
+
+                                upsampled:
+                                    row.is_upsampled,
+
+                                nativeResolution:
+                                    row.native_resolution_minutes,
+
+                                marketTimestamp:
+                                    row.timestamp_market,
+
+                                source:
+                                    row.source,
+
+                                sourceId:
+                                    row.source_id,
+
+                                unit:
+                                    row.unit
+                            })
+                        ),
+
+                    borderColor:
+                        color,
+
+                    backgroundColor:
+                        color,
+
+                    borderWidth:
+                        1.8,
+
+                    pointRadius:
+                        0,
+
+                    pointHitRadius:
+                        8,
+
+                    tension:
+                        0,
+
+                    spanGaps:
+                        false,
+
+                    segment: {
+
+                        borderDash:
+                            context => {
+
+                                const p0 =
+                                    context.p0.raw;
+
+                                const p1 =
+                                    context.p1.raw;
+
+                                if (
+                                    p0?.upsampled
+                                    || p1?.upsampled
+                                ) {
+
+                                    return [
+                                        6,
+                                        4
+                                    ];
+                                }
+
+                                return undefined;
+                            }
+                    }
+                }
+            );
+        }
+
+        const eventMarkers =
+            buildEventMarkers(
+                result.events || [],
+                rows
+            );
+
+        const context =
+            document
+                .getElementById(
+                    "priceChart"
+                )
+                .getContext("2d");
+
+        chart =
+            new Chart(
+                context,
+                {
+                    type:
+                        "line",
+
+                    data: {
+                        datasets:
+                            datasets
+                    },
+
+                    options: {
+
+                        responsive:
+                            true,
+
+                        maintainAspectRatio:
+                            false,
+
+                        interaction: {
+                            mode:
+                                "nearest",
+
+                            intersect:
+                                false,
+
+                            axis:
+                                "x"
+                        },
+
+                        parsing:
+                            false,
+
+                        plugins: {
+
+                            legend: {
+                                position:
+                                    "top"
+                            },
+
+                            tooltip: {
+
+                                callbacks: {
+
+                                    title:
+                                        items => {
+
+                                            if (
+                                                !items.length
+                                            ) {
+                                                return "";
+                                            }
+
+                                            return timestampLabel(
+                                                items[0]
+                                                    .raw
+                                                    .x
+                                            );
+                                        },
+
+                                    label:
+                                        context => {
+
+                                            const raw =
+                                                context.raw;
+
+                                            return (
+                                                `${context.dataset.label}: `
+                                                + `${raw.y.toFixed(2)} `
+                                                + `${raw.unit}`
+                                            );
+                                        },
+
+                                    afterLabel:
+                                        context => {
+
+                                            const raw =
+                                                context.raw;
+
+                                            const details = [
+                                                `Source: ${raw.source}`
+                                            ];
+
+                                            if (
+                                                raw.nativeResolution
+                                                !== null
+                                                && raw.nativeResolution
+                                                !== undefined
+                                            ) {
+
+                                                details.push(
+                                                    `Native resolution: `
+                                                    + `${raw.nativeResolution} min`
+                                                );
+                                            }
+
+                                            if (
+                                                raw.upsampled
+                                            ) {
+
+                                                details.push(
+                                                    "Displayed at finer resolution "
+                                                    + "by repeating the native value"
+                                                );
+                                            }
+
+                                            return details;
+                                        }
+                                }
+                            },
+
+                            marketEvents: {
+                                events:
+                                    eventMarkers
+                            }
+                        },
+
+                        scales: {
+
+                            x: {
+
+                                type:
+                                    "linear",
+
+                                ticks: {
+
+                                    maxTicksLimit:
+                                        10,
+
+                                    callback:
+                                        value => {
+
+                                            const date =
+                                                new Date(
+                                                    value
+                                                );
+
+                                            return new Intl.DateTimeFormat(
+                                                "en-GB",
+                                                {
+                                                    month:
+                                                        "short",
+
+                                                    day:
+                                                        "2-digit",
+
+                                                    hour:
+                                                        "2-digit",
+
+                                                    minute:
+                                                        "2-digit"
+                                                }
+                                            ).format(
+                                                date
+                                            );
+                                        }
+                                },
+
+                                title: {
+                                    display:
+                                        true,
+
+                                    text:
+                                        "Market time"
+                                }
+                            },
+
+                            y: {
+
+                                title: {
+                                    display:
+                                        true,
+
+                                    text:
+                                        rows[0]
+                                            ?.unit
+                                            || "Price"
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+    }
+
+
+    // ==================================================
+    // SUMMARY
+    // ==================================================
+
+    function renderSummary(
+        result
+    ) {
+
+        const metadata =
+            result.metadata
+            || {};
+
+        const rows =
+            result.data
+            || [];
+
+        summaryElement.innerHTML =
+            "";
+
+        const values = [
+
+            [
+                "Series",
+                marketLabel(
+                    marketElement.value
+                )
+            ],
+
+            [
+                "Rows",
+                metadata.rows
+                ?? rows.length
+            ],
+
+            [
+                "Lines",
+                metadata.series
+                ?? new Set(
+                    rows.map(
+                        row =>
+                            row.series_id
+                    )
+                ).size
+            ],
+
+            [
+                "Frequency",
+                frequencyElement
+                    .options[
+                        frequencyElement
+                            .selectedIndex
+                    ]
+                    .text
+            ]
+        ];
+
+        if (
+            metadata.upsampled_points
+        ) {
+
+            values.push(
+                [
+                    "Upsampled points",
+                    metadata
+                        .upsampled_points
+                ]
+            );
+        }
+
+        for (
+            const [label, value]
+            of values
+        ) {
+
+            const chip =
+                document.createElement(
+                    "div"
+                );
+
+            chip.className =
+                "summary-chip";
+
+            chip.textContent =
+                `${label}: ${value}`;
+
+            summaryElement.appendChild(
+                chip
+            );
+        }
+    }
+
+
+    // ==================================================
+    // RESOLUTION NOTE
+    // ==================================================
+
+    function renderResolutionNote(
+        result
+    ) {
+
+        const rows =
+            result.data
+            || [];
+
+        const upsampled =
+            rows.filter(
+                row =>
+                    row.is_upsampled
+            );
+
+        if (!upsampled.length) {
+
+            resolutionNote.classList.add(
+                "hidden"
+            );
+
+            resolutionNote.textContent =
+                "";
+
+            return;
+        }
+
+        const nativeResolutions =
+            [
+                ...new Set(
+                    upsampled
+                        .map(
+                            row =>
+                                row
+                                    .native_resolution_minutes
+                        )
+                        .filter(
+                            value =>
+                                value !== null
+                                && value !== undefined
+                        )
+                )
+            ]
+            .sort(
+                (a, b) =>
+                    a - b
+            );
+
+        resolutionNote.classList.remove(
+            "hidden"
+        );
+
+        resolutionNote.textContent =
+            (
+                "Dashed sections are displayed at a finer "
+                + "frequency than the official source. "
+                + "The original observations remain unchanged; "
+                + "the dashboard repeats each native value for "
+                + "display purposes. Native resolution: "
+                + nativeResolutions
+                    .map(
+                        value =>
+                            `${value} min`
+                    )
+                    .join(", ")
+                + "."
+            );
+    }
+
+
+    // ==================================================
+    // EVENTS
+    // ==================================================
+
+    function renderEvents(
+        result
+    ) {
+
+        const events =
+            result.events
+            || [];
+
+        eventsElement.innerHTML =
+            "";
+
+        if (!events.length) {
+            return;
+        }
+
+        const heading =
+            document.createElement(
+                "div"
+            );
+
+        heading.className =
+            "note";
+
+        heading.textContent =
+            "Market changes in the selected period";
+
+        eventsElement.appendChild(
+            heading
+        );
+
+        for (
+            const event
+            of events
+        ) {
+
+            const element =
+                document.createElement(
+                    "div"
+                );
+
+            element.className =
+                "event";
+
+            element.innerHTML =
+                `
+                    <span class="event-date">
+                        ${event.event_date}
+                    </span>
+                    —
+                    <span class="event-title">
+                        ${event.title}
+                    </span>
+                    ${
+                        event.description
+                            ? `<br>${event.description}`
+                            : ""
+                    }
+                `;
+
+            eventsElement.appendChild(
+                element
+            );
+        }
+    }
+
+
+    // ==================================================
+    // LOAD BUTTON
+    // ==================================================
+
+    loadButton.addEventListener(
+        "click",
+        async () => {
+
+            loadButton.disabled =
+                true;
+
+            setStatus(
+                "Loading official market data..."
+            );
+
+            try {
+
+                const result =
+                    await loadData();
+
+                renderSummary(
+                    result
+                );
+
+                drawChart(
+                    result
+                );
+
+                renderResolutionNote(
+                    result
+                );
+
+                renderEvents(
+                    result
+                );
+
+                if (
+                    !result.data
+                    || result.data.length === 0
                 ) {
 
-                    tableRow.innerHTML = `
-                        <td>
-                            ${formatDate(
-                                row.market_date
-                            )}
-                        </td>
-
-                        <td>
-                            ${row.avg_price_pt.toFixed(2)}
-                        </td>
-                    `;
+                    setStatus(
+                        (
+                            result.metadata
+                                ?.message
+                            || "No official data are available for this selection."
+                        ),
+                        "error"
+                    );
 
                 } else {
 
-                    tableRow.innerHTML = `
-                        <td>
-                            ${formatDate(
-                                row.market_date
-                            )}
-                        </td>
-
-                        <td>
-                            ${row.avg_price_es.toFixed(2)}
-                        </td>
-
-                        <td>
-                            ${row.avg_price_pt.toFixed(2)}
-                        </td>
-
-                        <td>
-                            ${row.split_periods}
-                        </td>
-
-                        <td>
-                            ${row.max_spread.toFixed(2)}
-                        </td>
-                    `;
-                }
-
-
-                tableBody.appendChild(
-                    tableRow
-                );
-            }
-        }
-
-
-        // ==================================================
-        // DAILY OMIE CHART
-        // ==================================================
-
-        function renderChart(
-            data,
-            zone
-        ) {
-
-            const dates =
-                data.map(
-                    row =>
-                        formatDate(
-                            row.market_date
-                        )
-                );
-
-
-            if (priceChart) {
-
-                priceChart.destroy();
-            }
-
-
-            const chartContext =
-                document.getElementById(
-                    "price-chart"
-                );
-
-
-            priceChart =
-                new Chart(
-                    chartContext,
-                    {
-
-                        type: "line",
-
-                        data: {
-
-                            labels: dates,
-
-                            datasets:
-                                createDatasets(
-                                    data,
-                                    zone
-                                )
-                        },
-
-                        options: {
-
-                            responsive: true,
-
-                            maintainAspectRatio:
-                                false,
-
-                            interaction: {
-
-                                mode: "index",
-
-                                intersect: false
-                            },
-
-                            plugins: {
-
-                                title: {
-
-                                    display: true,
-
-                                    text:
-                                        "OMIE Daily Average Day-Ahead Prices"
-                                }
-                            },
-
-                            scales: {
-
-                                y: {
-
-                                    title: {
-
-                                        display: true,
-
-                                        text:
-                                            "Price (€/MWh)"
-                                    }
-                                },
-
-                                x: {
-
-                                    title: {
-
-                                        display: true,
-
-                                        text:
-                                            "Market date"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                );
-        }
-
-
-        // ==================================================
-        // LOAD DAILY OMIE DATA
-        // ==================================================
-
-        async function loadMarketData() {
-
-            const message =
-                document.getElementById(
-                    "message"
-                );
-
-
-            message.textContent =
-                "Loading market data...";
-
-
-            const zone =
-                document.getElementById(
-                    "zone"
-                ).value;
-
-
-            try {
-
-                const response =
-                    await fetch(
-                        buildApiUrl()
-                    );
-
-
-                if (!response.ok) {
-
-                    const errorData =
-                        await response.json();
-
-
-                    throw new Error(
-                        errorData.detail
-                        || "Unable to load data."
-                    );
-                }
-
-
-                const data =
-                    await response.json();
-
-
-                if (
-                    data.length === 0
-                ) {
-
-                    message.textContent =
-                        "No market data found for this period.";
-
-                    return;
-                }
-
-
-                const firstDate =
-                    formatDate(
-                        data[0].market_date
-                    );
-
-
-                const lastDate =
-                    formatDate(
-                        data[
-                            data.length - 1
-                        ].market_date
-                    );
-
-
-                if (
-                    !document
-                        .getElementById(
-                            "start-date"
-                        )
-                        .value
-                ) {
-
-                    document
-                        .getElementById(
-                            "start-date"
-                        )
-                        .value =
-                        firstDate;
-                }
-
-
-                if (
-                    !document
-                        .getElementById(
-                            "end-date"
-                        )
-                        .value
-                ) {
-
-                    document
-                        .getElementById(
-                            "end-date"
-                        )
-                        .value =
-                        lastDate;
-                }
-
-
-                if (
-                    !document
-                        .getElementById(
-                            "intraday-date"
-                        )
-                        .value
-                ) {
-
-                    document
-                        .getElementById(
-                            "intraday-date"
-                        )
-                        .value =
-                        lastDate;
-                }
-
-
-                if (
-                    !document
-                        .getElementById(
-                            "price-load-date"
-                        )
-                        .value
-                ) {
-
-                    document
-                        .getElementById(
-                            "price-load-date"
-                        )
-                        .value =
-                        lastDate;
-                }
-
-
-                renderChart(
-                    data,
-                    zone
-                );
-
-
-                renderTable(
-                    data,
-                    zone
-                );
-
-
-                message.textContent =
-                    `${data.length} day(s) loaded.`;
-
-            } catch (
-                error
-            ) {
-
-                message.textContent =
-                    "Error: "
-                    + error.message;
-            }
-        }
-
-
-        // ==================================================
-        // HISTORICAL PRICE + LOAD
-        // ==================================================
-
-        async function loadHistoricalPriceLoadData() {
-
-            const message =
-                document.getElementById(
-                    "historical-message"
-                );
-
-
-            const startDate =
-                convertDateForApi(
-                    document.getElementById(
-                        "historical-start-date"
-                    ).value
-                );
-
-
-            const endDate =
-                convertDateForApi(
-                    document.getElementById(
-                        "historical-end-date"
-                    ).value
-                );
-
-
-            const parameters =
-                new URLSearchParams();
-
-
-            parameters.append(
-                "country",
-                "PT"
-            );
-
-
-            if (startDate) {
-
-                parameters.append(
-                    "start_date",
-                    startDate
-                );
-            }
-
-
-            if (endDate) {
-
-                parameters.append(
-                    "end_date",
-                    endDate
-                );
-            }
-
-
-            message.textContent =
-                "Loading historical price and load data...";
-
-
-            try {
-
-                const response =
-                    await fetch(
-                        "/market/daily-price-load?"
-                        + parameters.toString()
-                    );
-
-
-                if (!response.ok) {
-
-                    const errorData =
-                        await response.json();
-
-
-                    throw new Error(
-                        errorData.detail
-                        || "Unable to load historical data."
-                    );
-                }
-
-
-                const data =
-                    await response.json();
-
-
-                if (
-                    data.length === 0
-                ) {
-
-                    message.textContent =
-                        "No historical price/load data found.";
-
-                    if (
-                        historicalPriceLoadChart
-                    ) {
-
-                        historicalPriceLoadChart
-                            .destroy();
-
-                        historicalPriceLoadChart =
-                            null;
-                    }
-
-                    return;
-                }
-
-
-                const dates =
-                    data.map(
-                        row =>
-                            formatDate(
-                                row.market_date
-                            )
-                    );
-
-
-                const averagePrices =
-                    data.map(
-                        row =>
-                            row.avg_price_eur_mwh
-                    );
-
-
-                const averageLoads =
-                    data.map(
-                        row =>
-                            row.avg_load_mw
-                    );
-
-
-                const firstDate =
-                    dates[0];
-
-
-                const lastDate =
-                    dates[
-                        dates.length - 1
-                    ];
-
-
-                if (
-                    !document
-                        .getElementById(
-                            "historical-start-date"
-                        )
-                        .value
-                ) {
-
-                    document
-                        .getElementById(
-                            "historical-start-date"
-                        )
-                        .value =
-                        firstDate;
-                }
-
-
-                if (
-                    !document
-                        .getElementById(
-                            "historical-end-date"
-                        )
-                        .value
-                ) {
-
-                    document
-                        .getElementById(
-                            "historical-end-date"
-                        )
-                        .value =
-                        lastDate;
-                }
-
-
-                if (
-                    historicalPriceLoadChart
-                ) {
-
-                    historicalPriceLoadChart
-                        .destroy();
-                }
-
-
-                const chartContext =
-                    document.getElementById(
-                        "historical-price-load-chart"
-                    );
-
-
-                historicalPriceLoadChart =
-                    new Chart(
-                        chartContext,
-                        {
-
-                            type: "line",
-
-                            data: {
-
-                                labels: dates,
-
-                                datasets: [
-
-                                    {
-
-                                        label:
-                                            "Portugal Daily Average Price",
-
-                                        data:
-                                            averagePrices,
-
-                                        yAxisID:
-                                            "yPrice",
-
-                                        tension: 0.15,
-
-                                        pointRadius: 0,
-
-                                        borderWidth: 2
-                                    },
-
-
-                                    {
-
-                                        label:
-                                            "Portugal Daily Average Load",
-
-                                        data:
-                                            averageLoads,
-
-                                        yAxisID:
-                                            "yLoad",
-
-                                        tension: 0.15,
-
-                                        pointRadius: 0,
-
-                                        borderWidth: 2
-                                    }
-                                ]
-                            },
-
-
-                            options: {
-
-                                responsive: true,
-
-                                maintainAspectRatio:
-                                    false,
-
-                                interaction: {
-
-                                    mode: "index",
-
-                                    intersect: false
-                                },
-
-
-                                plugins: {
-
-                                    title: {
-
-                                        display: true,
-
-                                        text:
-                                            "Portugal Historical Day-Ahead Price and Electricity Load"
-                                    }
-                                },
-
-
-                                scales: {
-
-                                    x: {
-
-                                        title: {
-
-                                            display: true,
-
-                                            text:
-                                                "Market date"
-                                        }
-                                    },
-
-
-                                    yPrice: {
-
-                                        type:
-                                            "linear",
-
-                                        position:
-                                            "left",
-
-                                        title: {
-
-                                            display:
-                                                true,
-
-                                            text:
-                                                "Average Price (€/MWh)"
-                                        }
-                                    },
-
-
-                                    yLoad: {
-
-                                        type:
-                                            "linear",
-
-                                        position:
-                                            "right",
-
-                                        title: {
-
-                                            display:
-                                                true,
-
-                                            text:
-                                                "Average Load (MW)"
-                                        },
-
-                                        grid: {
-
-                                            drawOnChartArea:
-                                                false
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    );
-
-
-                message.textContent =
-                    `${data.length} daily observations loaded.`;
-
-            } catch (
-                error
-            ) {
-
-                message.textContent =
-                    "Error: "
-                    + error.message;
-            }
-        }
-
-
-        // ==================================================
-        // INTRADAY DATA
-        // ==================================================
-
-        async function loadIntradayData() {
-
-            const dateInput =
-                document.getElementById(
-                    "intraday-date"
-                ).value;
-
-
-            const message =
-                document.getElementById(
-                    "intraday-message"
-                );
-
-
-            const statsContainer =
-                document.getElementById(
-                    "intraday-stats"
-                );
-
-
-            if (!dateInput) {
-
-                message.textContent =
-                    "Please select a market date.";
-
-                return;
-            }
-
-
-            const apiDate =
-                convertDateForApi(
-                    dateInput
-                );
-
-
-            message.textContent =
-                "Loading intraday prices...";
-
-
-            try {
-
-                const response =
-                    await fetch(
-                        `/omie/intraday?date=${apiDate}`
-                    );
-
-
-                if (!response.ok) {
-
-                    const errorData =
-                        await response.json();
-
-
-                    throw new Error(
-                        errorData.detail
-                        || "Unable to load intraday data."
-                    );
-                }
-
-
-                const data =
-                    await response.json();
-
-
-                if (
-                    data.length === 0
-                ) {
-
-                    message.textContent =
-                        "No intraday data found for this date.";
-
-                    statsContainer.innerHTML =
-                        "";
-
-                    return;
-                }
-
-
-                const times =
-                    data.map(
-                        row =>
-                            row.timestamp_market
-                                .slice(
-                                    11,
-                                    16
-                                )
-                    );
-
-
-                const spanishPrices =
-                    data.map(
-                        row =>
-                            row.price_es
-                    );
-
-
-                const portuguesePrices =
-                    data.map(
-                        row =>
-                            row.price_pt
-                    );
-
-
-                const spreads =
-                    data.map(
-                        row =>
-                            row.pt_minus_es
-                    );
-
-
-                const averageSpain =
-                    spanishPrices.reduce(
+                    setStatus(
                         (
-                            sum,
-                            value
-                        ) =>
-                            sum
-                            + value,
-                        0
-                    )
-                    /
-                    spanishPrices.length;
-
-
-                const averagePortugal =
-                    portuguesePrices.reduce(
-                        (
-                            sum,
-                            value
-                        ) =>
-                            sum
-                            + value,
-                        0
-                    )
-                    /
-                    portuguesePrices.length;
-
-
-                const minimumSpain =
-                    Math.min(
-                        ...spanishPrices
+                            `Loaded `
+                            + `${result.data.length.toLocaleString()} `
+                            + `display points successfully.`
+                        ),
+                        "success"
                     );
-
-
-                const maximumSpain =
-                    Math.max(
-                        ...spanishPrices
-                    );
-
-
-                const minimumPortugal =
-                    Math.min(
-                        ...portuguesePrices
-                    );
-
-
-                const maximumPortugal =
-                    Math.max(
-                        ...portuguesePrices
-                    );
-
-
-                const splitPeriods =
-                    spreads.filter(
-                        value =>
-                            Math.abs(
-                                value
-                            ) > 0.001
-                    ).length;
-
-
-                const maximumSpread =
-                    Math.max(
-                        ...spreads.map(
-                            value =>
-                                Math.abs(
-                                    value
-                                )
-                        )
-                    );
-
-
-                const negativeSpain =
-                    spanishPrices.filter(
-                        value =>
-                            value < 0
-                    ).length;
-
-
-                const negativePortugal =
-                    portuguesePrices.filter(
-                        value =>
-                            value < 0
-                    ).length;
-
-
-                statsContainer.innerHTML = `
-
-                    <div class="stat-card">
-
-                        <div class="stat-label">
-                            Spain average
-                        </div>
-
-                        <div class="stat-value">
-                            ${averageSpain.toFixed(2)}
-                            €/MWh
-                        </div>
-
-                    </div>
-
-
-                    <div class="stat-card">
-
-                        <div class="stat-label">
-                            Portugal average
-                        </div>
-
-                        <div class="stat-value">
-                            ${averagePortugal.toFixed(2)}
-                            €/MWh
-                        </div>
-
-                    </div>
-
-
-                    <div class="stat-card">
-
-                        <div class="stat-label">
-                            Spain min / max
-                        </div>
-
-                        <div class="stat-value">
-                            ${minimumSpain.toFixed(2)}
-                            /
-                            ${maximumSpain.toFixed(2)}
-                        </div>
-
-                    </div>
-
-
-                    <div class="stat-card">
-
-                        <div class="stat-label">
-                            Portugal min / max
-                        </div>
-
-                        <div class="stat-value">
-                            ${minimumPortugal.toFixed(2)}
-                            /
-                            ${maximumPortugal.toFixed(2)}
-                        </div>
-
-                    </div>
-
-
-                    <div class="stat-card">
-
-                        <div class="stat-label">
-                            Split periods
-                        </div>
-
-                        <div class="stat-value">
-                            ${splitPeriods}
-                        </div>
-
-                    </div>
-
-
-                    <div class="stat-card">
-
-                        <div class="stat-label">
-                            Maximum spread
-                        </div>
-
-                        <div class="stat-value">
-                            ${maximumSpread.toFixed(2)}
-                            €/MWh
-                        </div>
-
-                    </div>
-
-
-                    <div class="stat-card">
-
-                        <div class="stat-label">
-                            Negative periods ES
-                        </div>
-
-                        <div class="stat-value">
-                            ${negativeSpain}
-                        </div>
-
-                    </div>
-
-
-                    <div class="stat-card">
-
-                        <div class="stat-label">
-                            Negative periods PT
-                        </div>
-
-                        <div class="stat-value">
-                            ${negativePortugal}
-                        </div>
-
-                    </div>
-                `;
-
-
-                if (
-                    intradayChart
-                ) {
-
-                    intradayChart.destroy();
                 }
 
+            } catch (error) {
 
-                intradayChart =
-                    new Chart(
-                        document.getElementById(
-                            "intraday-chart"
-                        ),
-                        {
-
-                            type: "line",
-
-                            data: {
-
-                                labels: times,
-
-                                datasets: [
-
-                                    {
-
-                                        label:
-                                            "Spain",
-
-                                        data:
-                                            spanishPrices,
-
-                                        tension:
-                                            0.1,
-
-                                        pointRadius:
-                                            2
-                                    },
-
-
-                                    {
-
-                                        label:
-                                            "Portugal",
-
-                                        data:
-                                            portuguesePrices,
-
-                                        tension:
-                                            0.1,
-
-                                        pointRadius:
-                                            2
-                                    }
-                                ]
-                            },
-
-
-                            options: {
-
-                                responsive: true,
-
-                                maintainAspectRatio:
-                                    false,
-
-                                interaction: {
-
-                                    mode:
-                                        "index",
-
-                                    intersect:
-                                        false
-                                },
-
-
-                                plugins: {
-
-                                    title: {
-
-                                        display:
-                                            true,
-
-                                        text:
-                                            "15-Minute OMIE Day-Ahead Prices"
-                                    }
-                                },
-
-
-                                scales: {
-
-                                    y: {
-
-                                        title: {
-
-                                            display:
-                                                true,
-
-                                            text:
-                                                "Price (€/MWh)"
-                                        }
-                                    },
-
-
-                                    x: {
-
-                                        title: {
-
-                                            display:
-                                                true,
-
-                                            text:
-                                                "Market time"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    );
-
-
-                if (
-                    spreadChart
-                ) {
-
-                    spreadChart.destroy();
-                }
-
-
-                spreadChart =
-                    new Chart(
-                        document.getElementById(
-                            "spread-chart"
-                        ),
-                        {
-
-                            type: "line",
-
-                            data: {
-
-                                labels: times,
-
-                                datasets: [
-
-                                    {
-
-                                        label:
-                                            "Portugal - Spain",
-
-                                        data:
-                                            spreads,
-
-                                        tension:
-                                            0.1,
-
-                                        pointRadius:
-                                            2
-                                    }
-                                ]
-                            },
-
-
-                            options: {
-
-                                responsive: true,
-
-                                maintainAspectRatio:
-                                    false,
-
-                                interaction: {
-
-                                    mode:
-                                        "index",
-
-                                    intersect:
-                                        false
-                                },
-
-
-                                plugins: {
-
-                                    title: {
-
-                                        display:
-                                            true,
-
-                                        text:
-                                            "Portugal - Spain Day-Ahead Price Spread"
-                                    }
-                                },
-
-
-                                scales: {
-
-                                    y: {
-
-                                        title: {
-
-                                            display:
-                                                true,
-
-                                            text:
-                                                "PT - ES (€/MWh)"
-                                        }
-                                    },
-
-
-                                    x: {
-
-                                        title: {
-
-                                            display:
-                                                true,
-
-                                            text:
-                                                "Market time"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    );
-
-
-                message.textContent =
-                    `${data.length} market periods loaded.`;
-
-            } catch (
-                error
-            ) {
-
-                message.textContent =
-                    "Error: "
-                    + error.message;
-            }
-        }
-
-
-        // ==================================================
-        // SINGLE-DAY PRICE + LOAD
-        // ==================================================
-
-        async function loadPriceLoadData() {
-
-            const dateInput =
-                document.getElementById(
-                    "price-load-date"
-                ).value;
-
-
-            const message =
-                document.getElementById(
-                    "price-load-message"
+                console.error(
+                    error
                 );
 
+                if (chart) {
 
-            if (!dateInput) {
+                    chart.destroy();
 
-                message.textContent =
-                    "Please select a market date.";
+                    chart = null;
+                }
 
-                return;
-            }
+                summaryElement.innerHTML =
+                    "";
 
+                eventsElement.innerHTML =
+                    "";
 
-            const apiDate =
-                convertDateForApi(
-                    dateInput
+                resolutionNote.classList.add(
+                    "hidden"
                 );
 
-
-            message.textContent =
-                "Loading price and load data...";
-
-
-            try {
-
-                const response =
-                    await fetch(
-                        `/market/price-load?country=PT&date=${apiDate}`
-                    );
-
-
-                if (!response.ok) {
-
-                    const errorData =
-                        await response.json();
-
-
-                    throw new Error(
-                        errorData.detail
-                        || "Unable to load price/load data."
-                    );
-                }
-
-
-                const data =
-                    await response.json();
-
-
-                if (
-                    data.length === 0
-                ) {
-
-                    message.textContent =
-                        "No price/load data found for this date.";
-
-                    return;
-                }
-
-
-                const times =
-                    data.map(
-                        row =>
-                            row.timestamp_market
-                                .slice(
-                                    11,
-                                    16
-                                )
-                    );
-
-
-                const prices =
-                    data.map(
-                        row =>
-                            row.price_eur_mwh
-                    );
-
-
-                const loads =
-                    data.map(
-                        row =>
-                            row.load_mw
-                    );
-
-
-                if (
-                    priceLoadChart
-                ) {
-
-                    priceLoadChart.destroy();
-                }
-
-
-                priceLoadChart =
-                    new Chart(
-                        document.getElementById(
-                            "price-load-chart"
-                        ),
-                        {
-
-                            type: "line",
-
-                            data: {
-
-                                labels:
-                                    times,
-
-                                datasets: [
-
-                                    {
-
-                                        label:
-                                            "Portugal Day-Ahead Price",
-
-                                        data:
-                                            prices,
-
-                                        yAxisID:
-                                            "yPrice",
-
-                                        tension:
-                                            0.1,
-
-                                        pointRadius:
-                                            2
-                                    },
-
-
-                                    {
-
-                                        label:
-                                            "Portugal Electricity Load",
-
-                                        data:
-                                            loads,
-
-                                        yAxisID:
-                                            "yLoad",
-
-                                        tension:
-                                            0.1,
-
-                                        pointRadius:
-                                            2
-                                    }
-                                ]
-                            },
-
-
-                            options: {
-
-                                responsive:
-                                    true,
-
-                                maintainAspectRatio:
-                                    false,
-
-                                interaction: {
-
-                                    mode:
-                                        "index",
-
-                                    intersect:
-                                        false
-                                },
-
-
-                                plugins: {
-
-                                    title: {
-
-                                        display:
-                                            true,
-
-                                        text:
-                                            "Portugal 15-Minute Day-Ahead Price and Electricity Load"
-                                    }
-                                },
-
-
-                                scales: {
-
-                                    x: {
-
-                                        title: {
-
-                                            display:
-                                                true,
-
-                                            text:
-                                                "Market time"
-                                        }
-                                    },
-
-
-                                    yPrice: {
-
-                                        type:
-                                            "linear",
-
-                                        position:
-                                            "left",
-
-                                        title: {
-
-                                            display:
-                                                true,
-
-                                            text:
-                                                "Price (€/MWh)"
-                                        }
-                                    },
-
-
-                                    yLoad: {
-
-                                        type:
-                                            "linear",
-
-                                        position:
-                                            "right",
-
-                                        title: {
-
-                                            display:
-                                                true,
-
-                                            text:
-                                                "Load (MW)"
-                                        },
-
-                                        grid: {
-
-                                            drawOnChartArea:
-                                                false
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    );
-
-
-                message.textContent =
-                    `${data.length} joined observations loaded.`;
-
-            } catch (
-                error
-            ) {
-
-                message.textContent =
-                    "Error: "
-                    + error.message;
+                emptyMessage.classList.remove(
+                    "hidden"
+                );
+
+                setStatus(
+                    error.message,
+                    "error"
+                );
+
+            } finally {
+
+                loadButton.disabled =
+                    false;
             }
         }
+    );
 
-
-        // ==================================================
-        // BUTTONS
-        // ==================================================
-
-        document
-            .getElementById(
-                "apply-button"
-            )
-            .addEventListener(
-                "click",
-                loadMarketData
-            );
-
-
-        document
-            .getElementById(
-                "reset-button"
-            )
-            .addEventListener(
-                "click",
-                function () {
-
-                    document
-                        .getElementById(
-                            "start-date"
-                        )
-                        .value = "";
-
-
-                    document
-                        .getElementById(
-                            "end-date"
-                        )
-                        .value = "";
-
-
-                    document
-                        .getElementById(
-                            "zone"
-                        )
-                        .value =
-                        "ALL";
-
-
-                    loadMarketData();
-                }
-            );
-
-
-        document
-            .getElementById(
-                "historical-button"
-            )
-            .addEventListener(
-                "click",
-                loadHistoricalPriceLoadData
-            );
-
-
-        document
-            .getElementById(
-                "historical-reset-button"
-            )
-            .addEventListener(
-                "click",
-                function () {
-
-                    document
-                        .getElementById(
-                            "historical-start-date"
-                        )
-                        .value = "";
-
-
-                    document
-                        .getElementById(
-                            "historical-end-date"
-                        )
-                        .value = "";
-
-
-                    loadHistoricalPriceLoadData();
-                }
-            );
-
-
-        document
-            .getElementById(
-                "intraday-button"
-            )
-            .addEventListener(
-                "click",
-                loadIntradayData
-            );
-
-
-        document
-            .getElementById(
-                "price-load-button"
-            )
-            .addEventListener(
-                "click",
-                loadPriceLoadData
-            );
-
-
-        // ==================================================
-        // INITIAL PAGE LOAD
-        // ==================================================
-
-        loadMarketData();
-
-        loadHistoricalPriceLoadData();
-
-    </script>
+</script>
 
 </body>
-
 </html>

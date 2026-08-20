@@ -1,131 +1,189 @@
-from datetime import datetime
-from typing import Literal
+from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
 
 from src.analytics.omie import (
     get_daily_market_summary,
-    get_intraday_prices,
-    get_prices,
 )
 
-from src.config import (
-    APP_MODE,
-    DATABASE_PATH,
-    IS_PUBLIC,
-    WEB_PATH,
+from src.api.market_prices import (
+    router as market_prices_router,
 )
 
+
+# ==================================================
+# PATHS
+# ==================================================
+
+WEB_DIR = (
+    Path(__file__)
+    .resolve()
+    .parents[1]
+    / "web"
+)
+
+INDEX_FILE = (
+    WEB_DIR
+    / "index.html"
+)
+
+
+# ==================================================
+# FASTAPI APPLICATION
+# ==================================================
 
 app = FastAPI(
-    title="Iberian Energy Data Hub API",
+    title="Iberian Energy Data Hub",
     description=(
-        "API for Iberian electricity "
-        "market data and analytics."
+        "Historical electricity-market data "
+        "for Spain and Portugal."
     ),
-    version="0.1.0",
+    version="0.3.0",
 )
 
 
 # ==================================================
-# DATE VALIDATION
+# UNIFIED MARKET PRICE ROUTER
+#
+# Adds:
+#
+# GET /market/prices
+# GET /market/catalog
 # ==================================================
 
-def validate_date(
-    date: str | None,
-) -> None:
-
-    if date is None:
-        return
-
-    try:
-        datetime.strptime(
-            date,
-            "%Y%m%d",
-        )
-
-    except ValueError as exc:
-
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "Date must be a valid calendar "
-                "date in YYYYMMDD format."
-            ),
-        ) from exc
-
-
-def validate_date_range(
-    start_date: str | None,
-    end_date: str | None,
-) -> None:
-
-    validate_date(
-        start_date
-    )
-
-    validate_date(
-        end_date
-    )
-
-
-    if (
-        start_date is not None
-        and end_date is not None
-        and end_date < start_date
-    ):
-
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "end_date cannot be "
-                "before start_date."
-            ),
-        )
+app.include_router(
+    market_prices_router
+)
 
 
 # ==================================================
-# WEBSITE
+# ROOT
 # ==================================================
 
-@app.get("/")
+@app.get(
+    "/",
+    tags=["General"],
+)
 def root():
 
-    return FileResponse(
-        WEB_PATH
-    )
-
-
-# ==================================================
-# HEALTH CHECK
-# ==================================================
-
-@app.get("/health")
-def health_check():
-
     return {
-        "status": "ok",
-        "mode": APP_MODE,
+        "name":
+            "Iberian Energy Data Hub",
+
+        "status":
+            "running",
+
+        "dashboard":
+            "/dashboard",
+
+        "documentation":
+            "/docs",
+
+        "endpoints": {
+            "health":
+                "/health",
+
+            "about":
+                "/about",
+
+            "omie_daily_summary":
+                "/omie/daily-summary",
+
+            "market_prices":
+                "/market/prices",
+
+            "market_catalog":
+                "/market/catalog",
+        },
     }
 
 
 # ==================================================
-# DEPLOYMENT INFORMATION
+# DASHBOARD
 # ==================================================
 
-@app.get("/about")
+@app.get(
+    "/dashboard",
+    include_in_schema=False,
+)
+def dashboard():
+
+    if not INDEX_FILE.exists():
+
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "Dashboard HTML file "
+                "was not found."
+            ),
+        )
+
+    return FileResponse(
+        INDEX_FILE
+    )
+
+
+# ==================================================
+# HEALTH
+# ==================================================
+
+@app.get(
+    "/health",
+    tags=["General"],
+)
+def health():
+
+    return {
+        "status":
+            "ok"
+    }
+
+
+# ==================================================
+# ABOUT
+# ==================================================
+
+@app.get(
+    "/about",
+    tags=["General"],
+)
 def about():
 
     return {
-        "project": (
-            "Iberian Energy Data Hub"
-        ),
-        "mode": APP_MODE,
-        "database": (
-            DATABASE_PATH.name
-        ),
-        "public_demo": IS_PUBLIC,
+        "project":
+            "Iberian Energy Data Hub",
+
+        "description":
+            (
+                "A Python data-engineering and "
+                "analytics project collecting, "
+                "standardising and serving "
+                "historical Iberian electricity-"
+                "market data."
+            ),
+
+        "countries": [
+            "Spain",
+            "Portugal",
+        ],
+
+        "markets": [
+            "Day-ahead",
+            "Intraday auctions",
+            "Continuous intraday",
+            "aFRR",
+            "mFRR",
+            "RR",
+        ],
+
+        "sources": [
+            "OMIE",
+            "ESIOS",
+            "REN",
+        ],
     }
 
 
@@ -133,135 +191,40 @@ def about():
 # OMIE DAILY SUMMARY
 # ==================================================
 
-@app.get("/omie/daily-summary")
+@app.get(
+    "/omie/daily-summary",
+    tags=["OMIE"],
+)
 def omie_daily_summary(
-    start_date: str | None = None,
-    end_date: str | None = None,
+    date: str = Query(
+        ...,
+        description=(
+            "Market date in YYYY-MM-DD "
+            "or YYYYMMDD format."
+        ),
+    ),
 ):
 
-    validate_date_range(
-        start_date,
-        end_date,
-    )
+    try:
 
-
-    df = get_daily_market_summary(
-        start_date=start_date,
-        end_date=end_date,
-    )
-
-
-    return df.to_dict(
-        orient="records"
-    )
-
-
-# ==================================================
-# OMIE PRICES
-# ==================================================
-
-@app.get("/omie/prices")
-def omie_prices(
-    zone: Literal["ES", "PT"],
-    start_date: str | None = None,
-    end_date: str | None = None,
-):
-
-    validate_date_range(
-        start_date,
-        end_date,
-    )
-
-
-    df = get_prices(
-        zone=zone,
-        start_date=start_date,
-        end_date=end_date,
-    )
-
-
-    return df.to_dict(
-        orient="records"
-    )
-
-
-# ==================================================
-# OMIE INTRADAY PRICES
-# ==================================================
-
-@app.get("/omie/intraday")
-def omie_intraday(
-    date: str,
-):
-
-    validate_date(
-        date
-    )
-
-
-    df = get_intraday_prices(
-        date=date,
-    )
-
-
-    return df.to_dict(
-        orient="records"
-    )
-
-
-# ==================================================
-# LOCAL-ONLY REN / FUNDAMENTALS ENDPOINTS
-# ==================================================
-
-if not IS_PUBLIC:
-
-    from src.analytics.price_load import (
-        get_daily_price_load_summary,
-        get_price_load,
-    )
-
-
-    @app.get("/market/price-load")
-    def market_price_load(
-        country: Literal["PT"],
-        date: str,
-    ):
-
-        validate_date(
+        return get_daily_market_summary(
             date
         )
 
+    except ValueError as exc:
 
-        df = get_price_load(
-            country=country,
-            date=date,
-        )
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
 
+    except Exception as exc:
 
-        return df.to_dict(
-            orient="records"
-        )
-
-
-    @app.get("/market/daily-price-load")
-    def market_daily_price_load(
-        country: Literal["PT"],
-        start_date: str | None = None,
-        end_date: str | None = None,
-    ):
-
-        validate_date_range(
-            start_date,
-            end_date,
-        )
-
-
-        df = get_daily_price_load_summary(
-            start_date=start_date,
-            end_date=end_date,
-        )
-
-
-        return df.to_dict(
-            orient="records"
-        )
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Could not calculate "
+                "OMIE daily summary: "
+                f"{exc}"
+            ),
+        ) from exc
