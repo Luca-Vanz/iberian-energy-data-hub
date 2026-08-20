@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
@@ -9,19 +11,18 @@
 
     <title>Iberian Energy Data Hub</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
         :root {
-            --background: #f5f7fa;
+            --bg: #f5f7fa;
             --surface: #ffffff;
-            --border: #d9e0e8;
-            --text: #172033;
-            --muted: #687386;
+            --border: #dce2e9;
+            --text: #182230;
+            --muted: #667085;
             --primary: #1769aa;
-            --primary-dark: #0e4f82;
-            --danger: #b42318;
+            --primary-dark: #0d568f;
             --success: #18794e;
+            --warning: #9a6700;
+            --danger: #b42318;
         }
 
         * {
@@ -30,6 +31,7 @@
 
         body {
             margin: 0;
+
             font-family:
                 Inter,
                 ui-sans-serif,
@@ -38,7 +40,8 @@
                 BlinkMacSystemFont,
                 "Segoe UI",
                 sans-serif;
-            background: var(--background);
+
+            background: var(--bg);
             color: var(--text);
         }
 
@@ -47,66 +50,68 @@
             border-bottom: 1px solid var(--border);
         }
 
-        .header-inner {
-            max-width: 1450px;
+        .header-inner,
+        main {
+            max-width: 1500px;
             margin: 0 auto;
-            padding: 24px 28px;
+        }
+
+        .header-inner {
+            padding: 23px 28px;
         }
 
         h1 {
             margin: 0;
-            font-size: 30px;
-            font-weight: 700;
+            font-size: 29px;
             letter-spacing: -0.5px;
         }
 
         .subtitle {
-            margin-top: 7px;
+            margin-top: 6px;
             color: var(--muted);
-            font-size: 15px;
+            font-size: 14px;
         }
 
         main {
-            max-width: 1450px;
-            margin: 0 auto;
-            padding: 28px;
+            padding: 25px 28px 45px;
         }
 
         .panel {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 22px;
-            margin-bottom: 22px;
+            padding: 21px;
+            margin-bottom: 20px;
         }
 
         .panel-title {
-            margin: 0 0 18px 0;
-            font-size: 19px;
-            font-weight: 650;
+            margin: 0 0 17px;
+            font-size: 18px;
         }
 
         .controls {
             display: grid;
+
             grid-template-columns:
                 repeat(
                     auto-fit,
-                    minmax(170px, 1fr)
+                    minmax(165px, 1fr)
                 );
-            gap: 16px;
+
+            gap: 14px;
             align-items: end;
         }
 
         .control {
             display: flex;
             flex-direction: column;
-            gap: 7px;
+            gap: 6px;
         }
 
         label {
-            font-size: 13px;
-            font-weight: 600;
-            color: #3c4758;
+            font-size: 12px;
+            font-weight: 650;
+            color: #475467;
         }
 
         select,
@@ -119,21 +124,21 @@
 
         select,
         input {
-            border: 1px solid #cbd3dd;
-            padding: 0 11px;
+            border: 1px solid #cbd3dc;
             background: white;
+            padding: 0 10px;
             color: var(--text);
         }
 
         select:focus,
         input:focus {
-            outline: 2px solid rgba(23, 105, 170, 0.2);
+            outline: 2px solid rgba(23, 105, 170, 0.15);
             border-color: var(--primary);
         }
 
         button {
-            border: none;
-            padding: 0 20px;
+            border: 0;
+            padding: 0 17px;
             background: var(--primary);
             color: white;
             font-weight: 650;
@@ -142,6 +147,16 @@
 
         button:hover {
             background: var(--primary-dark);
+        }
+
+        button.secondary {
+            background: white;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        button.secondary:hover {
+            background: #f0f7fc;
         }
 
         button:disabled {
@@ -153,18 +168,20 @@
             display: none !important;
         }
 
-        .status {
-            margin-top: 17px;
-            padding: 11px 14px;
-            border-radius: 7px;
-            font-size: 14px;
-            background: #f1f4f8;
+        .availability {
+            margin-top: 13px;
+            font-size: 12px;
             color: var(--muted);
+            min-height: 18px;
         }
 
-        .status.error {
-            background: #fff0ee;
-            color: var(--danger);
+        .status {
+            margin-top: 15px;
+            padding: 10px 13px;
+            border-radius: 7px;
+            background: #f2f4f7;
+            color: var(--muted);
+            font-size: 13px;
         }
 
         .status.success {
@@ -172,57 +189,70 @@
             color: var(--success);
         }
 
+        .status.warning {
+            background: #fff8e6;
+            color: var(--warning);
+        }
+
+        .status.error {
+            background: #fff0ee;
+            color: var(--danger);
+        }
+
         .summary {
             display: flex;
             flex-wrap: wrap;
-            gap: 9px;
-            margin-bottom: 16px;
+            gap: 8px;
+            margin-bottom: 15px;
         }
 
-        .summary-chip {
-            padding: 7px 11px;
+        .chip {
             border: 1px solid var(--border);
             border-radius: 20px;
+            padding: 6px 10px;
             font-size: 12px;
-            background: #fafbfd;
-            color: #4b5668;
+            color: #475467;
+            background: #fafbfc;
         }
 
         .chart-wrapper {
             position: relative;
-            height: 590px;
             width: 100%;
+            height: 590px;
         }
 
         #emptyMessage {
             position: absolute;
             inset: 0;
+
             display: flex;
-            justify-content: center;
             align-items: center;
-            color: var(--muted);
+            justify-content: center;
+
             text-align: center;
+            color: var(--muted);
             padding: 30px;
+
             pointer-events: none;
         }
 
         .note {
-            margin-top: 16px;
+            margin-top: 14px;
+            padding-top: 13px;
             border-top: 1px solid var(--border);
-            padding-top: 14px;
-            font-size: 13px;
-            line-height: 1.5;
             color: var(--muted);
+            font-size: 12px;
+            line-height: 1.55;
         }
 
         .events {
-            margin-top: 18px;
+            margin-top: 15px;
         }
 
         .event {
-            padding: 10px 0;
-            border-top: 1px solid #edf0f4;
-            font-size: 13px;
+            padding: 9px 0;
+            border-top: 1px solid #edf0f3;
+            font-size: 12px;
             line-height: 1.5;
         }
 
@@ -230,12 +260,73 @@
             border-top: 0;
         }
 
-        .event-date {
+        .event strong {
             font-weight: 650;
         }
 
-        .event-title {
-            font-weight: 600;
+        details {
+            margin-top: 16px;
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+        }
+
+        summary {
+            cursor: pointer;
+            color: var(--primary);
+            font-weight: 650;
+            font-size: 13px;
+        }
+
+        .table-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0 10px;
+        }
+
+        .table-note {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: 460px;
+
+            margin-top: 12px;
+
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        th,
+        td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #edf0f3;
+            text-align: left;
+        }
+
+        th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: #f8fafc;
+            font-weight: 650;
+        }
+
+        td.number {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
         }
 
         @media (max-width: 700px) {
@@ -244,7 +335,7 @@
             }
 
             .header-inner {
-                padding: 20px 16px;
+                padding: 19px 16px;
             }
 
             h1 {
@@ -258,17 +349,25 @@
     </style>
 </head>
 
+
 <body>
 
 <header>
+
     <div class="header-inner">
-        <h1>Iberian Energy Data Hub</h1>
+
+        <h1>
+            Iberian Energy Data Hub
+        </h1>
 
         <div class="subtitle">
             Historical electricity-market prices for Spain and Portugal
         </div>
+
     </div>
+
 </header>
+
 
 <main>
 
@@ -278,115 +377,68 @@
             Price explorer
         </h2>
 
+
         <div class="controls">
 
+
             <div class="control">
-                <label for="market">
+
+                <label for="series">
                     Price series
                 </label>
 
-                <select id="market">
-                    <option value="day_ahead">
-                        Day-ahead
-                    </option>
+                <select id="series"></select>
 
-                    <option value="intraday_auction">
-                        Intraday auction
-                    </option>
-
-                    <option value="intraday_continuous">
-                        Continuous intraday
-                    </option>
-
-                    <option value="afrr_energy">
-                        aFRR energy
-                    </option>
-
-                    <option value="afrr_capacity">
-                        aFRR capacity — marginal
-                    </option>
-
-                    <option value="mfrr_scheduled">
-                        mFRR scheduled activation
-                    </option>
-
-                    <option value="rr">
-                        Replacement reserve (RR)
-                    </option>
-                </select>
             </div>
 
 
             <div class="control">
+
                 <label for="country">
                     Country
                 </label>
 
-                <select id="country">
-                    <option value="both">
-                        Spain + Portugal
-                    </option>
+                <select id="country"></select>
 
-                    <option value="ES">
-                        Spain
-                    </option>
-
-                    <option value="PT">
-                        Portugal
-                    </option>
-                </select>
             </div>
 
 
             <div
-                class="control hidden"
                 id="directionControl"
+                class="control hidden"
             >
+
                 <label for="direction">
                     Direction
                 </label>
 
-                <select id="direction">
-                    <option value="both">
-                        UP + DOWN
-                    </option>
+                <select id="direction"></select>
 
-                    <option value="up">
-                        UP
-                    </option>
-
-                    <option value="down">
-                        DOWN
-                    </option>
-                </select>
             </div>
 
 
             <div
-                class="control hidden"
                 id="sessionControl"
+                class="control hidden"
             >
+
                 <label for="session">
                     Auction session
                 </label>
 
-                <select id="session">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                </select>
+                <select id="session"></select>
+
             </div>
 
 
             <div class="control">
+
                 <label for="frequency">
                     Display frequency
                 </label>
 
                 <select id="frequency">
+
                     <option value="15min">
                         15 minutes
                     </option>
@@ -413,11 +465,14 @@
                     <option value="yearly">
                         Yearly
                     </option>
+
                 </select>
+
             </div>
 
 
             <div class="control">
+
                 <label for="startDate">
                     Start date
                 </label>
@@ -426,10 +481,12 @@
                     id="startDate"
                     type="date"
                 >
+
             </div>
 
 
             <div class="control">
+
                 <label for="endDate">
                     End date
                 </label>
@@ -438,22 +495,34 @@
                     id="endDate"
                     type="date"
                 >
+
             </div>
 
 
             <div class="control">
+
                 <button id="loadButton">
                     Load prices
                 </button>
+
             </div>
 
         </div>
 
+
+        <div
+            id="availability"
+            class="availability"
+        >
+            Checking official availability in the background...
+        </div>
+
+
         <div
             id="status"
-            class="status"
+            class="status success"
         >
-            Select a price series and load the data.
+            Ready. Select a price series and period.
         </div>
 
     </section>
@@ -462,13 +531,15 @@
     <section class="panel">
 
         <h2 class="panel-title">
-            Electricity price
+            Price chart
         </h2>
+
 
         <div
             id="summary"
             class="summary"
         ></div>
+
 
         <div class="chart-wrapper">
 
@@ -483,15 +554,71 @@
 
         </div>
 
+
         <div
             id="resolutionNote"
             class="note hidden"
         ></div>
 
+
         <div
             id="events"
             class="events"
         ></div>
+
+
+        <details>
+
+            <summary>
+                Show exact data values
+            </summary>
+
+
+            <div class="table-toolbar">
+
+                <div
+                    id="tableNote"
+                    class="table-note"
+                ></div>
+
+
+                <button
+                    id="csvButton"
+                    class="secondary"
+                    type="button"
+                >
+                    Download CSV
+                </button>
+
+            </div>
+
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Market time</th>
+                            <th>Series</th>
+                            <th>Price</th>
+                            <th>Unit</th>
+                            <th>Native resolution</th>
+                            <th>Processing</th>
+                            <th>Source</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="dataTableBody"></tbody>
+
+                </table>
+
+            </div>
+
+        </details>
 
     </section>
 
@@ -499,12 +626,242 @@
 
 
 <script>
+
     // ==================================================
-    // ELEMENTS
+    // CONFIGURATION
     // ==================================================
 
-    const marketElement =
-        document.getElementById("market");
+    const MARKET_TIMEZONE =
+        "Europe/Madrid";
+
+    const TABLE_ROW_LIMIT =
+        500;
+
+    const CATALOG_CACHE_KEY =
+        "iberian_energy_market_catalog_v1";
+
+    const CHARTJS_URL =
+        "https://cdn.jsdelivr.net/npm/chart.js";
+
+
+    // ==================================================
+    // USER-FACING SERIES
+    // ==================================================
+
+    const SERIES = [
+
+        {
+            id: "day_ahead",
+            group: "Wholesale",
+            label: "Day-ahead price",
+            market: "day_ahead",
+            stage: "energy",
+            metric: null,
+            direction: false,
+            session: false
+        },
+
+        {
+            id: "intraday_auction",
+            group: "Wholesale",
+            label: "Intraday auction price",
+            market: "intraday_auction",
+            stage: "energy",
+            metric: null,
+            direction: false,
+            session: true
+        },
+
+        {
+            id: "intraday_continuous",
+            group: "Wholesale",
+            label: "Continuous intraday weighted-average price",
+            market: "intraday_continuous",
+            stage: "energy",
+            metric: null,
+            direction: false,
+            session: false
+        },
+
+
+        {
+            id: "afrr_energy_marginal",
+            group: "aFRR",
+            label: "aFRR energy — marginal price",
+            market: "afrr",
+            stage: "energy",
+            metric: "marginal_price",
+            direction: true,
+            session: false
+        },
+
+        {
+            id: "afrr_capacity_marginal",
+            group: "aFRR",
+            label: "aFRR capacity — marginal price",
+            market: "afrr",
+            stage: "capacity",
+            metric: "marginal_price",
+            direction: true,
+            session: false
+        },
+
+        {
+            id: "afrr_capacity_weighted",
+            group: "aFRR",
+            label: "aFRR capacity — weighted-average price",
+            market: "afrr",
+            stage: "capacity",
+            metric: "weighted_average_price",
+            direction: true,
+            session: false,
+            countries: ["ES"]
+        },
+
+        {
+            id: "afrr_capacity_adjusted",
+            group: "aFRR",
+            label: "aFRR capacity — adjusted price",
+            market: "afrr",
+            stage: "capacity",
+            metric: "adjusted_price",
+            direction: true,
+            session: false,
+            countries: ["PT"]
+        },
+
+        {
+            id: "afrr_capacity_final",
+            group: "aFRR",
+            label: "aFRR capacity — final price",
+            market: "afrr",
+            stage: "capacity",
+            metric: "final_price",
+            direction: true,
+            session: false,
+            countries: ["PT"]
+        },
+
+
+        {
+            id: "mfrr_scheduled_weighted_es",
+            group: "mFRR",
+            label: "mFRR scheduled — weighted-average price",
+            market: "mfrr",
+            stage: "energy_scheduled",
+            metric: "weighted_average_price",
+            direction: true,
+            session: false,
+            countries: ["ES"]
+        },
+
+        {
+            id: "mfrr_scheduled_market_es",
+            group: "mFRR",
+            label: "mFRR scheduled — market price",
+            market: "mfrr",
+            stage: "energy_scheduled",
+            metric: "market_price",
+            direction: false,
+            session: false,
+            countries: ["ES"]
+        },
+
+        {
+            id: "mfrr_scheduled_activation_pt",
+            group: "mFRR",
+            label: "mFRR scheduled — activation price",
+            market: "mfrr",
+            stage: "energy_scheduled",
+            metric: "scheduled_activation_price",
+            direction: true,
+            session: false,
+            countries: ["PT"]
+        },
+
+        {
+            id: "mfrr_direct_weighted_es",
+            group: "mFRR",
+            label: "mFRR direct — weighted-average price",
+            market: "mfrr",
+            stage: "energy_direct",
+            metric: "weighted_average_price",
+            direction: true,
+            session: false,
+            countries: ["ES"]
+        },
+
+        {
+            id: "mfrr_direct_qt_pt",
+            group: "mFRR",
+            label: "mFRR direct QT — activation price",
+            market: "mfrr",
+            stage: "energy_direct_qt",
+            metric: "direct_activation_price",
+            direction: true,
+            session: false,
+            countries: ["PT"]
+        },
+
+        {
+            id: "mfrr_direct_q1t_pt",
+            group: "mFRR",
+            label: "mFRR direct Q1T — activation price",
+            market: "mfrr",
+            stage: "energy_direct_q1t",
+            metric: "direct_activation_price",
+            direction: true,
+            session: false,
+            countries: ["PT"]
+        },
+
+        {
+            id: "mfrr_legacy",
+            group: "mFRR",
+            label: "mFRR scheduled — legacy marginal price",
+            market: "mfrr",
+            stage: "energy_scheduled_legacy",
+            metric: "marginal_price",
+            direction: true,
+            session: false
+        },
+
+
+        {
+            id: "rr_activation",
+            group: "RR",
+            label: "Replacement reserve — activation price",
+            market: "rr",
+            metric: "activation_price",
+            direction: false,
+            session: false,
+            countries: ["PT"],
+            availabilityMode: "union",
+
+            components: [
+
+                {
+                    stage: "energy_legacy",
+                    metric: "activation_price"
+                },
+
+                {
+                    stage: "energy",
+                    metric: "activation_price"
+                }
+
+            ]
+        }
+
+    ];
+
+
+    // ==================================================
+    // DOM
+    // ==================================================
+
+    const seriesElement =
+        document.getElementById("series");
 
     const countryElement =
         document.getElementById("country");
@@ -533,14 +890,14 @@
     const loadButton =
         document.getElementById("loadButton");
 
+    const availabilityElement =
+        document.getElementById("availability");
+
     const statusElement =
         document.getElementById("status");
 
     const summaryElement =
         document.getElementById("summary");
-
-    const emptyMessage =
-        document.getElementById("emptyMessage");
 
     const resolutionNote =
         document.getElementById("resolutionNote");
@@ -548,130 +905,107 @@
     const eventsElement =
         document.getElementById("events");
 
+    const emptyMessage =
+        document.getElementById("emptyMessage");
+
+    const dataTableBody =
+        document.getElementById("dataTableBody");
+
+    const tableNote =
+        document.getElementById("tableNote");
+
+    const csvButton =
+        document.getElementById("csvButton");
+
 
     // ==================================================
-    // DEFAULT DATES
+    // STATE
     // ==================================================
 
-    function formatDateInput(date) {
-        return date
-            .toISOString()
-            .slice(0, 10);
+    let catalog =
+        null;
+
+    let chart =
+        null;
+
+    let chartAvailable =
+        false;
+
+    let chartLibraryLoading =
+        false;
+
+    let lastResult =
+        null;
+
+
+    // ==================================================
+    // HELPERS
+    // ==================================================
+
+    function selectedDefinition() {
+
+        return SERIES.find(
+            item =>
+                item.id
+                === seriesElement.value
+        );
     }
 
 
-    const defaultEnd = new Date();
+    function normalizeDate(
+        value
+    ) {
 
-    defaultEnd.setDate(
-        defaultEnd.getDate() - 1
-    );
-
-    const defaultStart =
-        new Date(defaultEnd);
-
-    defaultStart.setDate(
-        defaultStart.getDate() - 7
-    );
-
-    startDateElement.value =
-        formatDateInput(defaultStart);
-
-    endDateElement.value =
-        formatDateInput(defaultEnd);
-
-
-    // ==================================================
-    // MARKET CONFIGURATION
-    //
-    // The dashboard uses economic labels.
-    // The backend still preserves exact source fields.
-    // ==================================================
-
-    const SERIES_CONFIG = {
-
-        day_ahead: {
-            market: "day_ahead",
-            balancing: false
-        },
-
-        intraday_auction: {
-            market: "intraday_auction",
-            balancing: false,
-            session: true
-        },
-
-        intraday_continuous: {
-            market: "intraday_continuous",
-            balancing: false
-        },
-
-        afrr_energy: {
-            market: "afrr",
-            balancing: true,
-            direction: true,
-            stage: "energy",
-            metric: "marginal_price"
-        },
-
-        afrr_capacity: {
-            market: "afrr",
-            balancing: true,
-            direction: true,
-            stage: "capacity",
-            metric: "marginal_price"
-        },
-
-        mfrr_scheduled: {
-            market: "mfrr",
-            balancing: true,
-            direction: true,
-            special: "mfrr_scheduled"
-        },
-
-        rr: {
-            market: "rr",
-            balancing: true,
-            direction: false,
-            stage: null,
-            metric: "activation_price"
+        if (!value) {
+            return null;
         }
-    };
+
+        const text =
+            String(value);
 
 
-    // ==================================================
-    // CONTROL VISIBILITY
-    // ==================================================
+        if (
+            /^\d{8}$/.test(text)
+        ) {
 
-    function updateControls() {
+            return (
+                text.slice(0, 4)
+                + "-"
+                + text.slice(4, 6)
+                + "-"
+                + text.slice(6, 8)
+            );
+        }
 
-        const config =
-            SERIES_CONFIG[
-                marketElement.value
-            ];
 
-        directionControl.classList.toggle(
-            "hidden",
-            !config.direction
-        );
-
-        sessionControl.classList.toggle(
-            "hidden",
-            !config.session
+        return text.slice(
+            0,
+            10
         );
     }
 
 
-    marketElement.addEventListener(
-        "change",
-        updateControls
-    );
+    function humanMetric(
+        value
+    ) {
 
-    updateControls();
+        if (!value) {
+            return "";
+        }
 
 
-    // ==================================================
-    // STATUS
-    // ==================================================
+        return value
+            .replaceAll(
+                "_",
+                " "
+            )
+            .replace(
+                /\b\w/g,
+                character =>
+                    character.toUpperCase()
+            );
+    }
+
 
     function setStatus(
         message,
@@ -684,41 +1018,1377 @@
         statusElement.className =
             "status";
 
-        if (type === "error") {
-            statusElement.classList.add(
-                "error"
-            );
-        }
 
-        if (type === "success") {
-            statusElement.classList.add(
-                "success"
-            );
+        if (
+            type !== "normal"
+        ) {
+
+            statusElement
+                .classList
+                .add(type);
         }
     }
 
 
     // ==================================================
-    // API QUERY
+    // DEFAULT DATES
     // ==================================================
 
-    function buildUrl(
-        config,
-        country,
-        overrides = {}
+    function setInitialDates() {
+
+        const end =
+            new Date();
+
+        end.setDate(
+            end.getDate() - 1
+        );
+
+
+        const start =
+            new Date(end);
+
+        start.setDate(
+            start.getDate() - 7
+        );
+
+
+        startDateElement.value =
+            start
+                .toISOString()
+                .slice(
+                    0,
+                    10
+                );
+
+
+        endDateElement.value =
+            end
+                .toISOString()
+                .slice(
+                    0,
+                    10
+                );
+    }
+
+
+    // ==================================================
+    // CATALOG
+    // ==================================================
+
+    function allCatalogRows() {
+
+        if (!catalog) {
+            return [];
+        }
+
+
+        return [
+            ...(catalog.wholesale || []),
+            ...(catalog.balancing || [])
+        ];
+    }
+
+
+    function definitionComponents(
+        definition
+    ) {
+
+        if (
+            definition.components
+        ) {
+
+            return definition.components;
+        }
+
+
+        return [
+            {
+                stage:
+                    definition.stage,
+
+                metric:
+                    definition.metric
+            }
+        ];
+    }
+
+
+    function catalogMatchesDefinition(
+        row,
+        definition
+    ) {
+
+        if (
+            row.market
+            !== definition.market
+        ) {
+
+            return false;
+        }
+
+
+        if (
+            definition.countries
+            && !definition.countries.includes(
+                row.country
+            )
+        ) {
+
+            return false;
+        }
+
+
+        return definitionComponents(
+            definition
+        ).some(
+            component => {
+
+                if (
+                    component.stage
+                    && row.market_stage
+                    !== component.stage
+                ) {
+
+                    return false;
+                }
+
+
+                if (
+                    component.metric
+                    && row.metric
+                    !== component.metric
+                ) {
+
+                    return false;
+                }
+
+
+                return true;
+            }
+        );
+    }
+
+
+    function matchingCatalogRows(
+        definition,
+        countries = null
+    ) {
+
+        return allCatalogRows()
+            .filter(
+                row =>
+                    catalogMatchesDefinition(
+                        row,
+                        definition
+                    )
+            )
+            .filter(
+                row =>
+                    !countries
+                    || countries.includes(
+                        row.country
+                    )
+            );
+    }
+
+
+    // ==================================================
+    // SERIES SELECTOR
+    //
+    // IMPORTANT:
+    // This works even when the catalog has not loaded.
+    // ==================================================
+
+    function populateSeries() {
+
+        const previous =
+            seriesElement.value;
+
+        seriesElement.innerHTML =
+            "";
+
+
+        const definitions =
+            catalog
+                ? SERIES.filter(
+                    definition =>
+                        matchingCatalogRows(
+                            definition
+                        ).length > 0
+                )
+                : SERIES;
+
+
+        const groups =
+            new Map();
+
+
+        for (
+            const definition
+            of definitions
+        ) {
+
+            if (
+                !groups.has(
+                    definition.group
+                )
+            ) {
+
+                const group =
+                    document.createElement(
+                        "optgroup"
+                    );
+
+                group.label =
+                    definition.group;
+
+
+                groups.set(
+                    definition.group,
+                    group
+                );
+
+
+                seriesElement
+                    .appendChild(
+                        group
+                    );
+            }
+
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+            option.value =
+                definition.id;
+
+            option.textContent =
+                definition.label;
+
+
+            groups
+                .get(
+                    definition.group
+                )
+                .appendChild(
+                    option
+                );
+        }
+
+
+        const values =
+            Array.from(
+                seriesElement.options
+            ).map(
+                option =>
+                    option.value
+            );
+
+
+        if (
+            values.includes(
+                previous
+            )
+        ) {
+
+            seriesElement.value =
+                previous;
+        }
+    }
+
+
+    // ==================================================
+    // COUNTRIES
+    // ==================================================
+
+    function availableCountriesForDefinition(
+        definition
+    ) {
+
+        if (
+            catalog
+        ) {
+
+            const countries =
+                [
+                    ...new Set(
+                        matchingCatalogRows(
+                            definition
+                        ).map(
+                            row =>
+                                row.country
+                        )
+                    )
+                ];
+
+
+            if (
+                countries.length
+            ) {
+
+                return countries;
+            }
+        }
+
+
+        if (
+            definition.countries
+        ) {
+
+            return [
+                ...definition.countries
+            ];
+        }
+
+
+        return [
+            "ES",
+            "PT"
+        ];
+    }
+
+
+    function populateCountries() {
+
+        const definition =
+            selectedDefinition();
+
+
+        if (!definition) {
+            return;
+        }
+
+
+        const available =
+            availableCountriesForDefinition(
+                definition
+            );
+
+
+        const previous =
+            countryElement.value;
+
+
+        countryElement.innerHTML =
+            "";
+
+
+        if (
+            available.includes("ES")
+            && available.includes("PT")
+        ) {
+
+            countryElement.add(
+                new Option(
+                    "Spain + Portugal",
+                    "both"
+                )
+            );
+        }
+
+
+        if (
+            available.includes("ES")
+        ) {
+
+            countryElement.add(
+                new Option(
+                    "Spain",
+                    "ES"
+                )
+            );
+        }
+
+
+        if (
+            available.includes("PT")
+        ) {
+
+            countryElement.add(
+                new Option(
+                    "Portugal",
+                    "PT"
+                )
+            );
+        }
+
+
+        const values =
+            Array.from(
+                countryElement.options
+            ).map(
+                option =>
+                    option.value
+            );
+
+
+        if (
+            values.includes(
+                previous
+            )
+        ) {
+
+            countryElement.value =
+                previous;
+        }
+    }
+
+
+    function selectedCountries() {
+
+        if (
+            countryElement.value
+            === "both"
+        ) {
+
+            return [
+                "ES",
+                "PT"
+            ];
+        }
+
+
+        return [
+            countryElement.value
+        ];
+    }
+
+
+    // ==================================================
+    // DIRECTIONS
+    // ==================================================
+
+    function populateDirections() {
+
+        const definition =
+            selectedDefinition();
+
+
+        if (
+            !definition
+            || !definition.direction
+        ) {
+
+            directionControl
+                .classList
+                .add(
+                    "hidden"
+                );
+
+            directionElement.innerHTML =
+                "";
+
+            return;
+        }
+
+
+        directionControl
+            .classList
+            .remove(
+                "hidden"
+            );
+
+
+        let directions =
+            [
+                "up",
+                "down"
+            ];
+
+
+        if (
+            catalog
+        ) {
+
+            const countries =
+                selectedCountries();
+
+
+            const rows =
+                matchingCatalogRows(
+                    definition,
+                    countries
+                );
+
+
+            const byCountry =
+                countries.map(
+                    country =>
+                        new Set(
+                            rows
+                                .filter(
+                                    row =>
+                                        row.country
+                                        === country
+                                )
+                                .map(
+                                    row =>
+                                        row.direction
+                                )
+                        )
+                );
+
+
+            const catalogDirections =
+                [
+                    "up",
+                    "down"
+                ].filter(
+                    direction =>
+                        byCountry.every(
+                            set =>
+                                set.has(
+                                    direction
+                                )
+                        )
+                );
+
+
+            if (
+                catalogDirections.length
+            ) {
+
+                directions =
+                    catalogDirections;
+            }
+        }
+
+
+        const previous =
+            directionElement.value;
+
+
+        directionElement.innerHTML =
+            "";
+
+
+        if (
+            directions.includes("up")
+            && directions.includes("down")
+        ) {
+
+            directionElement.add(
+                new Option(
+                    "UP + DOWN",
+                    "both"
+                )
+            );
+        }
+
+
+        if (
+            directions.includes("up")
+        ) {
+
+            directionElement.add(
+                new Option(
+                    "UP",
+                    "up"
+                )
+            );
+        }
+
+
+        if (
+            directions.includes("down")
+        ) {
+
+            directionElement.add(
+                new Option(
+                    "DOWN",
+                    "down"
+                )
+            );
+        }
+
+
+        const values =
+            Array.from(
+                directionElement.options
+            ).map(
+                option =>
+                    option.value
+            );
+
+
+        if (
+            values.includes(
+                previous
+            )
+        ) {
+
+            directionElement.value =
+                previous;
+        }
+    }
+
+
+    function selectedDirections() {
+
+        const definition =
+            selectedDefinition();
+
+
+        if (
+            !definition.direction
+        ) {
+
+            return [
+                "none"
+            ];
+        }
+
+
+        if (
+            directionElement.value
+            === "both"
+        ) {
+
+            return [
+                "up",
+                "down"
+            ];
+        }
+
+
+        return [
+            directionElement.value
+        ];
+    }
+
+
+    // ==================================================
+    // AUCTION SESSIONS
+    // ==================================================
+
+    function populateSessions() {
+
+        const definition =
+            selectedDefinition();
+
+
+        if (
+            !definition
+            || !definition.session
+        ) {
+
+            sessionControl
+                .classList
+                .add(
+                    "hidden"
+                );
+
+            sessionElement.innerHTML =
+                "";
+
+            return;
+        }
+
+
+        sessionControl
+            .classList
+            .remove(
+                "hidden"
+            );
+
+
+        let sessions =
+            [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+            ];
+
+
+        if (
+            catalog
+        ) {
+
+            const countries =
+                selectedCountries();
+
+
+            const rows =
+                matchingCatalogRows(
+                    definition,
+                    countries
+                );
+
+
+            const byCountry =
+                countries.map(
+                    country =>
+                        new Set(
+                            rows
+                                .filter(
+                                    row =>
+                                        row.country
+                                        === country
+                                )
+                                .map(
+                                    row =>
+                                        Number(
+                                            row.session
+                                        )
+                                )
+                        )
+                );
+
+
+            const catalogSessions =
+                [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6
+                ].filter(
+                    session =>
+                        byCountry.every(
+                            set =>
+                                set.has(
+                                    session
+                                )
+                        )
+                );
+
+
+            if (
+                catalogSessions.length
+            ) {
+
+                sessions =
+                    catalogSessions;
+            }
+        }
+
+
+        const previous =
+            Number(
+                sessionElement.value
+            );
+
+
+        sessionElement.innerHTML =
+            "";
+
+
+        for (
+            const session
+            of sessions
+        ) {
+
+            sessionElement.add(
+                new Option(
+                    `Session ${session}`,
+                    String(session)
+                )
+            );
+        }
+
+
+        if (
+            sessions.includes(
+                previous
+            )
+        ) {
+
+            sessionElement.value =
+                String(previous);
+        }
+    }
+
+
+    // ==================================================
+    // AVAILABILITY
+    // ==================================================
+
+    function activeCatalogRows() {
+
+        if (
+            !catalog
+        ) {
+
+            return [];
+        }
+
+
+        const definition =
+            selectedDefinition();
+
+
+        const countries =
+            selectedCountries();
+
+
+        let rows =
+            matchingCatalogRows(
+                definition,
+                countries
+            );
+
+
+        if (
+            definition.direction
+        ) {
+
+            const directions =
+                selectedDirections();
+
+
+            rows =
+                rows.filter(
+                    row =>
+                        directions.includes(
+                            row.direction
+                        )
+                );
+        }
+
+
+        if (
+            definition.session
+        ) {
+
+            const session =
+                Number(
+                    sessionElement.value
+                );
+
+
+            rows =
+                rows.filter(
+                    row =>
+                        Number(
+                            row.session
+                        )
+                        === session
+                );
+        }
+
+
+        return rows;
+    }
+
+
+    function availabilityRange() {
+
+        const definition =
+            selectedDefinition();
+
+
+        const rows =
+            activeCatalogRows();
+
+
+        if (
+            !rows.length
+        ) {
+
+            return null;
+        }
+
+
+        const firstDates =
+            rows
+                .map(
+                    row =>
+                        normalizeDate(
+                            row.first_date
+                        )
+                )
+                .filter(Boolean)
+                .sort();
+
+
+        const lastDates =
+            rows
+                .map(
+                    row =>
+                        normalizeDate(
+                            row.last_date
+                        )
+                )
+                .filter(Boolean)
+                .sort();
+
+
+        let first;
+        let last;
+
+
+        if (
+            definition.availabilityMode
+            === "union"
+        ) {
+
+            first =
+                firstDates[0];
+
+            last =
+                lastDates.at(-1);
+
+        } else {
+
+            first =
+                firstDates.at(-1);
+
+            last =
+                lastDates[0];
+        }
+
+
+        return {
+            first:
+                first,
+
+            last:
+                last,
+
+            rows:
+                rows
+        };
+    }
+
+
+    function updateAvailability() {
+
+        if (
+            !catalog
+        ) {
+
+            availabilityElement.textContent =
+                (
+                    "Checking official availability "
+                    + "in the background..."
+                );
+
+            return;
+        }
+
+
+        const range =
+            availabilityRange();
+
+
+        if (
+            !range
+        ) {
+
+            availabilityElement.textContent =
+                (
+                    "No matching official series "
+                    + "are available."
+                );
+
+            return;
+        }
+
+
+        const resolutions =
+            [
+                ...new Set(
+                    range.rows.flatMap(
+                        row =>
+                            row
+                                .native_resolutions_minutes
+                                || []
+                    )
+                )
+            ].sort(
+                (a, b) =>
+                    a - b
+            );
+
+
+        availabilityElement.textContent =
+            (
+                `Official availability: `
+                + `${range.first} to ${range.last}. `
+                + `Native resolution: `
+                + resolutions
+                    .map(
+                        value =>
+                            `${value} min`
+                    )
+                    .join(", ")
+                + "."
+            );
+
+
+        startDateElement.min =
+            range.first;
+
+        endDateElement.min =
+            range.first;
+
+        startDateElement.max =
+            range.last;
+
+        endDateElement.max =
+            range.last;
+
+
+        if (
+            endDateElement.value
+            > range.last
+        ) {
+
+            endDateElement.value =
+                range.last;
+        }
+
+
+        if (
+            startDateElement.value
+            > range.last
+        ) {
+
+            startDateElement.value =
+                range.last;
+        }
+
+
+        if (
+            startDateElement.value
+            < range.first
+        ) {
+
+            startDateElement.value =
+                range.first;
+        }
+    }
+
+
+    // ==================================================
+    // SELECTOR REFRESH
+    // ==================================================
+
+    function refreshAllSelectors() {
+
+        populateSeries();
+
+        populateCountries();
+
+        populateDirections();
+
+        populateSessions();
+
+        updateAvailability();
+    }
+
+
+    function refreshAfterSeriesChange() {
+
+        populateCountries();
+
+        populateDirections();
+
+        populateSessions();
+
+        updateAvailability();
+    }
+
+
+    function refreshAfterCountryChange() {
+
+        populateDirections();
+
+        populateSessions();
+
+        updateAvailability();
+    }
+
+
+    // ==================================================
+    // LOCAL CATALOG CACHE
+    // ==================================================
+
+    function loadCachedCatalog() {
+
+        try {
+
+            const raw =
+                localStorage.getItem(
+                    CATALOG_CACHE_KEY
+                );
+
+
+            if (
+                !raw
+            ) {
+
+                return null;
+            }
+
+
+            const parsed =
+                JSON.parse(
+                    raw
+                );
+
+
+            if (
+                !parsed.catalog
+            ) {
+
+                return null;
+            }
+
+
+            return parsed.catalog;
+
+        } catch {
+
+            return null;
+        }
+    }
+
+
+    function saveCatalogToCache(
+        freshCatalog
+    ) {
+
+        try {
+
+            localStorage.setItem(
+                CATALOG_CACHE_KEY,
+                JSON.stringify(
+                    {
+                        saved_at:
+                            new Date()
+                                .toISOString(),
+
+                        catalog:
+                            freshCatalog
+                    }
+                )
+            );
+
+        } catch {
+
+            // Cache failure should never block the UI.
+        }
+    }
+
+
+    // ==================================================
+    // API
+    // ==================================================
+
+    async function fetchJson(
+        url
+    ) {
+
+        const response =
+            await fetch(url);
+
+
+        let payload;
+
+
+        try {
+
+            payload =
+                await response.json();
+
+        } catch {
+
+            throw new Error(
+                "The API returned an invalid response."
+            );
+        }
+
+
+        if (
+            !response.ok
+        ) {
+
+            throw new Error(
+                payload.detail
+                || `HTTP ${response.status}`
+            );
+        }
+
+
+        return payload;
+    }
+
+
+    // ==================================================
+    // BACKGROUND CATALOG REFRESH
+    // ==================================================
+
+    async function refreshCatalogInBackground() {
+
+        try {
+
+            const freshCatalog =
+                await fetchJson(
+                    "/market/catalog"
+                );
+
+
+            catalog =
+                freshCatalog;
+
+
+            saveCatalogToCache(
+                freshCatalog
+            );
+
+
+            refreshAllSelectors();
+
+        } catch (
+            error
+        ) {
+
+            console.warn(
+                "Could not refresh market catalog:",
+                error
+            );
+
+
+            if (
+                !catalog
+            ) {
+
+                availabilityElement.textContent =
+                    (
+                        "Availability information could not "
+                        + "be refreshed. Price selectors "
+                        + "remain available."
+                    );
+            }
+        }
+    }
+
+
+    // ==================================================
+    // CHART LIBRARY
+    //
+    // IMPORTANT:
+    // Chart.js loads AFTER the page is interactive.
+    // It no longer blocks the selectors.
+    // ==================================================
+
+    function loadChartLibraryInBackground() {
+
+        if (
+            typeof Chart
+            !== "undefined"
+        ) {
+
+            chartAvailable =
+                true;
+
+            registerChartPlugin();
+
+            return;
+        }
+
+
+        if (
+            chartLibraryLoading
+        ) {
+
+            return;
+        }
+
+
+        chartLibraryLoading =
+            true;
+
+
+        const script =
+            document.createElement(
+                "script"
+            );
+
+
+        script.src =
+            CHARTJS_URL;
+
+        script.async =
+            true;
+
+
+        script.onload =
+            () => {
+
+                chartLibraryLoading =
+                    false;
+
+                chartAvailable =
+                    true;
+
+
+                registerChartPlugin();
+
+
+                if (
+                    lastResult
+                    && lastResult.data?.length
+                ) {
+
+                    drawChart(
+                        lastResult
+                    );
+                }
+            };
+
+
+        script.onerror =
+            () => {
+
+                chartLibraryLoading =
+                    false;
+
+                chartAvailable =
+                    false;
+
+
+                console.warn(
+                    "Chart.js could not be loaded."
+                );
+            };
+
+
+        document.head
+            .appendChild(
+                script
+            );
+    }
+
+
+    // ==================================================
+    // QUERY
+    // ==================================================
+
+    function buildRequestUrl(
+        definition,
+        component
     ) {
 
         const params =
             new URLSearchParams();
 
+
         params.set(
             "market",
-            config.market
+            definition.market
         );
 
         params.set(
             "country",
-            country
+            countryElement.value
         );
 
         params.set(
@@ -736,53 +2406,50 @@
             frequencyElement.value
         );
 
+
         if (
-            config.direction
-            && directionElement.value
+            definition.direction
         ) {
+
             params.set(
                 "direction",
                 directionElement.value
             );
         }
 
-        if (config.session) {
+
+        if (
+            definition.session
+        ) {
+
             params.set(
                 "session",
                 sessionElement.value
             );
         }
 
-        if (config.stage) {
-            params.set(
-                "stage",
-                config.stage
-            );
-        }
 
-        if (config.metric) {
-            params.set(
-                "metric",
-                config.metric
-            );
-        }
-
-        for (
-            const [key, value]
-            of Object.entries(overrides)
+        if (
+            component.stage
         ) {
 
-            if (
-                value !== null
-                && value !== undefined
-            ) {
-
-                params.set(
-                    key,
-                    value
-                );
-            }
+            params.set(
+                "stage",
+                component.stage
+            );
         }
+
+
+        if (
+            component.metric
+        ) {
+
+            params.set(
+                "metric",
+                component.metric
+            );
+        }
+
 
         return (
             "/market/prices?"
@@ -791,158 +2458,7 @@
     }
 
 
-    async function fetchJson(url) {
-
-        const response =
-            await fetch(url);
-
-        const payload =
-            await response.json();
-
-        if (!response.ok) {
-
-            const detail =
-                payload.detail
-                || `HTTP ${response.status}`;
-
-            throw new Error(
-                detail
-            );
-        }
-
-        return payload;
-    }
-
-
-    // ==================================================
-    // mFRR
-    //
-    // Spain and Portugal currently expose the
-    // official scheduled-activation series under
-    // different source metric names.
-    //
-    // We therefore request each country separately
-    // instead of pretending their raw schemas are
-    // identical.
-    // ==================================================
-
-    async function fetchMfrrScheduled(
-        requestedCountry,
-        config
-    ) {
-
-        const countries =
-            requestedCountry === "both"
-                ? ["ES", "PT"]
-                : [requestedCountry];
-
-        const requests =
-            countries.map(
-                async country => {
-
-                    const overrides =
-                        country === "ES"
-                            ? {
-                                stage:
-                                    "energy_scheduled",
-
-                                metric:
-                                    "weighted_average_price"
-                            }
-                            : {
-                                stage:
-                                    "energy_scheduled",
-
-                                metric:
-                                    "scheduled_activation_price"
-                            };
-
-                    const url =
-                        buildUrl(
-                            config,
-                            country,
-                            overrides
-                        );
-
-                    return fetchJson(
-                        url
-                    );
-                }
-            );
-
-        const results =
-            await Promise.all(
-                requests
-            );
-
-        const data =
-            results.flatMap(
-                result =>
-                    result.data || []
-            );
-
-        const events =
-            results.flatMap(
-                result =>
-                    result.events || []
-            );
-
-        const upsampledPoints =
-            data.filter(
-                row =>
-                    row.is_upsampled
-            ).length;
-
-        return {
-            metadata: {
-                market:
-                    "mfrr",
-
-                countries:
-                    countries,
-
-                start_date:
-                    startDateElement.value,
-
-                end_date:
-                    endDateElement.value,
-
-                frequency:
-                    frequencyElement.value,
-
-                rows:
-                    data.length,
-
-                series:
-                    new Set(
-                        data.map(
-                            row =>
-                                row.series_id
-                        )
-                    ).size,
-
-                upsampled_points:
-                    upsampledPoints
-            },
-
-            events:
-                events,
-
-            data:
-                data
-        };
-    }
-
-
-    async function loadData() {
-
-        const config =
-            SERIES_CONFIG[
-                marketElement.value
-            ];
-
-        const requestedCountry =
-            countryElement.value;
+    function validateRequestedRange() {
 
         if (
             !startDateElement.value
@@ -954,9 +2470,29 @@
             );
         }
 
+
+        const start =
+            new Date(
+                `${startDateElement.value}T12:00:00`
+            );
+
+
+        const end =
+            new Date(
+                `${endDateElement.value}T12:00:00`
+            );
+
+
+        const days =
+            (
+                end - start
+            )
+            / 86400000
+            + 1;
+
+
         if (
-            startDateElement.value
-            > endDateElement.value
+            days < 1
         ) {
 
             throw new Error(
@@ -964,160 +2500,545 @@
             );
         }
 
+
+        const frequency =
+            frequencyElement.value;
+
+
         if (
-            config.special
-            === "mfrr_scheduled"
+            frequency === "15min"
+            && days > 31
         ) {
 
-            return fetchMfrrScheduled(
-                requestedCountry,
-                config
+            throw new Error(
+                (
+                    "For 15-minute display, select "
+                    + "31 days or less."
+                )
             );
         }
 
-        const url =
-            buildUrl(
-                config,
-                requestedCountry
+
+        if (
+            frequency === "1h"
+            && days > 366
+        ) {
+
+            throw new Error(
+                (
+                    "For hourly display, select "
+                    + "one year or less."
+                )
+            );
+        }
+    }
+
+
+    function mergeResults(
+        definition,
+        results
+    ) {
+
+        const data =
+            results.flatMap(
+                result =>
+                    result.data
+                    || []
             );
 
-        return fetchJson(
-            url
-        );
-    }
+
+        const eventMap =
+            new Map();
 
 
-    // ==================================================
-    // LABELS
-    // ==================================================
+        for (
+            const event
+            of results.flatMap(
+                result =>
+                    result.events
+                    || []
+            )
+        ) {
 
-    function marketLabel(value) {
+            const key =
+                [
+                    event.event_date,
+                    event.country,
+                    event.service,
+                    event.event_type,
+                    event.title
+                ].join("|");
 
-        const labels = {
-            day_ahead:
-                "Day-ahead",
 
-            intraday_auction:
-                "Intraday auction",
+            eventMap.set(
+                key,
+                event
+            );
+        }
 
-            intraday_continuous:
-                "Continuous intraday",
 
-            afrr_energy:
-                "aFRR energy",
+        return {
 
-            afrr_capacity:
-                "aFRR capacity",
+            definition:
+                definition,
 
-            mfrr_scheduled:
-                "mFRR scheduled activation",
+            data:
+                data,
 
-            rr:
-                "Replacement reserve"
+            events:
+                [
+                    ...eventMap.values()
+                ]
         };
+    }
 
-        return (
-            labels[value]
-            || value
+
+    async function loadData() {
+
+        validateRequestedRange();
+
+
+        const definition =
+            selectedDefinition();
+
+
+        const components =
+            definitionComponents(
+                definition
+            );
+
+
+        const requests =
+            components.map(
+                component =>
+                    fetchJson(
+                        buildRequestUrl(
+                            definition,
+                            component
+                        )
+                    )
+            );
+
+
+        const results =
+            await Promise.all(
+                requests
+            );
+
+
+        return mergeResults(
+            definition,
+            results
         );
     }
 
 
-    function seriesLabel(row) {
+    // ==================================================
+    // DISPLAY SERIES
+    // ==================================================
 
-        const pieces = [
+    function displaySeriesKey(
+        row,
+        definition
+    ) {
+
+        return [
+
+            definition.id,
+
+            row.country
+            || "",
+
+            row.direction
+            || "none",
+
+            definition.session
+                ? row.session
+                : 0
+
+        ].join("|");
+    }
+
+
+    function displaySeriesLabel(
+        row,
+        definition
+    ) {
+
+        const parts = [
             row.country
         ];
 
+
         if (
             row.direction
-            && row.direction !== "none"
+            && row.direction
+            !== "none"
         ) {
 
-            pieces.push(
-                row.direction.toUpperCase()
+            parts.push(
+                row.direction
+                    .toUpperCase()
             );
         }
 
+
         if (
-            row.session !== null
-            && row.session !== undefined
-            && row.market
-                === "intraday_auction"
+            definition.session
+            && row.session
         ) {
 
-            pieces.push(
+            parts.push(
                 `Session ${row.session}`
             );
         }
 
-        if (
-            row.metric
-            && ![
-                "price",
-                "marginal_price"
-            ].includes(
-                row.metric
-            )
-        ) {
 
-            pieces.push(
-                row.metric
-                    .replaceAll("_", " ")
-            );
-        }
-
-        return pieces.join(
+        return parts.join(
             " — "
         );
     }
 
 
     // ==================================================
-    // COLORS
+    // TIME
     // ==================================================
 
-    const SERIES_COLORS = [
-        "#1769aa",
-        "#d1495b",
-        "#2a9d8f",
-        "#7b2cbf",
-        "#e07a5f",
-        "#4f772d",
-        "#bc6c25",
-        "#495057"
-    ];
+    function formatMarketTime(
+        row
+    ) {
+
+        if (
+            row.timestamp_market
+        ) {
+
+            return (
+                row.timestamp_market
+                    .slice(0, 10)
+                + " "
+                + row.timestamp_market
+                    .slice(11, 16)
+            );
+        }
+
+
+        return new Intl.DateTimeFormat(
+            "en-GB",
+            {
+                timeZone:
+                    MARKET_TIMEZONE,
+
+                year:
+                    "numeric",
+
+                month:
+                    "2-digit",
+
+                day:
+                    "2-digit",
+
+                hour:
+                    "2-digit",
+
+                minute:
+                    "2-digit"
+            }
+        ).format(
+            new Date(
+                row.timestamp_utc
+            )
+        );
+    }
+
+
+    function rangeDays() {
+
+        const start =
+            new Date(
+                `${startDateElement.value}T12:00:00`
+            );
+
+
+        const end =
+            new Date(
+                `${endDateElement.value}T12:00:00`
+            );
+
+
+        return (
+            (end - start)
+            / 86400000
+            + 1
+        );
+    }
+
+
+    function formatAxisTime(
+        timestamp
+    ) {
+
+        const date =
+            new Date(
+                timestamp
+            );
+
+
+        const frequency =
+            frequencyElement.value;
+
+
+        const days =
+            rangeDays();
+
+
+        const common = {
+            timeZone:
+                MARKET_TIMEZONE
+        };
+
+
+        if (
+            frequency === "15min"
+            || frequency === "1h"
+        ) {
+
+            if (
+                days <= 2
+            ) {
+
+                return new Intl.DateTimeFormat(
+                    "en-GB",
+                    {
+                        ...common,
+
+                        hour:
+                            "2-digit",
+
+                        minute:
+                            "2-digit"
+                    }
+                ).format(date);
+            }
+
+
+            return new Intl.DateTimeFormat(
+                "en-GB",
+                {
+                    ...common,
+
+                    month:
+                        "short",
+
+                    day:
+                        "2-digit",
+
+                    hour:
+                        "2-digit"
+                }
+            ).format(date);
+        }
+
+
+        if (
+            frequency === "daily"
+        ) {
+
+            return new Intl.DateTimeFormat(
+                "en-GB",
+                {
+                    ...common,
+
+                    day:
+                        "2-digit",
+
+                    month:
+                        "short"
+                }
+            ).format(date);
+        }
+
+
+        if (
+            frequency === "weekly"
+            || frequency === "monthly"
+        ) {
+
+            return new Intl.DateTimeFormat(
+                "en-GB",
+                {
+                    ...common,
+
+                    month:
+                        "short",
+
+                    year:
+                        "numeric"
+                }
+            ).format(date);
+        }
+
+
+        return new Intl.DateTimeFormat(
+            "en-GB",
+            {
+                ...common,
+
+                year:
+                    "numeric"
+            }
+        ).format(date);
+    }
 
 
     // ==================================================
-    // CHART EVENT MARKERS
+    // REAL CHART TICKS
     // ==================================================
 
-    const marketEventsPlugin = {
+    function uniqueTimestamps(
+        rows
+    ) {
 
-        id: "marketEvents",
+        return [
+            ...new Set(
+                rows.map(
+                    row =>
+                        new Date(
+                            row.timestamp_utc
+                        ).getTime()
+                )
+            )
+        ].sort(
+            (a, b) =>
+                a - b
+        );
+    }
+
+
+    function desiredTickCount() {
+
+        const frequency =
+            frequencyElement.value;
+
+
+        if (
+            frequency === "1h"
+            && rangeDays() <= 1
+        ) {
+
+            return 12;
+        }
+
+
+        if (
+            frequency === "15min"
+            && rangeDays() <= 1
+        ) {
+
+            return 12;
+        }
+
+
+        if (
+            frequency === "daily"
+            && rangeDays() <= 31
+        ) {
+
+            return 16;
+        }
+
+
+        return 10;
+    }
+
+
+    function buildActualTickValues(
+        rows
+    ) {
+
+        const timestamps =
+            uniqueTimestamps(
+                rows
+            );
+
+
+        const maximum =
+            desiredTickCount();
+
+
+        if (
+            timestamps.length
+            <= maximum
+        ) {
+
+            return timestamps;
+        }
+
+
+        const step =
+            Math.ceil(
+                timestamps.length
+                / maximum
+            );
+
+
+        const result =
+            [];
+
+
+        for (
+            let index = 0;
+            index < timestamps.length;
+            index += step
+        ) {
+
+            result.push(
+                timestamps[index]
+            );
+        }
+
+
+        return result;
+    }
+
+
+    // ==================================================
+    // MARKET EVENT PLUGIN
+    // ==================================================
+
+    const eventPlugin = {
+
+        id:
+            "marketEvents",
+
 
         afterDatasetsDraw(
-            chart,
+            chartInstance,
             args,
-            pluginOptions
+            options
         ) {
 
             const events =
-                pluginOptions.events
+                options.events
                 || [];
 
-            if (!events.length) {
+
+            if (
+                !events.length
+            ) {
+
                 return;
             }
+
 
             const {
                 ctx,
                 chartArea,
                 scales
-            } = chart;
+            } = chartInstance;
+
 
             ctx.save();
+
 
             for (
                 const event
@@ -1125,27 +3046,36 @@
             ) {
 
                 const x =
-                    scales.x.getPixelForValue(
-                        event.x
-                    );
+                    scales.x
+                        .getPixelForValue(
+                            event.x
+                        );
+
 
                 if (
-                    x < chartArea.left
+                    !Number.isFinite(x)
+                    || x < chartArea.left
                     || x > chartArea.right
                 ) {
+
                     continue;
                 }
+
 
                 ctx.beginPath();
 
                 ctx.setLineDash(
-                    [5, 5]
+                    [
+                        4,
+                        4
+                    ]
                 );
 
                 ctx.strokeStyle =
-                    "#8a94a5";
+                    "#7c8798";
 
-                ctx.lineWidth = 1;
+                ctx.lineWidth =
+                    1;
 
                 ctx.moveTo(
                     x,
@@ -1159,186 +3089,67 @@
 
                 ctx.stroke();
 
-                ctx.setLineDash([]);
+                ctx.setLineDash(
+                    []
+                );
 
                 ctx.fillStyle =
-                    "#5f6b7a";
+                    "#667085";
 
                 ctx.font =
                     "11px sans-serif";
 
-                ctx.save();
-
-                ctx.translate(
-                    x + 4,
-                    chartArea.top + 8
-                );
-
-                ctx.rotate(
-                    Math.PI / 2
-                );
-
                 ctx.fillText(
-                    event.title,
-                    0,
-                    0
+                    event.date,
+                    x + 4,
+                    chartArea.top + 13
                 );
-
-                ctx.restore();
             }
+
 
             ctx.restore();
         }
     };
 
 
-    Chart.register(
-        marketEventsPlugin
-    );
+    let pluginRegistered =
+        false;
 
 
-    // ==================================================
-    // CHART
-    // ==================================================
+    function registerChartPlugin() {
 
-    let chart = null;
-
-
-    function timestampLabel(
-        timestamp
-    ) {
-
-        const date =
-            new Date(timestamp);
-
-        return new Intl.DateTimeFormat(
-            "en-GB",
-            {
-                year: "numeric",
-                month: "short",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit"
-            }
-        ).format(date);
-    }
-
-
-    function buildEventMarkers(
-        events,
-        data
-    ) {
-
-        if (!events?.length) {
-            return [];
-        }
-
-        const result = [];
-
-        for (
-            const event
-            of events
+        if (
+            !chartAvailable
+            || pluginRegistered
         ) {
-
-            const matchingPoint =
-                data.find(
-                    row =>
-                        row.timestamp_market
-                            ?.startsWith(
-                                event.event_date
-                            )
-                );
-
-            if (!matchingPoint) {
-                continue;
-            }
-
-            result.push(
-                {
-                    x:
-                        new Date(
-                            matchingPoint
-                                .timestamp_utc
-                        ).getTime(),
-
-                    title:
-                        event.title,
-
-                    date:
-                        event.event_date
-                }
-            );
-        }
-
-        return result;
-    }
-
-
-    function drawChart(result) {
-
-        const rows =
-            result.data || [];
-
-        if (chart) {
-
-            chart.destroy();
-
-            chart = null;
-        }
-
-        if (!rows.length) {
-
-            emptyMessage.classList.remove(
-                "hidden"
-            );
 
             return;
         }
 
-        emptyMessage.classList.add(
-            "hidden"
+
+        Chart.register(
+            eventPlugin
         );
 
-        const grouped =
-            new Map();
 
-        for (
-            const row
-            of rows
-        ) {
+        pluginRegistered =
+            true;
+    }
 
-            if (
-                !grouped.has(
-                    row.series_id
-                )
-            ) {
 
-                grouped.set(
-                    row.series_id,
-                    []
-                );
-            }
+    // ==================================================
+    // EVENT POSITIONS
+    // ==================================================
 
-            grouped.get(
-                row.series_id
-            ).push(
-                row
-            );
-        }
+    function buildEventMarkers(
+        events,
+        rows
+    ) {
 
-        const datasets = [];
-
-        let colorIndex = 0;
-
-        for (
-            const [
-                seriesId,
-                seriesRows
-            ]
-            of grouped.entries()
-        ) {
-
-            seriesRows.sort(
+        const sorted =
+            [
+                ...rows
+            ].sort(
                 (a, b) =>
                     new Date(
                         a.timestamp_utc
@@ -1349,26 +3160,248 @@
                     )
             );
 
-            const first =
-                seriesRows[0];
 
-            const color =
-                SERIES_COLORS[
-                    colorIndex
-                    % SERIES_COLORS.length
-                ];
+        const markers =
+            [];
 
-            colorIndex += 1;
+
+        for (
+            const event
+            of events
+        ) {
+
+            const eventDate =
+                normalizeDate(
+                    event.event_date
+                );
+
+
+            const point =
+                sorted.find(
+                    row => {
+
+                        const rowDate =
+                            row.timestamp_market
+                                ? row
+                                    .timestamp_market
+                                    .slice(
+                                        0,
+                                        10
+                                    )
+                                : normalizeDate(
+                                    row.market_date
+                                );
+
+
+                        return (
+                            rowDate
+                            >= eventDate
+                        );
+                    }
+                );
+
+
+            if (
+                point
+            ) {
+
+                markers.push(
+                    {
+                        x:
+                            new Date(
+                                point.timestamp_utc
+                            ).getTime(),
+
+                        date:
+                            eventDate,
+
+                        title:
+                            event.title
+                    }
+                );
+            }
+        }
+
+
+        return markers;
+    }
+
+
+    // ==================================================
+    // CHART
+    // ==================================================
+
+    function pointRadiusFor(
+        size
+    ) {
+
+        if (
+            size <= 48
+        ) {
+
+            return 3;
+        }
+
+
+        if (
+            size <= 120
+        ) {
+
+            return 2;
+        }
+
+
+        if (
+            size <= 400
+        ) {
+
+            return 1;
+        }
+
+
+        return 0;
+    }
+
+
+    function drawChart(
+        result
+    ) {
+
+        const rows =
+            result.data
+            || [];
+
+
+        if (
+            chart
+        ) {
+
+            chart.destroy();
+
+            chart =
+                null;
+        }
+
+
+        if (
+            !rows.length
+        ) {
+
+            emptyMessage
+                .classList
+                .remove(
+                    "hidden"
+                );
+
+            return;
+        }
+
+
+        emptyMessage
+            .classList
+            .add(
+                "hidden"
+            );
+
+
+        if (
+            !chartAvailable
+        ) {
+
+            return;
+        }
+
+
+        const grouped =
+            new Map();
+
+
+        for (
+            const row
+            of rows
+        ) {
+
+            const key =
+                displaySeriesKey(
+                    row,
+                    result.definition
+                );
+
+
+            if (
+                !grouped.has(
+                    key
+                )
+            ) {
+
+                grouped.set(
+                    key,
+                    []
+                );
+            }
+
+
+            grouped
+                .get(key)
+                .push(row);
+        }
+
+
+        let maximumSize =
+            0;
+
+
+        for (
+            const group
+            of grouped.values()
+        ) {
+
+            maximumSize =
+                Math.max(
+                    maximumSize,
+                    group.length
+                );
+        }
+
+
+        const radius =
+            pointRadiusFor(
+                maximumSize
+            );
+
+
+        const datasets =
+            [];
+
+
+        for (
+            const group
+            of grouped.values()
+        ) {
+
+            group.sort(
+                (a, b) =>
+                    new Date(
+                        a.timestamp_utc
+                    )
+                    -
+                    new Date(
+                        b.timestamp_utc
+                    )
+            );
+
 
             datasets.push(
                 {
+
                     label:
-                        seriesLabel(
-                            first
+                        displaySeriesLabel(
+                            group[0],
+                            result.definition
                         ),
 
                     data:
-                        seriesRows.map(
+                        group.map(
                             row => ({
                                 x:
                                     new Date(
@@ -1376,39 +3409,26 @@
                                     ).getTime(),
 
                                 y:
-                                    row.value,
+                                    Number(
+                                        row.value
+                                    ),
 
-                                upsampled:
-                                    row.is_upsampled,
-
-                                nativeResolution:
-                                    row.native_resolution_minutes,
-
-                                marketTimestamp:
-                                    row.timestamp_market,
-
-                                source:
-                                    row.source,
-
-                                sourceId:
-                                    row.source_id,
-
-                                unit:
-                                    row.unit
+                                row:
+                                    row
                             })
                         ),
-
-                    borderColor:
-                        color,
-
-                    backgroundColor:
-                        color,
 
                     borderWidth:
                         1.8,
 
                     pointRadius:
-                        0,
+                        radius,
+
+                    pointHoverRadius:
+                        Math.max(
+                            4,
+                            radius + 2
+                        ),
 
                     pointHitRadius:
                         8,
@@ -1424,15 +3444,23 @@
                         borderDash:
                             context => {
 
-                                const p0 =
-                                    context.p0.raw;
+                                const row1 =
+                                    context
+                                        .p0
+                                        .raw
+                                        ?.row;
 
-                                const p1 =
-                                    context.p1.raw;
+
+                                const row2 =
+                                    context
+                                        .p1
+                                        .raw
+                                        ?.row;
+
 
                                 if (
-                                    p0?.upsampled
-                                    || p1?.upsampled
+                                    row1?.is_upsampled
+                                    || row2?.is_upsampled
                                 ) {
 
                                     return [
@@ -1441,6 +3469,7 @@
                                     ];
                                 }
 
+
                                 return undefined;
                             }
                     }
@@ -1448,30 +3477,52 @@
             );
         }
 
-        const eventMarkers =
-            buildEventMarkers(
-                result.events || [],
+
+        const timestamps =
+            uniqueTimestamps(
                 rows
             );
+
+
+        const tickValues =
+            buildActualTickValues(
+                rows
+            );
+
+
+        const eventMarkers =
+            buildEventMarkers(
+                result.events
+                || [],
+                rows
+            );
+
 
         const context =
             document
                 .getElementById(
                     "priceChart"
                 )
-                .getContext("2d");
+                .getContext(
+                    "2d"
+                );
+
 
         chart =
             new Chart(
                 context,
                 {
+
                     type:
                         "line",
 
+
                     data: {
+
                         datasets:
                             datasets
                     },
+
 
                     options: {
 
@@ -1481,7 +3532,18 @@
                         maintainAspectRatio:
                             false,
 
+                        animation:
+                            false,
+
+                        parsing:
+                            false,
+
+                        normalized:
+                            true,
+
+
                         interaction: {
+
                             mode:
                                 "nearest",
 
@@ -1492,15 +3554,22 @@
                                 "x"
                         },
 
-                        parsing:
-                            false,
 
                         plugins: {
 
                             legend: {
+
                                 position:
                                     "top"
                             },
+
+
+                            marketEvents: {
+
+                                events:
+                                    eventMarkers
+                            },
+
 
                             tooltip: {
 
@@ -1512,72 +3581,125 @@
                                             if (
                                                 !items.length
                                             ) {
+
                                                 return "";
                                             }
 
-                                            return timestampLabel(
-                                                items[0]
-                                                    .raw
-                                                    .x
+
+                                            return (
+                                                "Market time: "
+                                                + formatMarketTime(
+                                                    items[0]
+                                                        .raw
+                                                        .row
+                                                )
                                             );
                                         },
+
 
                                     label:
                                         context => {
 
-                                            const raw =
-                                                context.raw;
+                                            const row =
+                                                context
+                                                    .raw
+                                                    .row;
+
 
                                             return (
                                                 `${context.dataset.label}: `
-                                                + `${raw.y.toFixed(2)} `
-                                                + `${raw.unit}`
+                                                + `${Number(row.value).toFixed(2)} `
+                                                + `${row.unit}`
                                             );
                                         },
+
 
                                     afterLabel:
                                         context => {
 
-                                            const raw =
-                                                context.raw;
+                                            const row =
+                                                context
+                                                    .raw
+                                                    .row;
 
-                                            const details = [
-                                                `Source: ${raw.source}`
-                                            ];
+
+                                            const lines =
+                                                [];
+
 
                                             if (
-                                                raw.nativeResolution
+                                                row.aggregation
+                                            ) {
+
+                                                lines.push(
+                                                    (
+                                                        "Processing: "
+                                                        + humanMetric(
+                                                            row.aggregation
+                                                        )
+                                                    )
+                                                );
+                                            }
+
+
+                                            if (
+                                                row.native_resolution_minutes
                                                 !== null
-                                                && raw.nativeResolution
+                                                && row.native_resolution_minutes
                                                 !== undefined
                                             ) {
 
-                                                details.push(
-                                                    `Native resolution: `
-                                                    + `${raw.nativeResolution} min`
+                                                lines.push(
+                                                    (
+                                                        "Native resolution: "
+                                                        + `${row.native_resolution_minutes} min`
+                                                    )
                                                 );
                                             }
+
 
                                             if (
-                                                raw.upsampled
+                                                row.is_upsampled
                                             ) {
 
-                                                details.push(
-                                                    "Displayed at finer resolution "
-                                                    + "by repeating the native value"
+                                                lines.push(
+                                                    (
+                                                        "Repeated at finer "
+                                                        + "display resolution"
+                                                    )
                                                 );
                                             }
 
-                                            return details;
+
+                                            if (
+                                                row.source
+                                            ) {
+
+                                                lines.push(
+                                                    `Source: ${row.source}`
+                                                );
+                                            }
+
+
+                                            if (
+                                                row.source_id
+                                            ) {
+
+                                                lines.push(
+                                                    (
+                                                        "Source series: "
+                                                        + row.source_id
+                                                    )
+                                                );
+                                            }
+
+
+                                            return lines;
                                         }
                                 }
-                            },
-
-                            marketEvents: {
-                                events:
-                                    eventMarkers
                             }
                         },
+
 
                         scales: {
 
@@ -1586,59 +3708,63 @@
                                 type:
                                     "linear",
 
+                                min:
+                                    timestamps[0],
+
+                                max:
+                                    timestamps.at(-1),
+
+
+                                afterBuildTicks:
+                                    axis => {
+
+                                        axis.ticks =
+                                            tickValues.map(
+                                                value => ({
+                                                    value:
+                                                        value
+                                                })
+                                            );
+                                    },
+
+
                                 ticks: {
 
-                                    maxTicksLimit:
-                                        10,
+                                    autoSkip:
+                                        false,
+
+                                    maxRotation:
+                                        0,
 
                                     callback:
-                                        value => {
-
-                                            const date =
-                                                new Date(
-                                                    value
-                                                );
-
-                                            return new Intl.DateTimeFormat(
-                                                "en-GB",
-                                                {
-                                                    month:
-                                                        "short",
-
-                                                    day:
-                                                        "2-digit",
-
-                                                    hour:
-                                                        "2-digit",
-
-                                                    minute:
-                                                        "2-digit"
-                                                }
-                                            ).format(
-                                                date
-                                            );
-                                        }
+                                        value =>
+                                            formatAxisTime(
+                                                value
+                                            )
                                 },
 
+
                                 title: {
+
                                     display:
                                         true,
 
                                     text:
-                                        "Market time"
+                                        "MIBEL market time"
                                 }
                             },
+
 
                             y: {
 
                                 title: {
+
                                     display:
                                         true,
 
                                     text:
-                                        rows[0]
-                                            ?.unit
-                                            || "Price"
+                                        rows[0]?.unit
+                                        || "Price"
                                 }
                             }
                         }
@@ -1656,41 +3782,39 @@
         result
     ) {
 
-        const metadata =
-            result.metadata
-            || {};
-
         const rows =
             result.data
             || [];
 
-        summaryElement.innerHTML =
-            "";
+
+        const lines =
+            new Set(
+                rows.map(
+                    row =>
+                        displaySeriesKey(
+                            row,
+                            result.definition
+                        )
+                )
+            ).size;
+
 
         const values = [
 
             [
                 "Series",
-                marketLabel(
-                    marketElement.value
-                )
+                result.definition.label
             ],
 
             [
-                "Rows",
-                metadata.rows
-                ?? rows.length
+                "Displayed points",
+                rows.length
+                    .toLocaleString()
             ],
 
             [
                 "Lines",
-                metadata.series
-                ?? new Set(
-                    rows.map(
-                        row =>
-                            row.series_id
-                    )
-                ).size
+                lines
             ],
 
             [
@@ -1704,38 +3828,58 @@
             ]
         ];
 
+
+        const upsampled =
+            rows.filter(
+                row =>
+                    row.is_upsampled
+            ).length;
+
+
         if (
-            metadata.upsampled_points
+            upsampled
         ) {
 
             values.push(
                 [
-                    "Upsampled points",
-                    metadata
-                        .upsampled_points
+                    "Upsampled",
+                    upsampled
+                        .toLocaleString()
                 ]
             );
         }
 
+
+        summaryElement.innerHTML =
+            "";
+
+
         for (
-            const [label, value]
+            const [
+                label,
+                value
+            ]
             of values
         ) {
 
-            const chip =
+            const element =
                 document.createElement(
                     "div"
                 );
 
-            chip.className =
-                "summary-chip";
 
-            chip.textContent =
+            element.className =
+                "chip";
+
+
+            element.textContent =
                 `${label}: ${value}`;
 
-            summaryElement.appendChild(
-                chip
-            );
+
+            summaryElement
+                .appendChild(
+                    element
+                );
         }
     }
 
@@ -1748,61 +3892,55 @@
         result
     ) {
 
-        const rows =
-            result.data
-            || [];
-
         const upsampled =
-            rows.filter(
-                row =>
-                    row.is_upsampled
-            );
+            (result.data || [])
+                .filter(
+                    row =>
+                        row.is_upsampled
+                );
 
-        if (!upsampled.length) {
 
-            resolutionNote.classList.add(
-                "hidden"
-            );
+        if (
+            !upsampled.length
+        ) {
 
-            resolutionNote.textContent =
-                "";
+            resolutionNote
+                .classList
+                .add(
+                    "hidden"
+                );
 
             return;
         }
 
-        const nativeResolutions =
+
+        const resolutions =
             [
                 ...new Set(
-                    upsampled
-                        .map(
-                            row =>
-                                row
-                                    .native_resolution_minutes
-                        )
-                        .filter(
-                            value =>
-                                value !== null
-                                && value !== undefined
-                        )
+                    upsampled.map(
+                        row =>
+                            row
+                                .native_resolution_minutes
+                    )
                 )
-            ]
-            .sort(
-                (a, b) =>
-                    a - b
+            ];
+
+
+        resolutionNote
+            .classList
+            .remove(
+                "hidden"
             );
 
-        resolutionNote.classList.remove(
-            "hidden"
-        );
 
         resolutionNote.textContent =
             (
-                "Dashed sections are displayed at a finer "
-                + "frequency than the official source. "
-                + "The original observations remain unchanged; "
-                + "the dashboard repeats each native value for "
-                + "display purposes. Native resolution: "
-                + nativeResolutions
+                "Dashed sections use a finer display frequency "
+                + "than the official source. The original "
+                + "observations are unchanged; native values "
+                + "are repeated only for visualisation. "
+                + "Native resolution: "
+                + resolutions
                     .map(
                         value =>
                             `${value} min`
@@ -1821,65 +3959,360 @@
         result
     ) {
 
+        eventsElement.innerHTML =
+            "";
+
+
         const events =
             result.events
             || [];
 
-        eventsElement.innerHTML =
-            "";
 
-        if (!events.length) {
+        if (
+            !events.length
+        ) {
+
             return;
         }
+
 
         const heading =
             document.createElement(
                 "div"
             );
 
+
         heading.className =
             "note";
+
 
         heading.textContent =
             "Market changes in the selected period";
 
-        eventsElement.appendChild(
-            heading
-        );
+
+        eventsElement
+            .appendChild(
+                heading
+            );
+
 
         for (
             const event
             of events
         ) {
 
-            const element =
+            const div =
                 document.createElement(
                     "div"
                 );
 
-            element.className =
+
+            div.className =
                 "event";
 
-            element.innerHTML =
-                `
-                    <span class="event-date">
-                        ${event.event_date}
-                    </span>
-                    —
-                    <span class="event-title">
-                        ${event.title}
-                    </span>
-                    ${
+
+            div.innerHTML =
+                (
+                    `<strong>`
+                    + `${normalizeDate(event.event_date)}`
+                    + ` — ${event.title}`
+                    + `</strong>`
+                    + (
                         event.description
                             ? `<br>${event.description}`
                             : ""
-                    }
+                    )
+                );
+
+
+            eventsElement
+                .appendChild(
+                    div
+                );
+        }
+    }
+
+
+    // ==================================================
+    // DATA TABLE
+    // ==================================================
+
+    function renderTable(
+        result
+    ) {
+
+        const rows =
+            [
+                ...(result.data || [])
+            ].sort(
+                (a, b) =>
+                    new Date(
+                        a.timestamp_utc
+                    )
+                    -
+                    new Date(
+                        b.timestamp_utc
+                    )
+            );
+
+
+        dataTableBody.innerHTML =
+            "";
+
+
+        const visible =
+            rows.slice(
+                0,
+                TABLE_ROW_LIMIT
+            );
+
+
+        for (
+            const row
+            of visible
+        ) {
+
+            const tr =
+                document.createElement(
+                    "tr"
+                );
+
+
+            const processing =
+                row.is_upsampled
+                    ? "Repeated for display"
+                    : (
+                        row.aggregation
+                            ? humanMetric(
+                                row.aggregation
+                            )
+                            : "Native"
+                    );
+
+
+            const source =
+                row.source_id
+                    ? (
+                        `${row.source} `
+                        + `(${row.source_id})`
+                    )
+                    : (
+                        row.source
+                        || ""
+                    );
+
+
+            tr.innerHTML =
+                `
+                    <td>
+                        ${formatMarketTime(row)}
+                    </td>
+
+                    <td>
+                        ${displaySeriesLabel(
+                            row,
+                            result.definition
+                        )}
+                    </td>
+
+                    <td class="number">
+                        ${Number(row.value).toFixed(2)}
+                    </td>
+
+                    <td>
+                        ${row.unit || ""}
+                    </td>
+
+                    <td>
+                        ${
+                            row.native_resolution_minutes
+                            ?? ""
+                        } min
+                    </td>
+
+                    <td>
+                        ${processing}
+                    </td>
+
+                    <td>
+                        ${source}
+                    </td>
                 `;
 
-            eventsElement.appendChild(
-                element
+
+            dataTableBody
+                .appendChild(
+                    tr
+                );
+        }
+
+
+        if (
+            rows.length
+            > TABLE_ROW_LIMIT
+        ) {
+
+            tableNote.textContent =
+                (
+                    `Showing the first `
+                    + `${TABLE_ROW_LIMIT.toLocaleString()} `
+                    + `of ${rows.length.toLocaleString()} points. `
+                    + `CSV contains all points.`
+                );
+
+        } else {
+
+            tableNote.textContent =
+                (
+                    `${rows.length.toLocaleString()} `
+                    + `data points.`
+                );
+        }
+    }
+
+
+    // ==================================================
+    // CSV
+    // ==================================================
+
+    function csvEscape(
+        value
+    ) {
+
+        return (
+            `"`
+            + String(
+                value
+                ?? ""
+            ).replaceAll(
+                "\"",
+                "\"\""
+            )
+            + `"`
+        );
+    }
+
+
+    function downloadCsv() {
+
+        if (
+            !lastResult?.data?.length
+        ) {
+
+            return;
+        }
+
+
+        const headers = [
+
+            "timestamp_market",
+            "timestamp_utc",
+            "country",
+            "series",
+            "direction",
+            "session",
+            "value",
+            "unit",
+            "native_resolution_minutes",
+            "is_upsampled",
+            "aggregation",
+            "source",
+            "source_id"
+        ];
+
+
+        const lines = [
+            headers.join(",")
+        ];
+
+
+        for (
+            const row
+            of lastResult.data
+        ) {
+
+            lines.push(
+                [
+
+                    row.timestamp_market,
+                    row.timestamp_utc,
+                    row.country,
+
+                    lastResult
+                        .definition
+                        .label,
+
+                    row.direction,
+                    row.session,
+                    row.value,
+                    row.unit,
+                    row.native_resolution_minutes,
+                    row.is_upsampled,
+                    row.aggregation,
+                    row.source,
+                    row.source_id
+
+                ]
+                    .map(
+                        csvEscape
+                    )
+                    .join(",")
             );
         }
+
+
+        const blob =
+            new Blob(
+                [
+                    "\uFEFF"
+                    + lines.join("\n")
+                ],
+                {
+                    type:
+                        "text/csv;charset=utf-8"
+                }
+            );
+
+
+        const url =
+            URL.createObjectURL(
+                blob
+            );
+
+
+        const link =
+            document.createElement(
+                "a"
+            );
+
+
+        link.href =
+            url;
+
+
+        link.download =
+            (
+                `iberian_energy_prices_`
+                + `${lastResult.definition.id}_`
+                + `${startDateElement.value}_`
+                + `${endDateElement.value}.csv`
+            );
+
+
+        document.body
+            .appendChild(
+                link
+            );
+
+
+        link.click();
+
+        link.remove();
+
+
+        URL.revokeObjectURL(
+            url
+        );
     }
 
 
@@ -1887,105 +4320,219 @@
     // LOAD BUTTON
     // ==================================================
 
-    loadButton.addEventListener(
-        "click",
-        async () => {
+    async function executeLoad() {
 
-            loadButton.disabled =
-                true;
+        loadButton.disabled =
+            true;
 
-            setStatus(
-                "Loading official market data..."
+
+        loadButton.textContent =
+            "Loading...";
+
+
+        setStatus(
+            "Loading official market data..."
+        );
+
+
+        try {
+
+            const result =
+                await loadData();
+
+
+            lastResult =
+                result;
+
+
+            renderSummary(
+                result
             );
 
-            try {
 
-                const result =
-                    await loadData();
+            renderTable(
+                result
+            );
 
-                renderSummary(
-                    result
-                );
 
-                drawChart(
-                    result
-                );
+            renderResolutionNote(
+                result
+            );
 
-                renderResolutionNote(
-                    result
-                );
 
-                renderEvents(
-                    result
-                );
+            renderEvents(
+                result
+            );
 
-                if (
-                    !result.data
-                    || result.data.length === 0
-                ) {
 
-                    setStatus(
-                        (
-                            result.metadata
-                                ?.message
-                            || "No official data are available for this selection."
-                        ),
-                        "error"
-                    );
+            drawChart(
+                result
+            );
 
-                } else {
 
-                    setStatus(
-                        (
-                            `Loaded `
-                            + `${result.data.length.toLocaleString()} `
-                            + `display points successfully.`
-                        ),
-                        "success"
-                    );
-                }
-
-            } catch (error) {
-
-                console.error(
-                    error
-                );
-
-                if (chart) {
-
-                    chart.destroy();
-
-                    chart = null;
-                }
-
-                summaryElement.innerHTML =
-                    "";
-
-                eventsElement.innerHTML =
-                    "";
-
-                resolutionNote.classList.add(
-                    "hidden"
-                );
-
-                emptyMessage.classList.remove(
-                    "hidden"
-                );
+            if (
+                !result.data.length
+            ) {
 
                 setStatus(
-                    error.message,
-                    "error"
+                    (
+                        "No official price is available "
+                        + "for this selection."
+                    ),
+                    "warning"
                 );
 
-            } finally {
+            } else {
 
-                loadButton.disabled =
-                    false;
+                setStatus(
+                    (
+                        `Loaded `
+                        + `${result.data.length.toLocaleString()} `
+                        + `display points successfully.`
+                    ),
+                    "success"
+                );
             }
+
+        } catch (
+            error
+        ) {
+
+            console.error(
+                error
+            );
+
+
+            setStatus(
+                error.message,
+                "error"
+            );
+
+
+        } finally {
+
+            loadButton.disabled =
+                false;
+
+
+            loadButton.textContent =
+                "Load prices";
         }
-    );
+    }
+
+
+    // ==================================================
+    // IMMEDIATE INITIALISATION
+    //
+    // Nothing asynchronous happens before the user can
+    // interact with the controls.
+    // ==================================================
+
+    function initialiseImmediateUI() {
+
+        setInitialDates();
+
+
+        // Build selectors immediately from SERIES.
+
+        populateSeries();
+
+        populateCountries();
+
+        populateDirections();
+
+        populateSessions();
+
+
+        setStatus(
+            (
+                "Ready. Select a price "
+                + "series and period."
+            ),
+            "success"
+        );
+
+
+        // Use cached catalogue instantly if available.
+
+        const cachedCatalog =
+            loadCachedCatalog();
+
+
+        if (
+            cachedCatalog
+        ) {
+
+            catalog =
+                cachedCatalog;
+
+
+            refreshAllSelectors();
+        }
+
+
+        // Neither of these blocks the interface.
+
+        refreshCatalogInBackground();
+
+        loadChartLibraryInBackground();
+    }
+
+
+    // ==================================================
+    // EVENTS
+    // ==================================================
+
+    seriesElement
+        .addEventListener(
+            "change",
+            refreshAfterSeriesChange
+        );
+
+
+    countryElement
+        .addEventListener(
+            "change",
+            refreshAfterCountryChange
+        );
+
+
+    directionElement
+        .addEventListener(
+            "change",
+            updateAvailability
+        );
+
+
+    sessionElement
+        .addEventListener(
+            "change",
+            updateAvailability
+        );
+
+
+    loadButton
+        .addEventListener(
+            "click",
+            executeLoad
+        );
+
+
+    csvButton
+        .addEventListener(
+            "click",
+            downloadCsv
+        );
+
+
+    // ==================================================
+    // START
+    // ==================================================
+
+    initialiseImmediateUI();
 
 </script>
 
 </body>
+
 </html>
