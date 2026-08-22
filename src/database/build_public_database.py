@@ -1,10 +1,14 @@
+from __future__ import annotations
+
+import json
 import sqlite3
+from datetime import datetime, timezone
 from pathlib import Path
 
 
-# ==================================================
+# ============================================================
 # PATHS
-# ==================================================
+# ============================================================
 
 SOURCE_DATABASE_PATH = (
     Path("data")
@@ -12,32 +16,291 @@ SOURCE_DATABASE_PATH = (
     / "iberian_energy.db"
 )
 
-
 PUBLIC_DATABASE_PATH = (
     Path("deployment")
     / "iberian_energy_public.db"
 )
 
 
-# ==================================================
-# PUBLIC TABLE WHITELIST
-# ==================================================
+# ============================================================
+# PUBLIC DATA POLICY
+# ============================================================
+
+PUBLIC_MARKETS = {
+    "day_ahead",
+    "intraday_auction",
+    "intraday_continuous",
+}
 
 PUBLIC_TABLES = {
     "omie_day_ahead_prices",
+    "market_price_data",
+    "market_events",
+    "market_catalog_cache",
 }
 
+COPY_BATCH_SIZE = 50_000
 
-# ==================================================
-# CREATE PUBLIC DATABASE
-# ==================================================
 
-def build_public_database():
+# ============================================================
+# HELPERS
+# ============================================================
 
-    print("=" * 60)
-    print("BUILD PUBLIC IBERIAN ENERGY DATABASE")
-    print("=" * 60)
+def table_exists(
+    connection: sqlite3.Connection,
+    table_name: str,
+) -> bool:
 
+    row = connection.execute(
+        """
+        SELECT 1
+        FROM sqlite_master
+        WHERE type = 'table'
+          AND name = ?
+        """,
+        (table_name,),
+    ).fetchone()
+
+    return row is not None
+
+
+def get_table_sql(
+    connection: sqlite3.Connection,
+    table_name: str,
+) -> str:
+
+    row = connection.execute(
+        """
+        SELECT sql
+        FROM sqlite_master
+        WHERE type = 'table'
+          AND name = ?
+        """,
+        (table_name,),
+    ).fetchone()
+
+    if (
+        row is None
+        or row[0] is None
+    ):
+        raise RuntimeError(
+            f"Could not find CREATE TABLE SQL "
+            f"for {table_name}."
+        )
+
+    return row[0]
+
+
+def get_index_sql(
+    connection: sqlite3.Connection,
+    table_name: str,
+) -> list[str]:
+
+    rows = connection.execute(
+        """
+        SELECT sql
+        FROM sqlite_master
+        WHERE type = 'index'
+          AND tbl_name = ?
+          AND sql IS NOT NULL
+        ORDER BY name
+        """,
+        (table_name,),
+    ).fetchall()
+
+    return [
+        row[0]
+        for row in rows
+        if row[0]
+    ]
+
+
+def copy_query_in_batches(
+    source_connection: sqlite3.Connection,
+    public_connection: sqlite3.Connection,
+    select_sql: str,
+    insert_sql: str,
+    parameters: tuple = (),
+) -> int:
+
+    cursor = source_connection.execute(
+        select_sql,
+        parameters,
+    )
+
+    total = 0
+
+    while True:
+
+        batch = cursor.fetchmany(
+            COPY_BATCH_SIZE
+        )
+
+        if not batch:
+            break
+
+        public_connection.executemany(
+            insert_sql,
+            batch,
+        )
+
+        total += len(batch)
+
+        print(
+            f"    Copied "
+            f"{total:,} rows...",
+            end="\r",
+        )
+
+    print(
+        f"    Copied "
+        f"{total:,} rows."
+    )
+
+    return total
+
+
+def readable_date(
+    compact_date: str,
+) -> str:
+
+    if (
+        len(compact_date) == 8
+        and compact_date.isdigit()
+    ):
+        return (
+            compact_date[:4]
+            + "-"
+            + compact_date[4:6]
+            + "-"
+            + compact_date[6:8]
+        )
+
+    return compact_date
+
+
+# ============================================================
+# BUILD PUBLIC CATALOG
+# ============================================================
+
+def build_public_catalog(
+    connection: sqlite3.Connection,
+) -> dict:
+
+    rows = connection.execute(
+        """
+        SELECT
+            country,
+            market,
+            market_stage,
+            direction,
+            session,
+            price_unit,
+            MIN(market_date),
+            MAX(market_date),
+            GROUP_CONCAT(
+                DISTINCT native_resolution_minutes
+            )
+
+        FROM market_price_data
+
+        GROUP BY
+            country,
+            market,
+            market_stage,
+            direction,
+            session,
+            price_unit
+
+        ORDER BY
+            market,
+            country,
+            session
+        """
+    ).fetchall()
+
+    wholesale = []
+
+    for (
+        country,
+        market,
+        market_stage,
+        direction,
+        session,
+        price_unit,
+        first_date,
+        last_date,
+        resolutions_text,
+    ) in rows:
+
+        resolutions = sorted(
+            {
+                int(value)
+                for value
+                in str(
+                    resolutions_text
+                    or ""
+                ).split(",")
+                if value
+            }
+        )
+
+        wholesale.append(
+            {
+                "country":
+                    country,
+
+                "market":
+                    market,
+
+                "market_stage":
+                    market_stage,
+
+                "direction":
+                    direction,
+
+                "session":
+                    session,
+
+                "unit":
+                    price_unit,
+
+                "first_date":
+                    readable_date(
+                        first_date
+                    ),
+
+                "last_date":
+                    readable_date(
+                        last_date
+                    ),
+
+                "native_resolutions_minutes":
+                    resolutions,
+            }
+        )
+
+    return {
+        "wholesale":
+            wholesale,
+
+        "balancing":
+            [],
+    }
+
+
+# ============================================================
+# MAIN BUILD
+# ============================================================
+
+def build_public_database() -> None:
+
+    print()
+    print("=" * 72)
+    print(
+        "BUILD SANITIZED PUBLIC IBERIAN ENERGY DATABASE"
+    )
+    print("=" * 72)
     print()
 
     print(
@@ -53,21 +316,23 @@ def build_public_database():
     print()
 
 
-    # --------------------------------------------------
-    # CHECK SOURCE DATABASE EXISTS
-    # --------------------------------------------------
+    # --------------------------------------------------------
+    # CHECK LOCAL DATABASE
+    # --------------------------------------------------------
 
     if not SOURCE_DATABASE_PATH.exists():
 
         raise FileNotFoundError(
-            f"Source database not found: "
-            f"{SOURCE_DATABASE_PATH}"
+            (
+                "Source database not found: "
+                f"{SOURCE_DATABASE_PATH}"
+            )
         )
 
 
-    # --------------------------------------------------
-    # CREATE DEPLOYMENT FOLDER
-    # --------------------------------------------------
+    # --------------------------------------------------------
+    # CREATE DEPLOYMENT DIRECTORY
+    # --------------------------------------------------------
 
     PUBLIC_DATABASE_PATH.parent.mkdir(
         parents=True,
@@ -75,18 +340,14 @@ def build_public_database():
     )
 
 
-    # --------------------------------------------------
-    # DELETE OLD PUBLIC DATABASE
-    # --------------------------------------------------
+    # --------------------------------------------------------
+    # REMOVE PREVIOUS PUBLIC DB
+    # --------------------------------------------------------
 
     if PUBLIC_DATABASE_PATH.exists():
 
         print(
-            "Existing public database found."
-        )
-
-        print(
-            "Deleting it before rebuilding..."
+            "Removing previous public database..."
         )
 
         PUBLIC_DATABASE_PATH.unlink()
@@ -94,353 +355,133 @@ def build_public_database():
         print()
 
 
-    # ==================================================
-    # READ SOURCE DATABASE
-    # ==================================================
+    # ========================================================
+    # OPEN DATABASES
+    # ========================================================
 
-    with sqlite3.connect(
+    source_connection = sqlite3.connect(
         SOURCE_DATABASE_PATH
-    ) as source_connection:
+    )
 
-        # ----------------------------------------------
-        # SHOW SOURCE TABLES
-        # ----------------------------------------------
-
-        source_tables = (
-            source_connection.execute(
-                """
-                SELECT name
-
-                FROM sqlite_master
-
-                WHERE type = 'table'
-
-                ORDER BY name;
-                """
-            ).fetchall()
-        )
-
-
-        source_tables = [
-            row[0]
-            for row in source_tables
-        ]
-
-
-        print(
-            "Tables in LOCAL database:"
-        )
-
-
-        for table in source_tables:
-
-            print(
-                f"  {table}"
-            )
-
-
-        print()
-
-
-        # ----------------------------------------------
-        # ENSURE OMIE TABLE EXISTS
-        # ----------------------------------------------
-
-        if (
-            "omie_day_ahead_prices"
-            not in source_tables
-        ):
-
-            raise RuntimeError(
-                "Required source table "
-                "'omie_day_ahead_prices' "
-                "does not exist."
-            )
-
-
-        # ----------------------------------------------
-        # CHECK REQUIRED OMIE COLUMNS
-        # ----------------------------------------------
-
-        source_columns = (
-            source_connection.execute(
-                """
-                PRAGMA table_info(
-                    omie_day_ahead_prices
-                );
-                """
-            ).fetchall()
-        )
-
-
-        source_column_names = {
-            row[1]
-            for row in source_columns
-        }
-
-
-        required_columns = {
-            "timestamp_utc",
-            "timestamp_market",
-            "market_date",
-            "period",
-            "bidding_zone",
-            "price_eur_mwh",
-        }
-
-
-        missing_columns = (
-            required_columns
-            - source_column_names
-        )
-
-
-        if missing_columns:
-
-            raise RuntimeError(
-                "OMIE table is missing required "
-                "columns: "
-                + ", ".join(
-                    sorted(
-                        missing_columns
-                    )
-                )
-            )
-
-
-        # ----------------------------------------------
-        # SOURCE ROW COUNT
-        # ----------------------------------------------
-
-        source_row_count = (
-            source_connection.execute(
-                """
-                SELECT COUNT(*)
-
-                FROM omie_day_ahead_prices;
-                """
-            ).fetchone()[0]
-        )
-
-
-        source_market_days = (
-            source_connection.execute(
-                """
-                SELECT COUNT(
-                    DISTINCT market_date
-                )
-
-                FROM omie_day_ahead_prices;
-                """
-            ).fetchone()[0]
-        )
-
-
-        source_first_date, source_last_date = (
-            source_connection.execute(
-                """
-                SELECT
-                    MIN(market_date),
-                    MAX(market_date)
-
-                FROM omie_day_ahead_prices;
-                """
-            ).fetchone()
-        )
-
-
-        source_zone_counts = (
-            source_connection.execute(
-                """
-                SELECT
-                    bidding_zone,
-                    COUNT(*)
-
-                FROM omie_day_ahead_prices
-
-                GROUP BY bidding_zone
-
-                ORDER BY bidding_zone;
-                """
-            ).fetchall()
-        )
-
-
-        # ----------------------------------------------
-        # VALIDATE BIDDING ZONES
-        # ----------------------------------------------
-
-        source_zones = {
-            row[0]
-            for row in source_zone_counts
-        }
-
-
-        unexpected_zones = (
-            source_zones
-            - {"ES", "PT"}
-        )
-
-
-        if unexpected_zones:
-
-            raise RuntimeError(
-                "Unexpected bidding zones found "
-                "in OMIE table: "
-                + ", ".join(
-                    sorted(
-                        unexpected_zones
-                    )
-                )
-            )
-
-
-        # ----------------------------------------------
-        # CHECK NULL VALUES
-        # ----------------------------------------------
-
-        source_null_rows = (
-            source_connection.execute(
-                """
-                SELECT COUNT(*)
-
-                FROM omie_day_ahead_prices
-
-                WHERE
-                    timestamp_utc IS NULL
-                    OR timestamp_market IS NULL
-                    OR market_date IS NULL
-                    OR period IS NULL
-                    OR bidding_zone IS NULL
-                    OR price_eur_mwh IS NULL;
-                """
-            ).fetchone()[0]
-        )
-
-
-        if source_null_rows > 0:
-
-            raise RuntimeError(
-                f"Source OMIE table contains "
-                f"{source_null_rows} rows "
-                f"with null values."
-            )
-
-
-        print(
-            "Source OMIE data:"
-        )
-
-        print(
-            f"  Rows: "
-            f"{source_row_count}"
-        )
-
-        print(
-            f"  Market days: "
-            f"{source_market_days}"
-        )
-
-        print(
-            f"  First date: "
-            f"{source_first_date}"
-        )
-
-        print(
-            f"  Last date: "
-            f"{source_last_date}"
-        )
-
-
-        print(
-            "  Rows by bidding zone:"
-        )
-
-
-        for (
-            zone,
-            count,
-        ) in source_zone_counts:
-
-            print(
-                f"    {zone}: "
-                f"{count}"
-            )
-
-
-        print()
-
-
-        # ----------------------------------------------
-        # READ ONLY WHITELISTED OMIE DATA
-        # ----------------------------------------------
-
-        omie_rows = (
-            source_connection.execute(
-                """
-                SELECT
-                    timestamp_utc,
-                    timestamp_market,
-                    market_date,
-                    period,
-                    bidding_zone,
-                    price_eur_mwh
-
-                FROM omie_day_ahead_prices
-
-                ORDER BY
-                    timestamp_utc,
-                    bidding_zone;
-                """
-            ).fetchall()
-        )
-
-
-    # ==================================================
-    # CREATE COMPLETELY NEW PUBLIC DATABASE
-    # ==================================================
-
-    with sqlite3.connect(
+    public_connection = sqlite3.connect(
         PUBLIC_DATABASE_PATH
-    ) as public_connection:
+    )
 
-        # ----------------------------------------------
-        # CREATE OMIE TABLE EXPLICITLY
-        # ----------------------------------------------
+    try:
+
+        # ----------------------------------------------------
+        # REQUIRED SOURCE TABLES
+        # ----------------------------------------------------
+
+        required_source_tables = {
+            "omie_day_ahead_prices",
+            "market_price_data",
+            "market_events",
+        }
+
+        missing_tables = {
+            table
+            for table
+            in required_source_tables
+            if not table_exists(
+                source_connection,
+                table,
+            )
+        }
+
+        if missing_tables:
+
+            raise RuntimeError(
+                (
+                    "Local database is missing "
+                    "required tables: "
+                    + ", ".join(
+                        sorted(
+                            missing_tables
+                        )
+                    )
+                )
+            )
+
+
+        # ====================================================
+        # CREATE PUBLIC TABLE SCHEMAS
+        #
+        # We clone only explicitly approved table structures.
+        # No source data are copied automatically.
+        # ====================================================
+
+        print(
+            "Creating public table schemas..."
+        )
+
+        for table_name in [
+            "omie_day_ahead_prices",
+            "market_price_data",
+            "market_events",
+        ]:
+
+            public_connection.execute(
+                get_table_sql(
+                    source_connection,
+                    table_name,
+                )
+            )
 
         public_connection.execute(
             """
-            CREATE TABLE omie_day_ahead_prices (
+            CREATE TABLE market_catalog_cache (
+                id INTEGER PRIMARY KEY
+                    CHECK (id = 1),
 
-                timestamp_utc TEXT NOT NULL,
+                payload_json TEXT NOT NULL,
 
-                timestamp_market TEXT NOT NULL,
-
-                market_date TEXT NOT NULL,
-
-                period INTEGER NOT NULL,
-
-                bidding_zone TEXT NOT NULL,
-
-                price_eur_mwh REAL NOT NULL,
-
-                PRIMARY KEY (
-                    timestamp_utc,
-                    bidding_zone
-                )
-            );
+                built_at_utc TEXT NOT NULL
+            )
             """
         )
 
+        public_connection.commit()
 
-        # ----------------------------------------------
-        # INSERT OMIE DATA
-        # ----------------------------------------------
+        print(
+            "    Schemas created."
+        )
 
-        public_connection.executemany(
+        print()
+
+
+        # ====================================================
+        # LEGACY DAY-AHEAD TABLE
+        #
+        # Retained for the existing /omie/* API endpoints.
+        # ====================================================
+
+        print(
+            "Copying legacy OMIE day-ahead table..."
+        )
+
+        legacy_count = copy_query_in_batches(
+            source_connection,
+            public_connection,
+
+            """
+            SELECT
+                timestamp_utc,
+                timestamp_market,
+                market_date,
+                period,
+                bidding_zone,
+                price_eur_mwh
+
+            FROM omie_day_ahead_prices
+
+            ORDER BY
+                timestamp_utc,
+                bidding_zone
+            """,
+
             """
             INSERT INTO omie_day_ahead_prices (
-
                 timestamp_utc,
                 timestamp_market,
                 market_date,
@@ -448,353 +489,673 @@ def build_public_database():
                 bidding_zone,
                 price_eur_mwh
             )
-
-            VALUES (
-                ?, ?, ?, ?, ?, ?
-            );
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
-            omie_rows,
         )
-
 
         public_connection.commit()
 
+        print()
 
-        # ==================================================
-        # PUBLIC DATABASE VALIDATION
-        # ==================================================
 
-        public_tables = (
-            public_connection.execute(
-                """
-                SELECT name
+        # ====================================================
+        # UNIFIED MARKET PRICE DATA
+        #
+        # SECURITY POLICY:
+        #
+        #   source = OMIE
+        #
+        # and market must be one of:
+        #
+        #   day_ahead
+        #   intraday_auction
+        #   intraday_continuous
+        #
+        # No balancing rows are copied.
+        # ====================================================
 
-                FROM sqlite_master
-
-                WHERE type = 'table'
-
-                ORDER BY name;
-                """
-            ).fetchall()
+        print(
+            "Copying sanitized unified OMIE market data..."
         )
 
+        placeholders = ",".join(
+            "?"
+            for _ in PUBLIC_MARKETS
+        )
+
+        public_market_count = (
+            copy_query_in_batches(
+
+                source_connection,
+                public_connection,
+
+                f"""
+                SELECT
+                    timestamp_utc,
+                    timestamp_market,
+                    market_date,
+                    period,
+                    country,
+                    market,
+                    market_stage,
+                    direction,
+                    session,
+                    price_value,
+                    price_unit,
+                    native_resolution_minutes,
+                    source,
+                    source_id
+
+                FROM market_price_data
+
+                WHERE source = 'OMIE'
+
+                  AND market IN (
+                      {placeholders}
+                  )
+
+                ORDER BY
+                    timestamp_utc,
+                    country,
+                    market,
+                    session
+                """,
+
+                """
+                INSERT INTO market_price_data (
+                    timestamp_utc,
+                    timestamp_market,
+                    market_date,
+                    period,
+                    country,
+                    market,
+                    market_stage,
+                    direction,
+                    session,
+                    price_value,
+                    price_unit,
+                    native_resolution_minutes,
+                    source,
+                    source_id
+                )
+                VALUES (
+                    ?, ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?, ?, ?
+                )
+                """,
+
+                tuple(
+                    sorted(
+                        PUBLIC_MARKETS
+                    )
+                ),
+            )
+        )
+
+        public_connection.commit()
+
+        print()
+
+
+        # ====================================================
+        # WHOLESALE MARKET EVENTS ONLY
+        # ====================================================
+
+        print(
+            "Copying wholesale market events..."
+        )
+
+        event_placeholders = ",".join(
+            "?"
+            for _ in PUBLIC_MARKETS
+        )
+
+        event_count = (
+            copy_query_in_batches(
+
+                source_connection,
+                public_connection,
+
+                f"""
+                SELECT
+                    event_date,
+                    country,
+                    service,
+                    event_type,
+                    title,
+                    description,
+                    source
+
+                FROM market_events
+
+                WHERE service IN (
+                    {event_placeholders}
+                )
+
+                ORDER BY
+                    event_date,
+                    country,
+                    service
+                """,
+
+                """
+                INSERT INTO market_events (
+                    event_date,
+                    country,
+                    service,
+                    event_type,
+                    title,
+                    description,
+                    source
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+
+                tuple(
+                    sorted(
+                        PUBLIC_MARKETS
+                    )
+                ),
+            )
+        )
+
+        public_connection.commit()
+
+        print()
+
+
+        # ====================================================
+        # RECREATE APPROVED INDEXES
+        #
+        # We create them only after bulk loading.
+        # ====================================================
+
+        print(
+            "Creating public database indexes..."
+        )
+
+        for table_name in [
+            "omie_day_ahead_prices",
+            "market_price_data",
+            "market_events",
+        ]:
+
+            for index_sql in get_index_sql(
+                source_connection,
+                table_name,
+            ):
+
+                public_connection.execute(
+                    index_sql
+                )
+
+        public_connection.commit()
+
+        print(
+            "    Indexes created."
+        )
+
+        print()
+
+
+        # ====================================================
+        # MATERIALISED PUBLIC CATALOG
+        # ====================================================
+
+        print(
+            "Building OMIE-only market catalog..."
+        )
+
+        catalog = build_public_catalog(
+            public_connection
+        )
+
+        catalog_json = json.dumps(
+            catalog,
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+
+        built_at_utc = (
+            datetime.now(
+                timezone.utc
+            )
+            .isoformat()
+        )
+
+        public_connection.execute(
+            """
+            INSERT INTO market_catalog_cache (
+                id,
+                payload_json,
+                built_at_utc
+            )
+            VALUES (
+                1,
+                ?,
+                ?
+            )
+            """,
+            (
+                catalog_json,
+                built_at_utc,
+            ),
+        )
+
+        public_connection.commit()
+
+        catalog_rows = len(
+            catalog["wholesale"]
+        )
+
+        print(
+            f"    Wholesale catalog rows: "
+            f"{catalog_rows}"
+        )
+
+        print(
+            "    Balancing catalog rows: 0"
+        )
+
+        print()
+
+
+        # ====================================================
+        # SECURITY VALIDATION
+        # ====================================================
+
+        print(
+            "Running public database security checks..."
+        )
+
+
+        # ----------------------------------------------------
+        # TABLE WHITELIST
+        # ----------------------------------------------------
 
         public_tables = {
             row[0]
-            for row in public_tables
+            for row
+            in public_connection.execute(
+                """
+                SELECT name
+                FROM sqlite_master
+
+                WHERE type = 'table'
+                  AND name NOT LIKE 'sqlite_%'
+                """
+            ).fetchall()
         }
 
-
-        # ----------------------------------------------
-        # SECURITY CHECK:
-        # ONLY WHITELISTED TABLES MAY EXIST
-        # ----------------------------------------------
-
-        unexpected_public_tables = (
+        unexpected_tables = (
             public_tables
             - PUBLIC_TABLES
         )
-
 
         missing_public_tables = (
             PUBLIC_TABLES
             - public_tables
         )
 
-
-        if unexpected_public_tables:
+        if unexpected_tables:
 
             raise RuntimeError(
-                "SECURITY CHECK FAILED. "
-                "Unexpected tables found in "
-                "public database: "
-                + ", ".join(
-                    sorted(
-                        unexpected_public_tables
+                (
+                    "SECURITY CHECK FAILED. "
+                    "Unexpected public tables: "
+                    + ", ".join(
+                        sorted(
+                            unexpected_tables
+                        )
                     )
                 )
             )
-
 
         if missing_public_tables:
 
             raise RuntimeError(
-                "Public database is missing "
-                "required tables: "
-                + ", ".join(
-                    sorted(
-                        missing_public_tables
+                (
+                    "Public database is missing "
+                    "required tables: "
+                    + ", ".join(
+                        sorted(
+                            missing_public_tables
+                        )
                     )
                 )
             )
 
 
-        # ----------------------------------------------
-        # EXPLICIT REN TABLE CHECK
-        # ----------------------------------------------
+        # ----------------------------------------------------
+        # ONLY OMIE SOURCE IN UNIFIED TABLE
+        # ----------------------------------------------------
 
-        forbidden_tables = {
-            "electricity_load",
-            "electricity_generation",
-        }
-
-
-        leaked_tables = (
-            public_tables
-            & forbidden_tables
-        )
-
-
-        if leaked_tables:
-
-            raise RuntimeError(
-                "SECURITY CHECK FAILED. "
-                "REN-derived tables detected: "
-                + ", ".join(
-                    sorted(
-                        leaked_tables
-                    )
-                )
-            )
-
-
-        # ----------------------------------------------
-        # ROW COUNT CHECK
-        # ----------------------------------------------
-
-        public_row_count = (
+        non_omie_rows = (
             public_connection.execute(
                 """
                 SELECT COUNT(*)
 
-                FROM omie_day_ahead_prices;
+                FROM market_price_data
+
+                WHERE source <> 'OMIE'
+                   OR source IS NULL
                 """
             ).fetchone()[0]
         )
 
-
-        if (
-            public_row_count
-            != source_row_count
-        ):
+        if non_omie_rows != 0:
 
             raise RuntimeError(
-                "Row-count validation failed. "
-                f"Source has "
-                f"{source_row_count} rows "
-                f"but public database has "
-                f"{public_row_count}."
+                (
+                    "SECURITY CHECK FAILED. "
+                    f"Found {non_omie_rows:,} "
+                    "non-OMIE unified rows."
+                )
             )
 
 
-        # ----------------------------------------------
-        # PUBLIC DATE RANGE
-        # ----------------------------------------------
+        # ----------------------------------------------------
+        # NO BALANCING MARKETS
+        # ----------------------------------------------------
 
-        public_market_days = (
+        forbidden_market_rows = (
             public_connection.execute(
                 """
-                SELECT COUNT(
-                    DISTINCT market_date
-                )
+                SELECT COUNT(*)
 
-                FROM omie_day_ahead_prices;
+                FROM market_price_data
+
+                WHERE market NOT IN (
+                    'day_ahead',
+                    'intraday_auction',
+                    'intraday_continuous'
+                )
                 """
             ).fetchone()[0]
         )
 
+        if forbidden_market_rows != 0:
 
-        public_first_date, public_last_date = (
+            raise RuntimeError(
+                (
+                    "SECURITY CHECK FAILED. "
+                    f"Found "
+                    f"{forbidden_market_rows:,} "
+                    "non-wholesale market rows."
+                )
+            )
+
+
+        # ----------------------------------------------------
+        # CATALOG MUST CONTAIN NO BALANCING SERIES
+        # ----------------------------------------------------
+
+        cached_payload = (
             public_connection.execute(
                 """
-                SELECT
-                    MIN(market_date),
-                    MAX(market_date)
-
-                FROM omie_day_ahead_prices;
+                SELECT payload_json
+                FROM market_catalog_cache
+                WHERE id = 1
                 """
             ).fetchone()
         )
 
+        if cached_payload is None:
 
-        public_zone_counts = (
+            raise RuntimeError(
+                "Public market catalog cache is missing."
+            )
+
+        cached_catalog = json.loads(
+            cached_payload[0]
+        )
+
+        if cached_catalog.get(
+            "balancing"
+        ) != []:
+
+            raise RuntimeError(
+                (
+                    "SECURITY CHECK FAILED. "
+                    "Public catalog contains "
+                    "balancing entries."
+                )
+            )
+
+
+        # ----------------------------------------------------
+        # MARKET COUNTS
+        # ----------------------------------------------------
+
+        rows_by_market = (
             public_connection.execute(
                 """
                 SELECT
-                    bidding_zone,
+                    market,
                     COUNT(*)
 
-                FROM omie_day_ahead_prices
+                FROM market_price_data
 
-                GROUP BY bidding_zone
+                GROUP BY market
 
-                ORDER BY bidding_zone;
+                ORDER BY market
                 """
             ).fetchall()
         )
 
 
-        # ----------------------------------------------
-        # SQLITE INTEGRITY CHECK
-        # ----------------------------------------------
+        # ----------------------------------------------------
+        # SOURCE COUNTS
+        # ----------------------------------------------------
 
-        integrity_result = (
+        rows_by_source = (
             public_connection.execute(
                 """
-                PRAGMA integrity_check;
+                SELECT
+                    source,
+                    COUNT(*)
+
+                FROM market_price_data
+
+                GROUP BY source
+
+                ORDER BY source
+                """
+            ).fetchall()
+        )
+
+
+        # ----------------------------------------------------
+        # SQLITE INTEGRITY
+        # ----------------------------------------------------
+
+        integrity = (
+            public_connection.execute(
+                """
+                PRAGMA integrity_check
                 """
             ).fetchone()[0]
         )
 
-
-        if integrity_result != "ok":
+        if integrity != "ok":
 
             raise RuntimeError(
-                "SQLite integrity check failed: "
-                f"{integrity_result}"
+                (
+                    "SQLite integrity check failed: "
+                    f"{integrity}"
+                )
             )
 
 
-        # ----------------------------------------------
-        # COMPACT DATABASE
-        # ----------------------------------------------
-
-        public_connection.execute(
-            "VACUUM;"
+        print(
+            "    Security checks passed."
         )
 
+        print()
 
-    # ==================================================
+
+        # ====================================================
+        # VACUUM
+        # ====================================================
+
+        print(
+            "Compacting public database..."
+        )
+
+        public_connection.commit()
+
+        public_connection.execute(
+            "VACUUM"
+        )
+
+        print(
+            "    VACUUM complete."
+        )
+
+        print()
+
+
+    finally:
+
+        source_connection.close()
+
+        public_connection.close()
+
+
+    # ========================================================
     # FINAL REPORT
-    # ==================================================
+    # ========================================================
 
-    database_size_mb = (
+    size_bytes = (
         PUBLIC_DATABASE_PATH
         .stat()
         .st_size
-        / (1024 * 1024)
     )
 
+    size_mb = (
+        size_bytes
+        / 1024
+        / 1024
+    )
 
-    print("=" * 60)
+    print("=" * 72)
+    print(
+        "PUBLIC DATABASE BUILD REPORT"
+    )
+    print("=" * 72)
+
+    print()
 
     print(
-        "PUBLIC DATABASE VALIDATION"
+        "Public tables:"
     )
 
-    print("=" * 60)
-
-
-    print(
-        "Tables in PUBLIC database:"
-    )
-
-
-    for table in sorted(
-        public_tables
+    for table_name in sorted(
+        PUBLIC_TABLES
     ):
 
         print(
-            f"  {table}"
+            f"  {table_name}"
         )
 
-
     print()
 
-
     print(
-        f"Total rows: "
-        f"{public_row_count}"
+        f"Legacy day-ahead rows: "
+        f"{legacy_count:,}"
     )
 
     print(
-        f"Market days: "
-        f"{public_market_days}"
+        f"Unified OMIE rows: "
+        f"{public_market_count:,}"
     )
 
     print(
-        f"First date: "
-        f"{public_first_date}"
+        f"Wholesale event rows: "
+        f"{event_count:,}"
     )
 
     print(
-        f"Last date: "
-        f"{public_last_date}"
+        f"Catalog rows: "
+        f"{catalog_rows:,}"
     )
-
 
     print()
 
     print(
-        "Rows by bidding zone:"
+        "Rows by unified market:"
     )
-
 
     for (
-        zone,
+        market,
         count,
-    ) in public_zone_counts:
+    ) in rows_by_market:
 
         print(
-            f"  {zone}: "
-            f"{count}"
+            f"  {market}: "
+            f"{count:,}"
         )
 
+    print()
+
+    print(
+        "Rows by source:"
+    )
+
+    for (
+        source,
+        count,
+    ) in rows_by_source:
+
+        print(
+            f"  {source}: "
+            f"{count:,}"
+        )
 
     print()
 
     print(
         f"Database size: "
-        f"{database_size_mb:.2f} MB"
+        f"{size_mb:.2f} MB"
     )
-
-
-    print()
-
-    print(
-        "REN electricity_load table: "
-        "NOT PRESENT"
-    )
-
-    print(
-        "REN electricity_generation table: "
-        "NOT PRESENT"
-    )
-
-
-    print()
 
     print(
         "SQLite integrity check: OK"
     )
 
+    print(
+        "Non-OMIE unified rows: 0"
+    )
+
+    print(
+        "Balancing-market rows: 0"
+    )
+
+    print(
+        "Balancing catalog rows: 0"
+    )
 
     print()
 
-    print("=" * 60)
-
+    print("=" * 72)
     print(
         "PUBLIC DATABASE BUILD PASSED"
     )
-
-    print("=" * 60)
-
+    print("=" * 72)
 
     print()
 
     print(
-        f"Safe public database created at:"
+        f"Created at: "
+        f"{PUBLIC_DATABASE_PATH}"
     )
 
-    print(
-        PUBLIC_DATABASE_PATH
-    )
+    print()
 
 
-# ==================================================
+# ============================================================
 # COMMAND LINE
-# ==================================================
+# ============================================================
 
 if __name__ == "__main__":
-
     build_public_database()

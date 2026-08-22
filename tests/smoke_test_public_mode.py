@@ -1,0 +1,845 @@
+from __future__ import annotations
+
+import sys
+import time
+from typing import Any
+
+import requests
+
+
+BASE_URL = "http://127.0.0.1:8001"
+TIMEOUT_SECONDS = 30
+
+ALLOWED_PUBLIC_MARKETS = {
+    "day_ahead",
+    "intraday_auction",
+    "intraday_continuous",
+}
+
+FORBIDDEN_PUBLIC_MARKETS = {
+    "afrr",
+    "mfrr",
+    "rr",
+}
+
+
+passed = 0
+failed = 0
+warnings = 0
+
+
+class SmokeTestFailure(AssertionError):
+    pass
+
+
+def assert_true(
+    condition: bool,
+    message: str,
+) -> None:
+
+    if not condition:
+        raise SmokeTestFailure(
+            message
+        )
+
+
+def request(
+    path: str,
+    params: dict[str, Any] | None = None,
+) -> tuple[requests.Response, float]:
+
+    start = time.perf_counter()
+
+    response = requests.get(
+        f"{BASE_URL}{path}",
+        params=params,
+        timeout=TIMEOUT_SECONDS,
+    )
+
+    elapsed = (
+        time.perf_counter()
+        - start
+    )
+
+    return response, elapsed
+
+
+def request_json(
+    path: str,
+    params: dict[str, Any] | None = None,
+    expected_status: int = 200,
+) -> tuple[dict[str, Any], float]:
+
+    response, elapsed = request(
+        path,
+        params,
+    )
+
+    assert_true(
+        response.status_code
+        == expected_status,
+        (
+            f"Expected HTTP {expected_status}, "
+            f"got {response.status_code} "
+            f"from {response.url}\n"
+            f"Response: {response.text[:1000]}"
+        ),
+    )
+
+    try:
+
+        payload = response.json()
+
+    except ValueError as exc:
+
+        raise SmokeTestFailure(
+            (
+                "Expected JSON response from "
+                f"{response.url}."
+            )
+        ) from exc
+
+    return payload, elapsed
+
+
+def print_timing(
+    elapsed: float,
+) -> None:
+
+    global warnings
+
+    print(
+        f"    API time: {elapsed:.3f} s"
+    )
+
+    if elapsed > 2:
+
+        warnings += 1
+
+        print(
+            "    WARNING: request took "
+            "more than 2 seconds"
+        )
+
+
+def run_test(
+    name: str,
+    function,
+) -> None:
+
+    global passed
+    global failed
+
+    print()
+    print("=" * 72)
+    print(name)
+    print("=" * 72)
+
+    try:
+
+        function()
+
+    except Exception as exc:
+
+        failed += 1
+
+        print(
+            f"FAIL: {exc}"
+        )
+
+    else:
+
+        passed += 1
+
+        print(
+            "PASS"
+        )
+
+
+# ============================================================
+# 1. HEALTH / MODE
+# ============================================================
+
+def test_health_public_mode() -> None:
+
+    payload, elapsed = request_json(
+        "/health"
+    )
+
+    print_timing(
+        elapsed
+    )
+
+    assert_true(
+        payload.get("status")
+        == "ok",
+        (
+            "Unexpected health status: "
+            f"{payload}"
+        ),
+    )
+
+    assert_true(
+        payload.get("mode")
+        == "public",
+        (
+            "Application is not running "
+            "in public mode. "
+            f"Response: {payload}"
+        ),
+    )
+
+    print(
+        "    Mode: public"
+    )
+
+
+# ============================================================
+# 2. PUBLIC DASHBOARD
+# ============================================================
+
+def test_public_dashboard() -> None:
+
+    response, elapsed = request(
+        "/"
+    )
+
+    print_timing(
+        elapsed
+    )
+
+    assert_true(
+        response.status_code
+        == 200,
+        (
+            "Public dashboard returned "
+            f"HTTP {response.status_code}."
+        ),
+    )
+
+    html = response.text
+
+    assert_true(
+        "Public portfolio demo."
+        in html,
+        (
+            "Root page does not appear "
+            "to be public_index.html."
+        ),
+    )
+
+    assert_true(
+        'id: "day_ahead"'
+        in html,
+        (
+            "Public dashboard is missing "
+            "day-ahead series."
+        ),
+    )
+
+    assert_true(
+        'id: "intraday_auction"'
+        in html,
+        (
+            "Public dashboard is missing "
+            "intraday auction series."
+        ),
+    )
+
+    assert_true(
+        'id: "intraday_continuous"'
+        in html,
+        (
+            "Public dashboard is missing "
+            "continuous intraday series."
+        ),
+    )
+
+    forbidden_strings = [
+        'id: "afrr_',
+        'id: "mfrr_',
+        'id: "rr_',
+    ]
+
+    for forbidden in forbidden_strings:
+
+        assert_true(
+            forbidden not in html,
+            (
+                "Public dashboard contains "
+                f"forbidden balancing selector: "
+                f"{forbidden}"
+            ),
+        )
+
+    print(
+        "    OMIE wholesale selectors only"
+    )
+
+
+# ============================================================
+# 3. ABOUT
+# ============================================================
+
+def test_about() -> None:
+
+    payload, elapsed = request_json(
+        "/about"
+    )
+
+    print_timing(
+        elapsed
+    )
+
+    assert_true(
+        payload.get("public_demo")
+        is True,
+        (
+            "About endpoint does not "
+            "identify public mode."
+        ),
+    )
+
+    sources = set(
+        payload.get(
+            "sources",
+            [],
+        )
+    )
+
+    assert_true(
+        sources == {"OMIE"},
+        (
+            "Unexpected public sources: "
+            f"{sources}"
+        ),
+    )
+
+    markets = set(
+        payload.get(
+            "markets",
+            [],
+        )
+    )
+
+    expected_markets = {
+        "Day-ahead",
+        "Intraday auctions",
+        "Continuous intraday",
+    }
+
+    assert_true(
+        markets == expected_markets,
+        (
+            "Unexpected public markets: "
+            f"{markets}"
+        ),
+    )
+
+    print(
+        "    Sources: OMIE only"
+    )
+
+
+# ============================================================
+# 4. PUBLIC MARKET CATALOG
+# ============================================================
+
+def test_catalog() -> None:
+
+    payload, elapsed = request_json(
+        "/market/catalog"
+    )
+
+    print_timing(
+        elapsed
+    )
+
+    wholesale = payload.get(
+        "wholesale",
+        [],
+    )
+
+    balancing = payload.get(
+        "balancing",
+        [],
+    )
+
+    assert_true(
+        balancing == [],
+        (
+            "Public catalog contains "
+            "balancing entries."
+        ),
+    )
+
+    assert_true(
+        len(wholesale) == 16,
+        (
+            "Expected 16 wholesale "
+            f"catalog rows, got "
+            f"{len(wholesale)}."
+        ),
+    )
+
+    markets = {
+        row.get("market")
+        for row in wholesale
+    }
+
+    assert_true(
+        markets.issubset(
+            ALLOWED_PUBLIC_MARKETS
+        ),
+        (
+            "Public catalog contains "
+            f"unexpected markets: "
+            f"{markets}"
+        ),
+    )
+
+    assert_true(
+        markets
+        == ALLOWED_PUBLIC_MARKETS,
+        (
+            "Public catalog is missing "
+            f"wholesale markets: "
+            f"{ALLOWED_PUBLIC_MARKETS - markets}"
+        ),
+    )
+
+    print(
+        f"    Wholesale catalog rows: "
+        f"{len(wholesale)}"
+    )
+
+    print(
+        "    Balancing catalog rows: 0"
+    )
+
+
+# ============================================================
+# 5. DAY-AHEAD
+# ============================================================
+
+def test_day_ahead() -> None:
+
+    payload, elapsed = request_json(
+        "/market/prices",
+        {
+            "market":
+                "day_ahead",
+
+            "country":
+                "both",
+
+            "start_date":
+                "2026-08-03",
+
+            "end_date":
+                "2026-08-03",
+
+            "frequency":
+                "1h",
+        },
+    )
+
+    print_timing(
+        elapsed
+    )
+
+    rows = payload.get(
+        "data",
+        [],
+    )
+
+    assert_true(
+        len(rows) == 48,
+        (
+            "Expected 48 public "
+            "day-ahead display points, "
+            f"got {len(rows)}."
+        ),
+    )
+
+    sources = {
+        row.get("source")
+        for row in rows
+    }
+
+    assert_true(
+        sources == {"OMIE"},
+        (
+            "Unexpected source in "
+            f"public day-ahead data: "
+            f"{sources}"
+        ),
+    )
+
+    print(
+        "    Day-ahead ES + PT: 48 points"
+    )
+
+
+# ============================================================
+# 6. INTRADAY AUCTION
+# ============================================================
+
+def test_intraday_auction() -> None:
+
+    payload, elapsed = request_json(
+        "/market/prices",
+        {
+            "market":
+                "intraday_auction",
+
+            "country":
+                "ES",
+
+            "start_date":
+                "2026-08-01",
+
+            "end_date":
+                "2026-08-01",
+
+            "frequency":
+                "15min",
+
+            "session":
+                1,
+        },
+    )
+
+    print_timing(
+        elapsed
+    )
+
+    rows = payload.get(
+        "data",
+        [],
+    )
+
+    assert_true(
+        len(rows) == 96,
+        (
+            "Expected 96 public "
+            "intraday-auction points, "
+            f"got {len(rows)}."
+        ),
+    )
+
+    assert_true(
+        {
+            row.get("source")
+            for row in rows
+        } == {"OMIE"},
+        (
+            "Unexpected source in "
+            "public auction data."
+        ),
+    )
+
+    print(
+        "    Intraday auction: 96 points"
+    )
+
+
+# ============================================================
+# 7. CONTINUOUS INTRADAY
+# ============================================================
+
+def test_intraday_continuous() -> None:
+
+    payload, elapsed = request_json(
+        "/market/prices",
+        {
+            "market":
+                "intraday_continuous",
+
+            "country":
+                "both",
+
+            "start_date":
+                "2026-08-03",
+
+            "end_date":
+                "2026-08-03",
+
+            "frequency":
+                "15min",
+        },
+    )
+
+    print_timing(
+        elapsed
+    )
+
+    rows = payload.get(
+        "data",
+        [],
+    )
+
+    assert_true(
+        len(rows) == 192,
+        (
+            "Expected 192 public "
+            "continuous-intraday points, "
+            f"got {len(rows)}."
+        ),
+    )
+
+    assert_true(
+        {
+            row.get("source")
+            for row in rows
+        } == {"OMIE"},
+        (
+            "Unexpected source in "
+            "continuous-intraday data."
+        ),
+    )
+
+    print(
+        "    Continuous intraday "
+        "ES + PT: 192 points"
+    )
+
+
+# ============================================================
+# 8–10. BALANCING MARKETS MUST BE FORBIDDEN
+# ============================================================
+
+def test_forbidden_market(
+    market: str,
+) -> None:
+
+    payload, elapsed = request_json(
+        "/market/prices",
+        {
+            "market":
+                market,
+
+            "country":
+                "ES",
+
+            "start_date":
+                "2026-08-03",
+
+            "end_date":
+                "2026-08-03",
+
+            "frequency":
+                "15min",
+        },
+        expected_status=403,
+    )
+
+    print_timing(
+        elapsed
+    )
+
+    assert_true(
+        (
+            "not available"
+            in str(
+                payload.get(
+                    "detail",
+                    "",
+                )
+            ).lower()
+        ),
+        (
+            "403 response did not contain "
+            "the expected public-access message."
+        ),
+    )
+
+    print(
+        f"    {market}: correctly blocked"
+    )
+
+
+def test_afrr_forbidden() -> None:
+
+    test_forbidden_market(
+        "afrr"
+    )
+
+
+def test_mfrr_forbidden() -> None:
+
+    test_forbidden_market(
+        "mfrr"
+    )
+
+
+def test_rr_forbidden() -> None:
+
+    test_forbidden_market(
+        "rr"
+    )
+
+
+# ============================================================
+# 11. DASHBOARD ALIAS
+# ============================================================
+
+def test_dashboard_alias() -> None:
+
+    response, elapsed = request(
+        "/dashboard"
+    )
+
+    print_timing(
+        elapsed
+    )
+
+    assert_true(
+        response.status_code
+        == 200,
+        (
+            "/dashboard returned "
+            f"HTTP {response.status_code}."
+        ),
+    )
+
+    assert_true(
+        "Public portfolio demo."
+        in response.text,
+        (
+            "/dashboard is not serving "
+            "the public dashboard."
+        ),
+    )
+
+
+# ============================================================
+# RUN
+# ============================================================
+
+def main() -> int:
+
+    print()
+    print(
+        "Iberian Energy Data Hub"
+    )
+
+    print(
+        "PUBLIC MODE SMOKE TEST"
+    )
+
+    print(
+        f"API: {BASE_URL}"
+    )
+
+
+    tests = [
+
+        (
+            "1. Health reports public mode",
+            test_health_public_mode,
+        ),
+
+        (
+            "2. Public dashboard is OMIE-only",
+            test_public_dashboard,
+        ),
+
+        (
+            "3. About endpoint is public-safe",
+            test_about,
+        ),
+
+        (
+            "4. Public catalog is OMIE-only",
+            test_catalog,
+        ),
+
+        (
+            "5. Public day-ahead prices",
+            test_day_ahead,
+        ),
+
+        (
+            "6. Public intraday auction",
+            test_intraday_auction,
+        ),
+
+        (
+            "7. Public continuous intraday",
+            test_intraday_continuous,
+        ),
+
+        (
+            "8. aFRR is forbidden publicly",
+            test_afrr_forbidden,
+        ),
+
+        (
+            "9. mFRR is forbidden publicly",
+            test_mfrr_forbidden,
+        ),
+
+        (
+            "10. RR is forbidden publicly",
+            test_rr_forbidden,
+        ),
+
+        (
+            "11. Dashboard alias is public-safe",
+            test_dashboard_alias,
+        ),
+    ]
+
+
+    for name, function in tests:
+
+        run_test(
+            name,
+            function,
+        )
+
+
+    print()
+    print("=" * 72)
+    print(
+        "FINAL RESULT"
+    )
+    print("=" * 72)
+
+    print(
+        f"Passed:   {passed}"
+    )
+
+    print(
+        f"Failed:   {failed}"
+    )
+
+    print(
+        f"Warnings: {warnings}"
+    )
+
+    print()
+
+
+    if failed == 0:
+
+        print(
+            "PUBLIC MODE SMOKE TEST PASSED"
+        )
+
+        return 0
+
+
+    print(
+        "PUBLIC MODE SMOKE TEST FAILED"
+    )
+
+    return 1
+
+
+if __name__ == "__main__":
+
+    sys.exit(
+        main()
+    )

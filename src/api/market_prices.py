@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import json
-import os
 import sqlite3
 
 from functools import lru_cache
-from pathlib import Path
 from typing import Literal
 
 from fastapi import (
@@ -18,6 +16,11 @@ from src.analytics.unified_prices import (
     get_unified_prices,
 )
 
+from src.config import (
+    DATABASE_PATH,
+    IS_PUBLIC,
+)
+
 
 router = APIRouter(
     prefix="/market",
@@ -26,86 +29,69 @@ router = APIRouter(
 
 
 # ============================================================
-# DATABASE PATHS
+# PUBLIC / LOCAL MARKET ACCESS
 # ============================================================
 
-REPO_ROOT = (
-    Path(__file__)
-    .resolve()
-    .parents[2]
-)
+WHOLESALE_MARKETS = {
+    "day_ahead",
+    "intraday_auction",
+    "intraday_continuous",
+}
 
-LOCAL_DATABASE_PATH = (
-    REPO_ROOT
-    / "data"
-    / "database"
-    / "iberian_energy.db"
-)
-
-PUBLIC_DATABASE_PATH = (
-    REPO_ROOT
-    / "deployment"
-    / "iberian_energy_public.db"
-)
+BALANCING_MARKETS = {
+    "afrr",
+    "mfrr",
+    "rr",
+}
 
 
-def get_database_path() -> Path:
+def validate_public_market_access(
+    market: str,
+) -> None:
     """
-    Return the database used by the current application mode.
+    Public mode deliberately exposes only OMIE wholesale data.
 
-    Local development:
-        data/database/iberian_energy.db
-
-    Public deployment:
-        deployment/iberian_energy_public.db
+    Local development can use the complete research database,
+    including ESIOS and REN balancing-market data.
     """
 
-    app_mode = (
-        os.getenv(
-            "IBERIAN_APP_MODE",
-            "local",
+    if (
+        IS_PUBLIC
+        and market not in WHOLESALE_MARKETS
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "This market is not available "
+                "in the public demo."
+            ),
         )
-        .strip()
-        .lower()
-    )
-
-    if app_mode == "public":
-        return PUBLIC_DATABASE_PATH
-
-    return LOCAL_DATABASE_PATH
 
 
 # ============================================================
-# FAST MATERIALISED MARKET CATALOG
+# MATERIALISED MARKET CATALOG
 # ============================================================
 
 @lru_cache(maxsize=1)
 def load_cached_market_catalog() -> dict:
     """
-    Load the materialised market catalog.
+    Read the pre-built market catalogue from SQLite.
 
-    The expensive catalog computation is performed separately by:
-
-        python -m src.database.build_market_catalog_cache
-
-    The API therefore does not scan millions of market rows
-    every time /market/catalog is requested.
+    The expensive catalogue computation is performed separately
+    during the data-build process. The API therefore does not scan
+    the full market tables every time /market/catalog is requested.
     """
 
-    database_path = (
-        get_database_path()
-    )
-
-    if not database_path.exists():
+    if not DATABASE_PATH.exists():
         raise RuntimeError(
             (
                 "Market database was not found: "
-                f"{database_path}"
+                f"{DATABASE_PATH}"
             )
         )
 
     database_uri = (
-        database_path
+        DATABASE_PATH
         .resolve()
         .as_uri()
         + "?mode=ro"
@@ -117,6 +103,7 @@ def load_cached_market_catalog() -> dict:
     )
 
     try:
+
         row = connection.execute(
             """
             SELECT
@@ -128,35 +115,34 @@ def load_cached_market_catalog() -> dict:
         ).fetchone()
 
     except sqlite3.OperationalError as exc:
+
         raise RuntimeError(
             (
                 "The market catalog cache has not "
-                "been built yet. Run: "
-                "python -m "
-                "src.database.build_market_catalog_cache"
+                "been built for this database."
             )
         ) from exc
 
     finally:
+
         connection.close()
 
+
     if row is None:
+
         raise RuntimeError(
-            (
-                "The market catalog cache is empty. "
-                "Run: python -m "
-                "src.database.build_market_catalog_cache"
-            )
+            "The market catalog cache is empty."
         )
 
-    payload_json = row[0]
 
     try:
+
         catalog = json.loads(
-            payload_json
+            row[0]
         )
 
     except json.JSONDecodeError as exc:
+
         raise RuntimeError(
             (
                 "The cached market catalog "
@@ -164,16 +150,44 @@ def load_cached_market_catalog() -> dict:
             )
         ) from exc
 
+
     if not isinstance(
         catalog,
         dict,
     ):
+
         raise RuntimeError(
             (
                 "The cached market catalog "
                 "has an invalid structure."
             )
         )
+
+
+    # Defence in depth:
+    #
+    # The public database should already contain an OMIE-only
+    # catalogue. We filter it again here so balancing entries
+    # cannot accidentally appear if the public DB is rebuilt
+    # incorrectly.
+
+    if IS_PUBLIC:
+
+        wholesale = [
+            row
+            for row in catalog.get(
+                "wholesale",
+                [],
+            )
+            if row.get("market")
+            in WHOLESALE_MARKETS
+        ]
+
+        return {
+            "wholesale": wholesale,
+            "balancing": [],
+        }
+
 
     return catalog
 
@@ -240,17 +254,19 @@ def market_prices(
     """
     Return a unified electricity-market price series.
 
-    The analytics layer handles:
+    Local mode:
+        wholesale + balancing markets
 
-    - wholesale and balancing markets
-    - ES / PT / both
-    - native-resolution preservation
-    - finer-resolution repetition
-    - coarser time aggregation
-    - market-event metadata
+    Public mode:
+        OMIE wholesale markets only
     """
 
+    validate_public_market_access(
+        market
+    )
+
     try:
+
         return get_unified_prices(
             market=market,
             country=country,
@@ -265,12 +281,14 @@ def market_prices(
         )
 
     except ValueError as exc:
+
         raise HTTPException(
             status_code=400,
             detail=str(exc),
         ) from exc
 
     except RuntimeError as exc:
+
         raise HTTPException(
             status_code=503,
             detail=str(exc),
@@ -286,14 +304,19 @@ def market_catalog():
     """
     Return available market-price series.
 
-    This endpoint reads a small materialised cache rather than
-    recomputing availability from millions of price observations.
+    Local mode:
+        complete catalogue
+
+    Public mode:
+        wholesale OMIE catalogue only
     """
 
     try:
+
         return load_cached_market_catalog()
 
     except RuntimeError as exc:
+
         raise HTTPException(
             status_code=503,
             detail=str(exc),
