@@ -3,6 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 
+# ============================================================
+# PATHS
+# ============================================================
+
 REPO_ROOT = (
     Path(__file__)
     .resolve()
@@ -23,6 +27,10 @@ OUTPUT_PATH = (
     / "public_index.html"
 )
 
+
+# ============================================================
+# PUBLIC PRICE SERIES
+# ============================================================
 
 PUBLIC_SERIES_BLOCK = """    const SERIES = [
 
@@ -62,6 +70,361 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
     ];"""
 
 
+# ============================================================
+# PUBLIC DATA GUIDE
+# ============================================================
+
+PUBLIC_DATA_GUIDE = """
+    <section class="panel">
+
+        <details
+            style="
+                margin-top: 0;
+                border-top: 0;
+                padding-top: 0;
+            "
+        >
+
+            <summary>
+                Price series &amp; frequency methodology
+            </summary>
+
+
+            <div
+                style="
+                    margin-top: 18px;
+                    color: #475467;
+                    font-size: 13px;
+                    line-height: 1.6;
+                "
+            >
+
+                <p style="margin-top: 0;">
+                    This guide explains what each displayed price represents
+                    and how the selected display frequency is calculated.
+                    Original OMIE observations are preserved in the database.
+                    Display transformations do not modify the source data.
+                </p>
+
+
+                <h3
+                    style="
+                        margin: 22px 0 10px;
+                        color: #182230;
+                        font-size: 15px;
+                    "
+                >
+                    Price series
+                </h3>
+
+
+                <div style="overflow-x: auto;">
+
+                    <table
+                        style="
+                            white-space: normal;
+                            min-width: 760px;
+                        "
+                    >
+
+                        <thead>
+
+                            <tr>
+                                <th>Price series</th>
+                                <th>What it represents</th>
+                                <th>Unit</th>
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        Day-ahead price
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    OMIE day-ahead market-clearing price for
+                                    each electricity delivery period and
+                                    bidding zone. Spain and Portugal are shown
+                                    separately when both are selected.
+                                </td>
+
+                                <td>
+                                    EUR/MWh
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        Intraday auction price
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    OMIE clearing price for the selected
+                                    intraday auction session and electricity
+                                    delivery period. Auction sessions are kept
+                                    separate because each session is a distinct
+                                    market-clearing process.
+                                </td>
+
+                                <td>
+                                    EUR/MWh
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        Continuous intraday
+                                        weighted-average price
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    Volume-weighted average price of continuous
+                                    intraday trades for each electricity
+                                    delivery period.
+                                </td>
+
+                                <td>
+                                    EUR/MWh
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <h3
+                    style="
+                        margin: 24px 0 10px;
+                        color: #182230;
+                        font-size: 15px;
+                    "
+                >
+                    Display frequency
+                </h3>
+
+
+                <div style="overflow-x: auto;">
+
+                    <table
+                        style="
+                            white-space: normal;
+                            min-width: 820px;
+                        "
+                    >
+
+                        <thead>
+
+                            <tr>
+                                <th>Frequency</th>
+                                <th>How the displayed value is calculated</th>
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        15 minutes
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    Native 15-minute prices are shown unchanged.
+                                    When the official source is hourly, the
+                                    hourly value is repeated at HH:00, HH:15,
+                                    HH:30 and HH:45. This is a display
+                                    transformation only: it is not interpolation
+                                    and does not create a new market price.
+                                    These repeated sections are shown with a
+                                    dashed line.
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        Hourly
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    Native hourly observations are shown
+                                    unchanged. Native 15-minute observations
+                                    within each hour are aggregated using a
+                                    time-weighted mean.
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        Daily
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    Time-weighted mean of the available official
+                                    observations within each market day.
+                                    Calendar boundaries use MIBEL market time.
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        Weekly
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    Time-weighted mean of the available official
+                                    observations in each Monday-to-Sunday week,
+                                    using MIBEL market time.
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        Monthly
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    Time-weighted mean of the available official
+                                    observations within each calendar month,
+                                    using MIBEL market time.
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        Yearly
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    Time-weighted mean of the available official
+                                    observations within each calendar year,
+                                    using MIBEL market time.
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <div
+                    style="
+                        margin-top: 18px;
+                        padding: 13px 14px;
+                        border-radius: 7px;
+                        background: #f8fafc;
+                    "
+                >
+
+                    <strong>
+                        Why time-weighted?
+                    </strong>
+
+                    A 60-minute source observation represents four times as
+                    much time as a 15-minute observation. Weighting each value
+                    by its native duration prevents periods with finer
+                    resolution from receiving disproportionate weight when
+                    historical datasets contain different native resolutions.
+
+                </div>
+
+
+                <div
+                    style="
+                        margin-top: 10px;
+                        padding: 13px 14px;
+                        border-radius: 7px;
+                        background: #f8fafc;
+                    "
+                >
+
+                    <strong>
+                        Missing data.
+                    </strong>
+
+                    Missing official observations are kept missing. The
+                    application does not replace missing prices with zero and
+                    does not interpolate across official source gaps.
+
+                </div>
+
+
+                <p
+                    style="
+                        margin-bottom: 0;
+                        margin-top: 16px;
+                        color: #667085;
+                        font-size: 12px;
+                    "
+                >
+                    Source: OMIE. Market-time calculations use
+                    Europe/Madrid, consistent with the MIBEL market clock.
+                </p>
+
+            </div>
+
+        </details>
+
+    </section>
+"""
+
+
+# ============================================================
+# REPLACE SERIES
+# ============================================================
+
 def replace_series_block(
     html: str,
 ) -> str:
@@ -79,6 +442,7 @@ def replace_series_block(
     )
 
     if start_index == -1:
+
         raise RuntimeError(
             "Could not find SERIES block start."
         )
@@ -89,6 +453,7 @@ def replace_series_block(
     )
 
     if end_index == -1:
+
         raise RuntimeError(
             "Could not find SERIES block end."
         )
@@ -104,6 +469,10 @@ def replace_series_block(
     )
 
 
+# ============================================================
+# PUBLIC CACHE KEY
+# ============================================================
+
 def replace_cache_key(
     html: str,
 ) -> str:
@@ -117,6 +486,7 @@ def replace_cache_key(
     )
 
     if old not in html:
+
         raise RuntimeError(
             "Could not find catalog cache key."
         )
@@ -127,6 +497,10 @@ def replace_cache_key(
         1,
     )
 
+
+# ============================================================
+# PUBLIC SUBTITLE
+# ============================================================
 
 def replace_subtitle(
     html: str,
@@ -143,6 +517,7 @@ def replace_subtitle(
     )
 
     if old not in html:
+
         raise RuntimeError(
             "Could not find dashboard subtitle."
         )
@@ -154,12 +529,16 @@ def replace_subtitle(
     )
 
 
+# ============================================================
+# PUBLIC PORTFOLIO NOTE
+# ============================================================
+
 def add_public_note(
     html: str,
 ) -> str:
 
     marker = (
-        '<main>'
+        "<main>"
     )
 
     note = """
@@ -167,19 +546,32 @@ def add_public_note(
 
     <section class="panel">
 
-        <div class="note" style="margin-top: 0; padding-top: 0; border-top: 0;">
-            <strong>Public portfolio demo.</strong>
+        <div
+            class="note"
+            style="
+                margin-top: 0;
+                padding-top: 0;
+                border-top: 0;
+            "
+        >
+
+            <strong>
+                Public portfolio demo.
+            </strong>
+
             This version exposes historical OMIE wholesale-market data only:
             day-ahead, intraday auctions and continuous intraday prices for
             Spain and Portugal. The local research project also contains
             additional Iberian market datasets that are not redistributed
             through this public demo.
+
         </div>
 
     </section>
 """
 
     if marker not in html:
+
         raise RuntimeError(
             "Could not find <main> element."
         )
@@ -190,6 +582,46 @@ def add_public_note(
         1,
     )
 
+
+# ============================================================
+# ADD DATA GUIDE
+# ============================================================
+
+def add_data_guide(
+    html: str,
+) -> str:
+
+    marker = """
+    <section class="panel">
+
+        <h2 class="panel-title">
+            Price explorer
+        </h2>
+"""
+
+    if marker not in html:
+
+        raise RuntimeError(
+            (
+                "Could not find Price explorer "
+                "section for guide insertion."
+            )
+        )
+
+    return html.replace(
+        marker,
+        (
+            PUBLIC_DATA_GUIDE
+            + "\n"
+            + marker
+        ),
+        1,
+    )
+
+
+# ============================================================
+# VALIDATION
+# ============================================================
 
 def validate_output(
     html: str,
@@ -204,6 +636,7 @@ def validate_output(
     for term in forbidden_terms:
 
         if term in html:
+
             raise RuntimeError(
                 (
                     "Public dashboard still "
@@ -211,17 +644,22 @@ def validate_output(
                 )
             )
 
+
     required_terms = [
         'id: "day_ahead"',
         'id: "intraday_auction"',
         'id: "intraday_continuous"',
         "Public portfolio demo.",
+        "Price series &amp; frequency methodology",
+        "Why time-weighted?",
+        "Missing official observations are kept missing.",
         "iberian_energy_public_market_catalog_v1",
     ]
 
     for term in required_terms:
 
         if term not in html:
+
             raise RuntimeError(
                 (
                     "Generated public dashboard "
@@ -229,6 +667,10 @@ def validate_output(
                 )
             )
 
+
+# ============================================================
+# MAIN
+# ============================================================
 
 def main() -> None:
 
@@ -240,6 +682,7 @@ def main() -> None:
     print("=" * 72)
     print()
 
+
     if not SOURCE_PATH.exists():
 
         raise FileNotFoundError(
@@ -249,9 +692,11 @@ def main() -> None:
             )
         )
 
+
     html = SOURCE_PATH.read_text(
         encoding="utf-8"
     )
+
 
     html = replace_series_block(
         html
@@ -269,14 +714,21 @@ def main() -> None:
         html
     )
 
+    html = add_data_guide(
+        html
+    )
+
+
     validate_output(
         html
     )
+
 
     OUTPUT_PATH.write_text(
         html,
         encoding="utf-8",
     )
+
 
     print(
         f"Source: {SOURCE_PATH}"
@@ -287,6 +739,7 @@ def main() -> None:
     )
 
     print()
+
 
     print(
         "Public price series:"
@@ -306,6 +759,46 @@ def main() -> None:
 
     print()
 
+
+    print(
+        "Methodology guide:"
+    )
+
+    print(
+        "  - Price-series definitions"
+    )
+
+    print(
+        "  - 15-minute display method"
+    )
+
+    print(
+        "  - Hourly aggregation"
+    )
+
+    print(
+        "  - Daily aggregation"
+    )
+
+    print(
+        "  - Weekly aggregation"
+    )
+
+    print(
+        "  - Monthly aggregation"
+    )
+
+    print(
+        "  - Yearly aggregation"
+    )
+
+    print(
+        "  - Missing-data policy"
+    )
+
+    print()
+
+
     print(
         "Balancing-market selectors: excluded"
     )
@@ -314,8 +807,8 @@ def main() -> None:
         "Public browser cache: separate"
     )
 
-    print()
 
+    print()
     print("=" * 72)
     print(
         "PUBLIC DASHBOARD BUILD PASSED"
@@ -324,4 +817,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+
     main()
