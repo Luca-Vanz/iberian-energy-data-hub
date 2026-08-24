@@ -280,6 +280,23 @@ def test_public_dashboard() -> None:
         "function buildDownloadChunks()",
     ]
 
+    required_loading_features = [
+        'id="chartLoading"',
+        "Crunching the megawatts...",
+        "larger data selections can take a little",
+        'role="status"',
+    ]
+
+    for required in required_loading_features:
+
+        assert_true(
+            required in html,
+            (
+                "Public dashboard is missing "
+                f"the graph loading state: {required}"
+            ),
+        )
+
     for required in required_download_features:
 
         assert_true(

@@ -221,7 +221,8 @@
             height: 590px;
         }
 
-        #emptyMessage {
+        #emptyMessage,
+        #chartLoading {
             position: absolute;
             inset: 0;
 
@@ -234,6 +235,31 @@
             padding: 30px;
 
             pointer-events: none;
+        }
+
+        #chartLoading {
+            flex-direction: column;
+            gap: 13px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #344054;
+            line-height: 1.55;
+        }
+
+        .loading-bolt {
+            font-size: 34px;
+            animation: loading-pulse 1.1s ease-in-out infinite;
+        }
+
+        @keyframes loading-pulse {
+            0%, 100% {
+                transform: scale(0.9);
+                opacity: 0.55;
+            }
+
+            50% {
+                transform: scale(1.12);
+                opacity: 1;
+            }
         }
 
         .note {
@@ -594,6 +620,20 @@
             <canvas id="priceChart"></canvas>
 
             <div
+                id="chartLoading"
+                class="hidden"
+                role="status"
+                aria-live="polite"
+            >
+                <div class="loading-bolt">⚡</div>
+                <div>
+                    <strong>Crunching the megawatts...</strong><br>
+                    Hang tight — larger data selections can take a little
+                    longer while every timestamp gets into formation.
+                </div>
+            </div>
+
+            <div
                 id="emptyMessage"
                 class="hidden"
             >
@@ -950,6 +990,9 @@
 
     const emptyMessage =
         document.getElementById("emptyMessage");
+
+    const chartLoading =
+        document.getElementById("chartLoading");
 
     const dataTableBody =
         document.getElementById("dataTableBody");
@@ -4716,6 +4759,19 @@
         );
 
 
+        emptyMessage
+            .classList
+            .add(
+                "hidden"
+            );
+
+        chartLoading
+            .classList
+            .remove(
+                "hidden"
+            );
+
+
         try {
 
             const result =
@@ -4791,6 +4847,12 @@
 
 
         } finally {
+
+            chartLoading
+                .classList
+                .add(
+                    "hidden"
+                );
 
             loadButton.disabled =
                 false;
