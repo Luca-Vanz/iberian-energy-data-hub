@@ -472,10 +472,21 @@
                                 </td>
 
                                 <td>
-                                    OMIE day-ahead market-clearing price for
-                                    each electricity delivery period and
-                                    bidding zone. Spain and Portugal are shown
-                                    separately when both are selected.
+                                    The day-ahead market is the main auction in
+                                    which electricity for every delivery period
+                                    of the following day is bought and sold.
+                                    OMIE matches the submitted supply and demand
+                                    orders and calculates one clearing price for
+                                    each delivery period and bidding zone. The
+                                    value shown is that wholesale price: the
+                                    amount paid per megawatt-hour of energy at
+                                    the market-clearing point. It is not a
+                                    household electricity tariff and does not
+                                    include network charges, taxes or retail
+                                    costs. Spain and Portugal are displayed as
+                                    separate bidding zones because their prices
+                                    can differ when cross-border capacity is
+                                    constrained.
                                 </td>
 
                                 <td>
@@ -494,11 +505,21 @@
                                 </td>
 
                                 <td>
-                                    OMIE clearing price for the selected
-                                    intraday auction session and electricity
-                                    delivery period. Auction sessions are kept
-                                    separate because each session is a distinct
-                                    market-clearing process.
+                                    Intraday auctions let market participants
+                                    revise the positions they took in the
+                                    day-ahead market as forecasts, demand or
+                                    plant availability change closer to
+                                    delivery. In each auction session, OMIE
+                                    matches a new set of buy and sell orders.
+                                    The displayed value is the resulting
+                                    clearing price for the selected session,
+                                    delivery period and bidding zone. It
+                                    measures the price of energy in that
+                                    specific auction, not a correction added to
+                                    the day-ahead price. Sessions remain
+                                    separate because the same delivery period
+                                    can be traded and priced differently in
+                                    several successive auctions.
                                 </td>
 
                                 <td>
@@ -518,9 +539,20 @@
                                 </td>
 
                                 <td>
-                                    Volume-weighted average price of continuous
-                                    intraday trades for each electricity
-                                    delivery period.
+                                    The continuous intraday market allows
+                                    participants to buy and sell electricity
+                                    continuously after the day-ahead market and
+                                    between auction sessions, until closer to
+                                    physical delivery. Unlike an auction, many
+                                    bilateral trades can occur at different
+                                    prices for the same delivery period. The
+                                    displayed value is OMIE's
+                                    volume-weighted average trade price: each
+                                    transaction price is weighted by the amount
+                                    of electricity traded, so larger trades
+                                    influence the value more than smaller ones.
+                                    It summarizes completed trades and is not a
+                                    single market-clearing price.
                                 </td>
 
                                 <td>
@@ -532,6 +564,124 @@
                         </tbody>
 
                     </table>
+
+                </div>
+
+
+                <h3
+                    style="
+                        margin: 24px 0 10px;
+                        color: #182230;
+                        font-size: 15px;
+                    "
+                >
+                    Ancillary and balancing services
+                </h3>
+
+
+                <div
+                    style="
+                        padding: 14px 16px;
+                        border: 1px solid #d0d5dd;
+                        border-radius: 7px;
+                        background: #f8fafc;
+                    "
+                >
+
+                    <p style="margin-top: 0;">
+                        <strong>
+                            Educational preview — data not yet public.
+                        </strong>
+
+                        These services are used by transmission-system
+                        operators after wholesale trading to keep electricity
+                        supply and demand balanced in real time. Their prices
+                        are different products from wholesale energy prices
+                        and must not be interpreted as alternative day-ahead
+                        or intraday prices.
+                    </p>
+
+
+                    <dl style="margin-bottom: 0;">
+
+                        <dt>
+                            <strong>
+                                FCR — Frequency Containment Reserve
+                            </strong>
+                        </dt>
+
+                        <dd style="margin: 3px 0 12px 20px;">
+                            The fastest reserve layer. Participating resources
+                            automatically change output or consumption within
+                            seconds to contain an immediate frequency
+                            deviation. No FCR price series is currently
+                            included in this public dashboard.
+                        </dd>
+
+
+                        <dt>
+                            <strong>
+                                aFRR — automatic Frequency Restoration Reserve
+                            </strong>
+                        </dt>
+
+                        <dd style="margin: 3px 0 12px 20px;">
+                            Automatically activated balancing capacity and
+                            energy used to restore system frequency and the
+                            control-area balance after a disturbance. Capacity
+                            prices pay for reserve availability in EUR/MW;
+                            energy prices value activated electricity in
+                            EUR/MWh. Upward and downward products are distinct.
+                        </dd>
+
+
+                        <dt>
+                            <strong>
+                                mFRR — manual Frequency Restoration Reserve
+                            </strong>
+                        </dt>
+
+                        <dd style="margin: 3px 0 12px 20px;">
+                            Manually activated balancing energy used when the
+                            system needs a sustained upward or downward change
+                            in generation or consumption. Scheduled and direct
+                            activations are separate processes and can have
+                            different price definitions.
+                        </dd>
+
+
+                        <dt>
+                            <strong>
+                                RR — Replacement Reserve
+                            </strong>
+                        </dt>
+
+                        <dd style="margin: 3px 0 12px 20px;">
+                            A slower reserve used to replace earlier activated
+                            reserves and maintain sufficient balancing
+                            capability for later periods. An activation price
+                            represents the price of energy activated through
+                            this reserve product.
+                        </dd>
+
+
+                        <dt>
+                            <strong>
+                                Balancing and imbalance settlement
+                            </strong>
+                        </dt>
+
+                        <dd style="margin: 3px 0 0 20px;">
+                            Balancing actions are the system operator's
+                            real-time corrections. Imbalance settlement is the
+                            later financial calculation that charges or credits
+                            market participants whose actual position differs
+                            from their scheduled position. A reserve price, an
+                            activated-energy price and an imbalance-settlement
+                            price therefore describe different variables.
+                        </dd>
+
+                    </dl>
 
                 </div>
 
