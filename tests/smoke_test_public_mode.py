@@ -273,6 +273,7 @@ def test_public_dashboard() -> None:
         )
 
     required_download_features = [
+        "Download data",
         "Download full-range CSV",
         "Select full available range",
         "Chart range limits do not apply.",
@@ -289,6 +290,27 @@ def test_public_dashboard() -> None:
                 f"{required}"
             ),
         )
+
+    ordered_sections = [
+        "Price explorer",
+        "Download data",
+        "Price chart",
+        "Price series &amp; frequency methodology",
+        "Data coverage &amp; quality",
+    ]
+
+    positions = [
+        html.find(section)
+        for section in ordered_sections
+    ]
+
+    assert_true(
+        positions == sorted(positions),
+        (
+            "Public dashboard sections are not "
+            f"in the expected order: {ordered_sections}"
+        ),
+    )
 
     print(
         "    OMIE wholesale selectors and "

@@ -930,19 +930,15 @@ def add_data_guide(
 ) -> str:
 
     marker = """
-    <section class="panel">
-
-        <h2 class="panel-title">
-            Price explorer
-        </h2>
+</main>
 """
 
     if marker not in html:
 
         raise RuntimeError(
             (
-                "Could not find Price explorer "
-                "section for guide insertion."
+                "Could not find page end "
+                "for guide insertion."
             )
         )
 
@@ -1017,6 +1013,29 @@ def validate_output(
                     f"is missing required content: {term}"
                 )
             )
+
+
+    ordered_sections = [
+        "Price explorer",
+        "Download data",
+        "Price chart",
+        "Price series &amp; frequency methodology",
+        "Data coverage &amp; quality",
+    ]
+
+    positions = [
+        html.find(section)
+        for section in ordered_sections
+    ]
+
+    if positions != sorted(positions):
+
+        raise RuntimeError(
+            (
+                "Generated public dashboard has an invalid "
+                f"section order: {ordered_sections}"
+            )
+        )
 
 
 # ============================================================

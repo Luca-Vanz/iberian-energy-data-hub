@@ -400,6 +400,297 @@
 
     <section class="panel">
 
+        <h2 class="panel-title">
+            Price explorer
+        </h2>
+
+
+        <div class="controls">
+
+
+            <div class="control">
+
+                <label for="series">
+                    Price series
+                </label>
+
+                <select id="series"></select>
+
+            </div>
+
+
+            <div class="control">
+
+                <label for="country">
+                    Country
+                </label>
+
+                <select id="country"></select>
+
+            </div>
+
+
+            <div
+                id="directionControl"
+                class="control hidden"
+            >
+
+                <label for="direction">
+                    Direction
+                </label>
+
+                <select id="direction"></select>
+
+            </div>
+
+
+            <div
+                id="sessionControl"
+                class="control hidden"
+            >
+
+                <label for="session">
+                    Auction session
+                </label>
+
+                <select id="session"></select>
+
+            </div>
+
+
+            <div class="control">
+
+                <label for="frequency">
+                    Display frequency
+                </label>
+
+                <select id="frequency">
+
+                    <option value="15min">
+                        15 minutes
+                    </option>
+
+                    <option
+                        value="1h"
+                        selected
+                    >
+                        Hourly
+                    </option>
+
+                    <option value="daily">
+                        Daily
+                    </option>
+
+                    <option value="weekly">
+                        Weekly
+                    </option>
+
+                    <option value="monthly">
+                        Monthly
+                    </option>
+
+                    <option value="yearly">
+                        Yearly
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="control">
+
+                <label for="startDate">
+                    Start date
+                </label>
+
+                <input
+                    id="startDate"
+                    type="date"
+                >
+
+            </div>
+
+
+            <div class="control">
+
+                <label for="endDate">
+                    End date
+                </label>
+
+                <input
+                    id="endDate"
+                    type="date"
+                >
+
+            </div>
+
+
+            <div class="control">
+
+                <button id="loadButton">
+                    Load prices
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="availability"
+            class="availability"
+        >
+            Checking official availability in the background...
+        </div>
+
+
+        <div style="margin-top: 10px;">
+
+            <button
+                id="earliestButton"
+                class="secondary"
+                type="button"
+                disabled
+            >
+                Start at earliest available
+            </button>
+
+
+            <button
+                id="fullRangeButton"
+                class="secondary"
+                type="button"
+                disabled
+            >
+                Select full available range
+            </button>
+
+        </div>
+
+
+        <div
+            id="status"
+            class="status success"
+        >
+            Ready. Select a price series and period.
+        </div>
+
+    </section>
+
+
+    <section class="panel">
+
+        <h2 class="panel-title">
+            Download data
+        </h2>
+
+
+        <p class="table-note">
+            Download the selected price series at any supported frequency for
+            the complete selected date range. Chart range limits do not apply.
+        </p>
+
+
+        <button
+            id="csvButton"
+            class="secondary"
+            type="button"
+        >
+            Download full-range CSV
+        </button>
+
+    </section>
+
+
+    <section class="panel">
+
+        <h2 class="panel-title">
+            Price chart
+        </h2>
+
+
+        <div
+            id="summary"
+            class="summary"
+        ></div>
+
+
+        <div class="chart-wrapper">
+
+            <canvas id="priceChart"></canvas>
+
+            <div
+                id="emptyMessage"
+                class="hidden"
+            >
+                No official data are available for this selection.
+            </div>
+
+        </div>
+
+
+        <div
+            id="resolutionNote"
+            class="note hidden"
+        ></div>
+
+
+        <div
+            id="events"
+            class="events"
+        ></div>
+
+
+        <details>
+
+            <summary>
+                Preview exact data values
+            </summary>
+
+
+            <div class="table-toolbar">
+
+                <div
+                    id="tableNote"
+                    class="table-note"
+                ></div>
+
+
+            </div>
+
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Market time</th>
+                            <th>Series</th>
+                            <th>Price</th>
+                            <th>Unit</th>
+                            <th>Native resolution</th>
+                            <th>Processing</th>
+                            <th>Source</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="dataTableBody"></tbody>
+
+                </table>
+
+            </div>
+
+        </details>
+
+    </section>
+
+    <section class="panel">
+
         <details
             style="
                 margin-top: 0;
@@ -1080,287 +1371,6 @@
 
     </section>
 
-
-    <section class="panel">
-
-        <h2 class="panel-title">
-            Price explorer
-        </h2>
-
-
-        <div class="controls">
-
-
-            <div class="control">
-
-                <label for="series">
-                    Price series
-                </label>
-
-                <select id="series"></select>
-
-            </div>
-
-
-            <div class="control">
-
-                <label for="country">
-                    Country
-                </label>
-
-                <select id="country"></select>
-
-            </div>
-
-
-            <div
-                id="directionControl"
-                class="control hidden"
-            >
-
-                <label for="direction">
-                    Direction
-                </label>
-
-                <select id="direction"></select>
-
-            </div>
-
-
-            <div
-                id="sessionControl"
-                class="control hidden"
-            >
-
-                <label for="session">
-                    Auction session
-                </label>
-
-                <select id="session"></select>
-
-            </div>
-
-
-            <div class="control">
-
-                <label for="frequency">
-                    Display frequency
-                </label>
-
-                <select id="frequency">
-
-                    <option value="15min">
-                        15 minutes
-                    </option>
-
-                    <option
-                        value="1h"
-                        selected
-                    >
-                        Hourly
-                    </option>
-
-                    <option value="daily">
-                        Daily
-                    </option>
-
-                    <option value="weekly">
-                        Weekly
-                    </option>
-
-                    <option value="monthly">
-                        Monthly
-                    </option>
-
-                    <option value="yearly">
-                        Yearly
-                    </option>
-
-                </select>
-
-            </div>
-
-
-            <div class="control">
-
-                <label for="startDate">
-                    Start date
-                </label>
-
-                <input
-                    id="startDate"
-                    type="date"
-                >
-
-            </div>
-
-
-            <div class="control">
-
-                <label for="endDate">
-                    End date
-                </label>
-
-                <input
-                    id="endDate"
-                    type="date"
-                >
-
-            </div>
-
-
-            <div class="control">
-
-                <button id="loadButton">
-                    Load prices
-                </button>
-
-            </div>
-
-        </div>
-
-
-        <div
-            id="availability"
-            class="availability"
-        >
-            Checking official availability in the background...
-        </div>
-
-
-        <div style="margin-top: 10px;">
-
-            <button
-                id="earliestButton"
-                class="secondary"
-                type="button"
-                disabled
-            >
-                Start at earliest available
-            </button>
-
-
-            <button
-                id="fullRangeButton"
-                class="secondary"
-                type="button"
-                disabled
-            >
-                Select full available range
-            </button>
-
-        </div>
-
-
-        <div
-            id="status"
-            class="status success"
-        >
-            Ready. Select a price series and period.
-        </div>
-
-    </section>
-
-
-    <section class="panel">
-
-        <h2 class="panel-title">
-            Price chart
-        </h2>
-
-
-        <div
-            id="summary"
-            class="summary"
-        ></div>
-
-
-        <div class="chart-wrapper">
-
-            <canvas id="priceChart"></canvas>
-
-            <div
-                id="emptyMessage"
-                class="hidden"
-            >
-                No official data are available for this selection.
-            </div>
-
-        </div>
-
-
-        <div
-            id="resolutionNote"
-            class="note hidden"
-        ></div>
-
-
-        <div
-            id="events"
-            class="events"
-        ></div>
-
-
-        <details>
-
-            <summary>
-                Show exact data values
-            </summary>
-
-
-            <div class="table-toolbar">
-
-                <div
-                    id="tableNote"
-                    class="table-note"
-                ></div>
-
-
-                <button
-                    id="csvButton"
-                    class="secondary"
-                    type="button"
-                >
-                    Download full-range CSV
-                </button>
-
-
-                <div class="table-note">
-                    Downloads use the selected frequency and complete selected
-                    date range. Chart range limits do not apply.
-                </div>
-
-            </div>
-
-
-            <div class="table-container">
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-                            <th>Market time</th>
-                            <th>Series</th>
-                            <th>Price</th>
-                            <th>Unit</th>
-                            <th>Native resolution</th>
-                            <th>Processing</th>
-                            <th>Source</th>
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody id="dataTableBody"></tbody>
-
-                </table>
-
-            </div>
-
-        </details>
-
-    </section>
 
 </main>
 
