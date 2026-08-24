@@ -272,8 +272,27 @@ def test_public_dashboard() -> None:
             ),
         )
 
+    required_download_features = [
+        "Download full-range CSV",
+        "Select full available range",
+        "Chart range limits do not apply.",
+        "function buildDownloadChunks()",
+    ]
+
+    for required in required_download_features:
+
+        assert_true(
+            required in html,
+            (
+                "Public dashboard is missing "
+                "the unrestricted download feature: "
+                f"{required}"
+            ),
+        )
+
     print(
-        "    OMIE wholesale selectors only"
+        "    OMIE wholesale selectors and "
+        "full-range downloads only"
     )
 
 

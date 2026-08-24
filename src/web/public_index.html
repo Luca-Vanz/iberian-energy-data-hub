@@ -1239,6 +1239,16 @@
                 Start at earliest available
             </button>
 
+
+            <button
+                id="fullRangeButton"
+                class="secondary"
+                type="button"
+                disabled
+            >
+                Select full available range
+            </button>
+
         </div>
 
 
@@ -1311,8 +1321,14 @@
                     class="secondary"
                     type="button"
                 >
-                    Download CSV
+                    Download full-range CSV
                 </button>
+
+
+                <div class="table-note">
+                    Downloads use the selected frequency and complete selected
+                    date range. Chart range limits do not apply.
+                </div>
 
             </div>
 
@@ -1473,6 +1489,9 @@
 
     const csvButton =
         document.getElementById("csvButton");
+
+    const fullRangeButton =
+        document.getElementById("fullRangeButton");
 
 
     // ==================================================
@@ -2523,6 +2542,9 @@
             earliestButton.disabled =
                 true;
 
+            fullRangeButton.disabled =
+                true;
+
             availabilityElement.textContent =
                 (
                     "Checking official availability "
@@ -2544,6 +2566,9 @@
             earliestButton.disabled =
                 true;
 
+            fullRangeButton.disabled =
+                true;
+
             availabilityElement.textContent =
                 (
                     "No matching official series "
@@ -2555,6 +2580,9 @@
 
 
         earliestButton.disabled =
+            false;
+
+        fullRangeButton.disabled =
             false;
 
 
@@ -2725,6 +2753,39 @@
             (
                 `Selected the earliest official data: `
                 + `${range.first} to ${end}.`
+            ),
+            "success"
+        );
+    }
+
+
+    function useFullAvailableRange() {
+
+        const range =
+            availabilityRange();
+
+
+        if (
+            !range
+        ) {
+
+            return;
+        }
+
+
+        startDateElement.value =
+            range.first;
+
+        endDateElement.value =
+            range.last;
+
+
+        setStatus(
+            (
+                `Selected the full official range: `
+                + `${range.first} to ${range.last}. `
+                + `Use the CSV download for ranges that exceed `
+                + `the chart limit.`
             ),
             "success"
         );
@@ -3039,7 +3100,9 @@
 
     function buildRequestUrl(
         definition,
-        component
+        component,
+        startDate = startDateElement.value,
+        endDate = endDateElement.value
     ) {
 
         const params =
@@ -3058,12 +3121,12 @@
 
         params.set(
             "start_date",
-            startDateElement.value
+            startDate
         );
 
         params.set(
             "end_date",
-            endDateElement.value
+            endDate
         );
 
         params.set(
@@ -3125,6 +3188,47 @@
 
     function validateRequestedRange() {
 
+        const days =
+            validateSelectedDates();
+
+
+        const frequency =
+            frequencyElement.value;
+
+
+        if (
+            frequency === "15min"
+            && days > 31
+        ) {
+
+            throw new Error(
+                (
+                    "For 15-minute display, select "
+                    + "31 days or less. CSV downloads "
+                    + "can use the full range."
+                )
+            );
+        }
+
+
+        if (
+            frequency === "1h"
+            && days > 366
+        ) {
+
+            throw new Error(
+                (
+                    "For hourly display, select "
+                    + "one year or less. CSV downloads "
+                    + "can use the full range."
+                )
+            );
+        }
+    }
+
+
+    function validateSelectedDates() {
+
         if (
             !startDateElement.value
             || !endDateElement.value
@@ -3166,36 +3270,7 @@
         }
 
 
-        const frequency =
-            frequencyElement.value;
-
-
-        if (
-            frequency === "15min"
-            && days > 31
-        ) {
-
-            throw new Error(
-                (
-                    "For 15-minute display, select "
-                    + "31 days or less."
-                )
-            );
-        }
-
-
-        if (
-            frequency === "1h"
-            && days > 366
-        ) {
-
-            throw new Error(
-                (
-                    "For hourly display, select "
-                    + "one year or less."
-                )
-            );
-        }
+        return days;
     }
 
 
@@ -4858,14 +4933,94 @@
     }
 
 
-    function downloadCsv() {
+    function downloadChunkDays() {
+
+        const frequency =
+            frequencyElement.value;
+
 
         if (
-            !lastResult?.data?.length
+            frequency === "15min"
         ) {
 
-            return;
+            return 90;
         }
+
+
+        if (
+            frequency === "1h"
+        ) {
+
+            return 366;
+        }
+
+
+        return 3660;
+    }
+
+
+    function buildDownloadChunks() {
+
+        const chunks = [];
+
+        const finalDate =
+            endDateElement.value;
+
+        const chunkDays =
+            downloadChunkDays();
+
+        let chunkStart =
+            startDateElement.value;
+
+
+        while (
+            chunkStart <= finalDate
+        ) {
+
+            const chunkEnd = [
+                finalDate,
+                datePlusDays(
+                    chunkStart,
+                    chunkDays - 1
+                )
+            ].sort()[0];
+
+
+            chunks.push(
+                {
+                    start: chunkStart,
+                    end: chunkEnd
+                }
+            );
+
+
+            chunkStart =
+                datePlusDays(
+                    chunkEnd,
+                    1
+                );
+        }
+
+
+        return chunks;
+    }
+
+
+    async function downloadCsv() {
+
+        validateSelectedDates();
+
+
+        const definition =
+            selectedDefinition();
+
+        const components =
+            definitionComponents(
+                definition
+            );
+
+        const chunks =
+            buildDownloadChunks();
 
 
         const headers = [
@@ -4891,43 +5046,105 @@
         ];
 
 
-        for (
-            const row
-            of lastResult.data
-        ) {
+        csvButton.disabled =
+            true;
 
-            lines.push(
-                [
+        csvButton.textContent =
+            "Preparing CSV...";
 
-                    row.timestamp_market,
-                    row.timestamp_utc,
-                    row.country,
 
-                    lastResult
-                        .definition
-                        .label,
+        try {
 
-                    row.direction,
-                    row.session,
-                    row.value,
-                    row.unit,
-                    row.native_resolution_minutes,
-                    row.is_upsampled,
-                    row.aggregation,
-                    row.source,
-                    row.source_id
+            let rowCount = 0;
 
-                ]
-                    .map(
-                        csvEscape
+
+            for (
+                let index = 0;
+                index < chunks.length;
+                index += 1
+            ) {
+
+                const chunk =
+                    chunks[index];
+
+
+                setStatus(
+                    (
+                        `Preparing download ${index + 1} `
+                        + `of ${chunks.length}: `
+                        + `${chunk.start} to ${chunk.end}...`
                     )
-                    .join(",")
-            );
-        }
+                );
 
 
-        const blob =
-            new Blob(
+                const results =
+                    await Promise.all(
+                        components.map(
+                            component =>
+                                fetchJson(
+                                    buildRequestUrl(
+                                        definition,
+                                        component,
+                                        chunk.start,
+                                        chunk.end
+                                    )
+                                )
+                        )
+                    );
+
+
+                for (
+                    const row
+                    of results.flatMap(
+                        result =>
+                            result.data
+                            || []
+                    )
+                ) {
+
+                    rowCount += 1;
+
+                    lines.push(
+                        [
+
+                            row.timestamp_market,
+                            row.timestamp_utc,
+                            row.country,
+
+                            definition.label,
+
+                            row.direction,
+                            row.session,
+                            row.value,
+                            row.unit,
+                            row.native_resolution_minutes,
+                            row.is_upsampled,
+                            row.aggregation,
+                            row.source,
+                            row.source_id
+
+                        ]
+                            .map(
+                                csvEscape
+                            )
+                            .join(",")
+                    );
+                }
+            }
+
+
+            if (
+                rowCount === 0
+            ) {
+
+                throw new Error(
+                    "No official data are available for this selection."
+                );
+            }
+
+
+            const blob =
+                new Blob(
                 [
                     "\uFEFF"
                     + lines.join("\n")
@@ -4939,45 +5156,74 @@
             );
 
 
-        const url =
-            URL.createObjectURL(
-                blob
+            const url =
+                URL.createObjectURL(
+                    blob
+                );
+
+
+            const link =
+                document.createElement(
+                    "a"
+                );
+
+
+            link.href =
+                url;
+
+
+            link.download =
+                (
+                    `iberian_energy_prices_`
+                    + `${definition.id}_`
+                    + `${frequencyElement.value}_`
+                    + `${startDateElement.value}_`
+                    + `${endDateElement.value}.csv`
+                );
+
+
+            document.body
+                .appendChild(
+                    link
+                );
+
+
+            link.click();
+
+            link.remove();
+
+
+            URL.revokeObjectURL(
+                url
             );
 
 
-        const link =
-            document.createElement(
-                "a"
+            setStatus(
+                (
+                    `Downloaded ${rowCount.toLocaleString()} `
+                    + `points at ${frequencyElement.value} `
+                    + `for the full selected range.`
+                ),
+                "success"
             );
 
+        } catch (
+            error
+        ) {
 
-        link.href =
-            url;
-
-
-        link.download =
-            (
-                `iberian_energy_prices_`
-                + `${lastResult.definition.id}_`
-                + `${startDateElement.value}_`
-                + `${endDateElement.value}.csv`
+            setStatus(
+                error.message,
+                "error"
             );
 
+        } finally {
 
-        document.body
-            .appendChild(
-                link
-            );
+            csvButton.disabled =
+                false;
 
-
-        link.click();
-
-        link.remove();
-
-
-        URL.revokeObjectURL(
-            url
-        );
+            csvButton.textContent =
+                "Download full-range CSV";
+        }
     }
 
 
@@ -5190,10 +5436,32 @@
         );
 
 
+    fullRangeButton
+        .addEventListener(
+            "click",
+            useFullAvailableRange
+        );
+
+
     csvButton
         .addEventListener(
             "click",
-            downloadCsv
+            async () => {
+
+                try {
+
+                    await downloadCsv();
+
+                } catch (
+                    error
+                ) {
+
+                    setStatus(
+                        error.message,
+                        "error"
+                    );
+                }
+            }
         );
 
 
