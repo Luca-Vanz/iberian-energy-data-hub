@@ -890,6 +890,194 @@
 
         </details>
 
+
+        <details style="margin-top: 18px;">
+
+            <summary>
+                Data coverage &amp; quality
+            </summary>
+
+
+            <div
+                style="
+                    margin-top: 18px;
+                    color: #475467;
+                    font-size: 13px;
+                    line-height: 1.6;
+                "
+            >
+
+                <p style="margin-top: 0;">
+                    Coverage below describes the current public database
+                    release, not the earliest date that may exist in OMIE's
+                    historical archives. The selector above the chart reads
+                    the exact first and last dates for the chosen country,
+                    product and auction session from the database catalog.
+                </p>
+
+
+                <div style="overflow-x: auto;">
+
+                    <table
+                        style="
+                            white-space: normal;
+                            min-width: 860px;
+                        "
+                    >
+
+                        <thead>
+
+                            <tr>
+                                <th>Public product</th>
+                                <th>Current coverage</th>
+                                <th>Native resolution</th>
+                                <th>Important interpretation</th>
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            <tr>
+
+                                <td>
+                                    <strong>Day-ahead</strong><br>
+                                    Spain and Portugal
+                                </td>
+
+                                <td>
+                                    1 Jan 2018–20 Aug 2026
+                                </td>
+
+                                <td>
+                                    Hourly before 1 Oct 2025;<br>
+                                    15-minute from 1 Oct 2025
+                                </td>
+
+                                <td>
+                                    The current database begins in 2018.
+                                    Earlier official files have been requested
+                                    from OMIE and are not silently inferred.
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    <strong>Intraday auctions</strong><br>
+                                    Spain and Portugal
+                                </td>
+
+                                <td>
+                                    Historical sessions mainly begin on
+                                    1 Jan 2018. Session 1 includes a
+                                    31 Dec 2017 delivery-horizon record.
+                                    End dates differ by session.
+                                </td>
+
+                                <td>
+                                    Hourly historically;<br>
+                                    15-minute products from 19 Mar 2025
+                                </td>
+
+                                <td>
+                                    Sessions 1–6 are separate in the regional
+                                    model. Three pan-European IDAs replace that
+                                    structure from 14 Jun 2024. Sessions are
+                                    never averaged into one synthetic price.
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    <strong>Continuous intraday</strong><br>
+                                    Spain and Portugal
+                                </td>
+
+                                <td>
+                                    13 Jun 2018–19 Aug 2026
+                                </td>
+
+                                <td>
+                                    Hourly historically;<br>
+                                    15-minute products from 19 Mar 2025
+                                </td>
+
+                                <td>
+                                    13 Jun 2018 is the market start, not a
+                                    missing-data boundary. A known source gap
+                                    remains on 29 Apr 2025.
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <h3
+                    style="
+                        margin: 24px 0 10px;
+                        color: #182230;
+                        font-size: 15px;
+                    "
+                >
+                    How publication quality is protected
+                </h3>
+
+
+                <ul style="margin-bottom: 0; padding-left: 20px;">
+                    <li>
+                        Raw/native source values and resolutions are preserved.
+                    </li>
+                    <li>
+                        Period sequences, duplicates, nulls and daylight-saving
+                        day lengths are validated during processing.
+                    </li>
+                    <li>
+                        Missing official observations remain missing—never zero,
+                        interpolated or replaced with another product.
+                    </li>
+                    <li>
+                        Countries, auction sessions and economically different
+                        price metrics remain distinct.
+                    </li>
+                    <li>
+                        The deployment database is checked for SQLite integrity,
+                        allowed tables, allowed markets and OMIE-only sources.
+                    </li>
+                    <li>
+                        Market-design and resolution changes are stored as
+                        dated events and displayed on relevant charts.
+                    </li>
+                </ul>
+
+
+                <p
+                    style="
+                        margin: 16px 0 0;
+                        color: #667085;
+                        font-size: 12px;
+                    "
+                >
+                    Current public release last includes official observations
+                    through 20 August 2026. Product-specific end dates can be
+                    earlier and are shown by the live availability catalog.
+                </p>
+
+            </div>
+
+        </details>
+
     </section>
 
 
