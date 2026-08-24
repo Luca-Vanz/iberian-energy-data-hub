@@ -518,6 +518,20 @@
         </div>
 
 
+        <div style="margin-top: 10px;">
+
+            <button
+                id="earliestButton"
+                class="secondary"
+                type="button"
+                disabled
+            >
+                Start at earliest available
+            </button>
+
+        </div>
+
+
         <div
             id="status"
             class="status success"
@@ -892,6 +906,9 @@
 
     const availabilityElement =
         document.getElementById("availability");
+
+    const earliestButton =
+        document.getElementById("earliestButton");
 
     const statusElement =
         document.getElementById("status");
@@ -1963,6 +1980,9 @@
             !catalog
         ) {
 
+            earliestButton.disabled =
+                true;
+
             availabilityElement.textContent =
                 (
                     "Checking official availability "
@@ -1981,6 +2001,9 @@
             !range
         ) {
 
+            earliestButton.disabled =
+                true;
+
             availabilityElement.textContent =
                 (
                     "No matching official series "
@@ -1989,6 +2012,10 @@
 
             return;
         }
+
+
+        earliestButton.disabled =
+            false;
 
 
         const resolutions =
@@ -2063,6 +2090,104 @@
             startDateElement.value =
                 range.first;
         }
+    }
+
+
+    // ==================================================
+    // EARLIEST AVAILABLE RANGE
+    // ==================================================
+
+    function datePlusDays(
+        dateText,
+        days
+    ) {
+
+        const date =
+            new Date(
+                `${dateText}T12:00:00Z`
+            );
+
+
+        date.setUTCDate(
+            date.getUTCDate()
+            + days
+        );
+
+
+        return date
+            .toISOString()
+            .slice(
+                0,
+                10
+            );
+    }
+
+
+    function useEarliestAvailable() {
+
+        const range =
+            availabilityRange();
+
+
+        if (
+            !range
+        ) {
+
+            return;
+        }
+
+
+        startDateElement.value =
+            range.first;
+
+
+        const frequency =
+            frequencyElement.value;
+
+
+        let end =
+            range.last;
+
+
+        if (
+            frequency === "15min"
+        ) {
+
+            end = [
+                range.last,
+                datePlusDays(
+                    range.first,
+                    30
+                )
+            ].sort()[0];
+        }
+
+
+        if (
+            frequency === "1h"
+        ) {
+
+            end = [
+                range.last,
+                datePlusDays(
+                    range.first,
+                    365
+                )
+            ].sort()[0];
+        }
+
+
+        endDateElement.value =
+            end;
+
+
+        setStatus(
+            (
+                `Selected the earliest official data: `
+                + `${range.first} to ${end}.`
+            ),
+            "success"
+        );
     }
 
 
@@ -4515,6 +4640,13 @@
         .addEventListener(
             "click",
             executeLoad
+        );
+
+
+    earliestButton
+        .addEventListener(
+            "click",
+            useEarliestAvailable
         );
 
 

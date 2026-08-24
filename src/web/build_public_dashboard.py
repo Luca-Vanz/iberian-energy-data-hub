@@ -808,6 +808,8 @@ def validate_output(
         "mFRR — manual Frequency Restoration Reserve",
         "RR — Replacement Reserve",
         "Balancing and imbalance settlement",
+        "Start at earliest available",
+        "Selected the earliest official data",
         "Why time-weighted?",
         "Missing official observations are kept missing.",
         "iberian_energy_public_market_catalog_v1",
