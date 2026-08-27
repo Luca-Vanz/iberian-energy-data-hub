@@ -45,6 +45,7 @@ DEFAULT_PUBLIC_DB_URL = (
 
 
 EXPECTED_TABLES = {
+    "balancing_market_data",
     "market_catalog_cache",
     "market_events",
     "market_price_data",
@@ -56,6 +57,11 @@ ALLOWED_MARKETS = {
     "day_ahead",
     "intraday_auction",
     "intraday_continuous",
+}
+
+ALLOWED_BALANCING_MARKETS = {
+    "afrr",
+    "mfrr",
 }
 
 
@@ -237,6 +243,30 @@ def validate_database(
             )
 
 
+        forbidden_balancing_rows = (
+            connection.execute(
+                """
+                SELECT COUNT(*)
+                FROM balancing_market_data
+                WHERE source <> 'ESIOS'
+                   OR source IS NULL
+                   OR country <> 'ES'
+                   OR service NOT IN ('afrr', 'mfrr')
+                """
+            ).fetchone()[0]
+        )
+
+        if forbidden_balancing_rows:
+
+            raise RuntimeError(
+                (
+                    "Public database contains "
+                    f"{forbidden_balancing_rows:,} "
+                    "unapproved balancing rows."
+                )
+            )
+
+
         balancing_catalog_count = (
             connection.execute(
                 """
@@ -253,6 +283,16 @@ def validate_database(
             raise RuntimeError(
                 "Market catalog cache is missing."
             )
+
+
+        balancing_row_count = (
+            connection.execute(
+                """
+                SELECT COUNT(*)
+                FROM balancing_market_data
+                """
+            ).fetchone()[0]
+        )
 
 
         row_count = (
@@ -275,11 +315,12 @@ def validate_database(
         )
 
         print(
-            "Sources: OMIE only"
+            "Wholesale source: OMIE"
         )
 
         print(
-            "Balancing markets: none"
+            f"REE/ESIOS balancing rows: "
+            f"{balancing_row_count:,}"
         )
 
     finally:

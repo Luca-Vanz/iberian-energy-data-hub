@@ -11,7 +11,8 @@ interactive web dashboard.
 
 [Open the Iberian Energy Data Hub](https://iberian-energy-data-hub.onrender.com/)
 
-The public deployment contains sanitized **OMIE wholesale-market data only**.
+The public deployment contains sanitized **OMIE wholesale prices** and
+authorized **Spanish REE/ESIOS aFRR and mFRR price series**.
 Balancing-market and REN fundamental datasets remain in the local research
 environment and are not redistributed publicly while reuse permissions are
 being clarified.
@@ -82,7 +83,7 @@ The application has two explicit modes controlled by `IBERIAN_APP_MODE`:
 
 | Mode | Database | Dashboard scope |
 | --- | --- | --- |
-| `public` | `deployment/iberian_energy_public.db` by default | Sanitized OMIE wholesale markets only; balancing requests return HTTP 403 |
+| `public` | `deployment/iberian_energy_public.db` by default | OMIE wholesale prices plus authorized Spanish REE/ESIOS aFRR and mFRR prices; other balancing sources remain blocked |
 | `local` | `data/database/iberian_energy.db` by default | Full research environment, including locally held fundamentals and balancing-market work |
 
 An alternative database path can be supplied with `IBERIAN_DB_PATH`.
@@ -113,7 +114,7 @@ Legacy OMIE endpoints remain available for backward compatibility.
 ## Architecture
 
 ```text
-Official sources (OMIE / local research sources)
+Official sources (OMIE / REE-ESIOS / local research sources)
                          |
                          v
                  Python collectors
@@ -137,10 +138,12 @@ Official sources (OMIE / local research sources)
               Interactive web dashboard
 ```
 
-The public SQLite database is built separately, validated as OMIE-only,
-compressed as a deployment artifact, and fetched during the Render build. The
-deployment verifies SQLite integrity, allowed tables, markets and sources
-before serving it.
+The public SQLite database is built separately. Its wholesale table is
+validated as OMIE-only, while its balancing table is restricted to Spanish
+REE/ESIOS aFRR and mFRR prices. REN and every other balancing source remain
+excluded. The database is compressed as a deployment artifact and fetched
+during the Render build, which verifies SQLite integrity, allowed tables,
+markets, countries and sources before serving it.
 
 ## Data-quality principles
 
@@ -218,8 +221,9 @@ validators and the read-only OMIE historical-package inspector tests.
 
 ## Project status
 
-The current public release is a working OMIE wholesale-market data product,
-not a complete representation of every Iberian electricity-market dataset.
-Ancillary and balancing services are documented educationally on the public
-site, but their underlying data will remain private unless the relevant source
-owners explicitly authorize redistribution.
+The current public release combines OMIE wholesale-market prices with the
+authorized Spanish REE/ESIOS aFRR and mFRR price series. Capacity prices
+(EUR/MW) and energy prices (EUR/MWh), upward and downward directions, scheduled
+and direct activation, and legacy and current products remain separate. FCR is
+not shown because no validated FCR price series is present locally; RR and REN
+data remain outside the public release.

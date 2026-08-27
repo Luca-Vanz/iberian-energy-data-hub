@@ -16,9 +16,12 @@ ALLOWED_PUBLIC_MARKETS = {
     "intraday_continuous",
 }
 
-FORBIDDEN_PUBLIC_MARKETS = {
+ALLOWED_PUBLIC_BALANCING_MARKETS = {
     "afrr",
     "mfrr",
+}
+
+FORBIDDEN_PUBLIC_MARKETS = {
     "rr",
 }
 
@@ -255,9 +258,28 @@ def test_public_dashboard() -> None:
         ),
     )
 
+    required_balancing_strings = [
+        'id: "afrr_energy_marginal"',
+        'id: "afrr_capacity_marginal"',
+        'id: "afrr_capacity_weighted"',
+        'id: "mfrr_scheduled_weighted_es"',
+        'id: "mfrr_scheduled_market_es"',
+        'id: "mfrr_direct_weighted_es"',
+        'id: "mfrr_legacy_es"',
+        "Public REE/ESIOS price series.",
+    ]
+
+    for required in required_balancing_strings:
+
+        assert_true(
+            required in html,
+            (
+                "Public dashboard is missing "
+                f"REE/ESIOS content: {required}"
+            ),
+        )
+
     forbidden_strings = [
-        'id: "afrr_',
-        'id: "mfrr_',
         'id: "rr_',
     ]
 
@@ -330,8 +352,8 @@ def test_public_dashboard() -> None:
     )
 
     print(
-        "    OMIE wholesale selectors and "
-        "full-range downloads only"
+        "    OMIE wholesale and REE/ESIOS "
+        "balancing selectors with full-range downloads"
     )
 
 
@@ -366,7 +388,7 @@ def test_about() -> None:
     )
 
     assert_true(
-        sources == {"OMIE"},
+        sources == {"OMIE", "ESIOS"},
         (
             "Unexpected public sources: "
             f"{sources}"
@@ -384,6 +406,8 @@ def test_about() -> None:
         "Day-ahead",
         "Intraday auctions",
         "Continuous intraday",
+        "aFRR",
+        "mFRR",
     }
 
     assert_true(
@@ -395,7 +419,7 @@ def test_about() -> None:
     )
 
     print(
-        "    Sources: OMIE only"
+        "    Sources: OMIE and ESIOS"
     )
 
 
@@ -424,11 +448,28 @@ def test_catalog() -> None:
     )
 
     assert_true(
-        balancing == [],
+        len(balancing) == 13,
         (
-            "Public catalog contains "
-            "balancing entries."
+            "Expected 13 REE/ESIOS balancing "
+            f"catalog rows, got {len(balancing)}."
         ),
+    )
+
+    assert_true(
+        {
+            row.get("market")
+            for row in balancing
+        } == ALLOWED_PUBLIC_BALANCING_MARKETS,
+        "Unexpected public balancing markets.",
+    )
+
+    assert_true(
+        all(
+            row.get("source") == "ESIOS"
+            and row.get("country") == "ES"
+            for row in balancing
+        ),
+        "Public catalog contains a non-REE/ESIOS balancing row.",
     )
 
     assert_true(
@@ -472,7 +513,7 @@ def test_catalog() -> None:
     )
 
     print(
-        "    Balancing catalog rows: 0"
+        f"    Balancing catalog rows: {len(balancing)}"
     )
 
 
@@ -664,7 +705,79 @@ def test_intraday_continuous() -> None:
 
 
 # ============================================================
-# 8–10. BALANCING MARKETS MUST BE FORBIDDEN
+# 8–9. APPROVED REE/ESIOS BALANCING MARKETS
+# ============================================================
+
+def test_public_afrr() -> None:
+
+    payload, elapsed = request_json(
+        "/market/prices",
+        {
+            "market": "afrr",
+            "country": "ES",
+            "start_date": "2026-08-03",
+            "end_date": "2026-08-03",
+            "frequency": "15min",
+            "direction": "both",
+            "stage": "energy",
+            "metric": "marginal_price",
+        },
+    )
+
+    print_timing(elapsed)
+    rows = payload.get("data", [])
+
+    assert_true(
+        len(rows) == 192,
+        f"Expected 192 public aFRR rows, got {len(rows)}.",
+    )
+    assert_true(
+        {row.get("source") for row in rows} == {"ESIOS"},
+        "Unexpected public aFRR source.",
+    )
+    assert_true(
+        {row.get("direction") for row in rows} == {"up", "down"},
+        "Unexpected public aFRR directions.",
+    )
+
+
+def test_public_mfrr() -> None:
+
+    payload, elapsed = request_json(
+        "/market/prices",
+        {
+            "market": "mfrr",
+            "country": "ES",
+            "start_date": "2026-08-03",
+            "end_date": "2026-08-03",
+            "frequency": "15min",
+            "direction": "both",
+            "stage": "energy_scheduled",
+            "metric": "weighted_average_price",
+        },
+    )
+
+    print_timing(elapsed)
+    rows = payload.get("data", [])
+
+    assert_true(
+        len(rows) > 0,
+        "Public mFRR returned no rows.",
+    )
+    assert_true(
+        {row.get("source") for row in rows} == {"ESIOS"},
+        "Unexpected public mFRR source.",
+    )
+    assert_true(
+        {"up", "down"}.issubset(
+            {row.get("direction") for row in rows}
+        ),
+        "Expected both public mFRR directions.",
+    )
+
+
+# ============================================================
+# 10. RR REMAINS FORBIDDEN
 # ============================================================
 
 def test_forbidden_market(
@@ -714,20 +827,6 @@ def test_forbidden_market(
 
     print(
         f"    {market}: correctly blocked"
-    )
-
-
-def test_afrr_forbidden() -> None:
-
-    test_forbidden_market(
-        "afrr"
-    )
-
-
-def test_mfrr_forbidden() -> None:
-
-    test_forbidden_market(
-        "mfrr"
     )
 
 
@@ -799,7 +898,7 @@ def main() -> int:
         ),
 
         (
-            "2. Public dashboard is OMIE-only",
+            "2. Public dashboard exposes approved price series",
             test_public_dashboard,
         ),
 
@@ -809,7 +908,7 @@ def main() -> int:
         ),
 
         (
-            "4. Public catalog is OMIE-only",
+            "4. Public catalog is source-restricted",
             test_catalog,
         ),
 
@@ -829,13 +928,13 @@ def main() -> int:
         ),
 
         (
-            "8. aFRR is forbidden publicly",
-            test_afrr_forbidden,
+            "8. Public REE/ESIOS aFRR",
+            test_public_afrr,
         ),
 
         (
-            "9. mFRR is forbidden publicly",
-            test_mfrr_forbidden,
+            "9. Public REE/ESIOS mFRR",
+            test_public_mfrr,
         ),
 
         (

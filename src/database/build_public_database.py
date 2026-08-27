@@ -33,6 +33,7 @@ PUBLIC_MARKETS = {
 }
 
 PUBLIC_TABLES = {
+    "balancing_market_data",
     "omie_day_ahead_prices",
     "market_price_data",
     "market_events",
@@ -280,12 +281,69 @@ def build_public_catalog(
             }
         )
 
+    balancing_rows = connection.execute(
+        """
+        SELECT
+            country,
+            service,
+            market_stage,
+            metric,
+            direction,
+            unit,
+            source,
+            source_id,
+            MIN(market_date),
+            MAX(market_date),
+            GROUP_CONCAT(DISTINCT resolution_minutes)
+        FROM balancing_market_data
+        GROUP BY
+            country,
+            service,
+            market_stage,
+            metric,
+            direction,
+            unit,
+            source,
+            source_id
+        ORDER BY
+            service,
+            market_stage,
+            metric,
+            direction,
+            source_id
+        """
+    ).fetchall()
+
+    balancing = []
+
+    for row in balancing_rows:
+
+        balancing.append(
+            {
+                "country": row[0],
+                "market": row[1],
+                "market_stage": row[2],
+                "metric": row[3],
+                "direction": row[4],
+                "unit": row[5],
+                "source": row[6],
+                "source_id": row[7],
+                "first_date": readable_date(row[8]),
+                "last_date": readable_date(row[9]),
+                "native_resolutions_minutes": sorted(
+                    int(value)
+                    for value in str(row[10] or "").split(",")
+                    if value
+                ),
+            }
+        )
+
     return {
         "wholesale":
             wholesale,
 
         "balancing":
-            [],
+            balancing,
     }
 
 
@@ -374,6 +432,7 @@ def build_public_database() -> None:
         # ----------------------------------------------------
 
         required_source_tables = {
+            "balancing_market_data",
             "omie_day_ahead_prices",
             "market_price_data",
             "market_events",
@@ -416,6 +475,7 @@ def build_public_database() -> None:
         )
 
         for table_name in [
+            "balancing_market_data",
             "omie_day_ahead_prices",
             "market_price_data",
             "market_events",
@@ -446,6 +506,77 @@ def build_public_database() -> None:
         print(
             "    Schemas created."
         )
+
+        print()
+
+
+        # ====================================================
+        # REE / ESIOS BALANCING PRICES
+        #
+        # Copy only Spanish ESIOS aFRR and mFRR price rows.
+        # REN and every other source remain excluded.
+        # ====================================================
+
+        print(
+            "Copying approved REE/ESIOS balancing prices..."
+        )
+
+        balancing_count = copy_query_in_batches(
+            source_connection,
+            public_connection,
+            """
+            SELECT
+                timestamp_utc,
+                timestamp_market,
+                market_date,
+                period,
+                country,
+                service,
+                market_stage,
+                metric,
+                direction,
+                value,
+                unit,
+                resolution_minutes,
+                source,
+                source_id
+            FROM balancing_market_data
+            WHERE source = 'ESIOS'
+              AND country = 'ES'
+              AND service IN ('afrr', 'mfrr')
+            ORDER BY
+                timestamp_utc,
+                service,
+                market_stage,
+                metric,
+                direction,
+                source_id
+            """,
+            """
+            INSERT INTO balancing_market_data (
+                timestamp_utc,
+                timestamp_market,
+                market_date,
+                period,
+                country,
+                service,
+                market_stage,
+                metric,
+                direction,
+                value,
+                unit,
+                resolution_minutes,
+                source,
+                source_id
+            )
+            VALUES (
+                ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?
+            )
+            """,
+        )
+
+        public_connection.commit()
 
         print()
 
@@ -675,6 +806,7 @@ def build_public_database() -> None:
         )
 
         for table_name in [
+            "balancing_market_data",
             "omie_day_ahead_prices",
             "market_price_data",
             "market_events",
@@ -703,7 +835,7 @@ def build_public_database() -> None:
         # ====================================================
 
         print(
-            "Building OMIE-only market catalog..."
+            "Building approved public market catalog..."
         )
 
         catalog = build_public_catalog(
@@ -754,7 +886,8 @@ def build_public_database() -> None:
         )
 
         print(
-            "    Balancing catalog rows: 0"
+            f"    Balancing catalog rows: "
+            f"{len(catalog['balancing'])}"
         )
 
         print()
@@ -827,7 +960,7 @@ def build_public_database() -> None:
 
 
         # ----------------------------------------------------
-        # ONLY OMIE SOURCE IN UNIFIED TABLE
+        # ONLY OMIE SOURCE IN UNIFIED WHOLESALE TABLE
         # ----------------------------------------------------
 
         non_omie_rows = (
@@ -855,39 +988,36 @@ def build_public_database() -> None:
 
 
         # ----------------------------------------------------
-        # NO BALANCING MARKETS
+        # ONLY APPROVED REE/ESIOS BALANCING ROWS
         # ----------------------------------------------------
 
-        forbidden_market_rows = (
+        forbidden_balancing_rows = (
             public_connection.execute(
                 """
                 SELECT COUNT(*)
-
-                FROM market_price_data
-
-                WHERE market NOT IN (
-                    'day_ahead',
-                    'intraday_auction',
-                    'intraday_continuous'
-                )
+                FROM balancing_market_data
+                WHERE source <> 'ESIOS'
+                   OR source IS NULL
+                   OR country <> 'ES'
+                   OR service NOT IN ('afrr', 'mfrr')
                 """
             ).fetchone()[0]
         )
 
-        if forbidden_market_rows != 0:
+        if forbidden_balancing_rows != 0:
 
             raise RuntimeError(
                 (
                     "SECURITY CHECK FAILED. "
                     f"Found "
-                    f"{forbidden_market_rows:,} "
-                    "non-wholesale market rows."
+                    f"{forbidden_balancing_rows:,} "
+                    "unapproved balancing rows."
                 )
             )
 
 
         # ----------------------------------------------------
-        # CATALOG MUST CONTAIN NO BALANCING SERIES
+        # CATALOG BALANCING SERIES MUST BE REE/ESIOS ONLY
         # ----------------------------------------------------
 
         cached_payload = (
@@ -910,15 +1040,27 @@ def build_public_database() -> None:
             cached_payload[0]
         )
 
-        if cached_catalog.get(
-            "balancing"
-        ) != []:
+        forbidden_catalog_rows = [
+            row
+            for row in cached_catalog.get(
+                "balancing",
+                [],
+            )
+            if (
+                row.get("source") != "ESIOS"
+                or row.get("country") != "ES"
+                or row.get("market")
+                not in {"afrr", "mfrr"}
+            )
+        ]
+
+        if forbidden_catalog_rows:
 
             raise RuntimeError(
                 (
                     "SECURITY CHECK FAILED. "
                     "Public catalog contains "
-                    "balancing entries."
+                    "unapproved balancing entries."
                 )
             )
 
@@ -1071,13 +1213,23 @@ def build_public_database() -> None:
     )
 
     print(
+        f"REE/ESIOS balancing rows: "
+        f"{balancing_count:,}"
+    )
+
+    print(
         f"Wholesale event rows: "
         f"{event_count:,}"
     )
 
     print(
-        f"Catalog rows: "
+        f"Wholesale catalog rows: "
         f"{catalog_rows:,}"
+    )
+
+    print(
+        f"Balancing catalog rows: "
+        f"{len(catalog['balancing']):,}"
     )
 
     print()
@@ -1128,11 +1280,13 @@ def build_public_database() -> None:
     )
 
     print(
-        "Balancing-market rows: 0"
+        f"Approved REE/ESIOS balancing rows: "
+        f"{balancing_count:,}"
     )
 
     print(
-        "Balancing catalog rows: 0"
+        f"Balancing catalog rows: "
+        f"{len(catalog['balancing']):,}"
     )
 
     print()

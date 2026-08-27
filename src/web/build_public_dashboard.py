@@ -65,6 +65,90 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
             metric: null,
             direction: false,
             session: false
+        },
+
+        {
+            id: "afrr_energy_marginal",
+            group: "REE/ESIOS aFRR",
+            label: "aFRR energy — marginal price",
+            market: "afrr",
+            stage: "energy",
+            metric: "marginal_price",
+            direction: true,
+            session: false,
+            countries: ["ES"]
+        },
+
+        {
+            id: "afrr_capacity_marginal",
+            group: "REE/ESIOS aFRR",
+            label: "aFRR capacity — marginal price",
+            market: "afrr",
+            stage: "capacity",
+            metric: "marginal_price",
+            direction: true,
+            session: false,
+            countries: ["ES"]
+        },
+
+        {
+            id: "afrr_capacity_weighted",
+            group: "REE/ESIOS aFRR",
+            label: "aFRR capacity — weighted-average price",
+            market: "afrr",
+            stage: "capacity",
+            metric: "weighted_average_price",
+            direction: true,
+            session: false,
+            countries: ["ES"]
+        },
+
+        {
+            id: "mfrr_scheduled_weighted_es",
+            group: "REE/ESIOS mFRR",
+            label: "mFRR scheduled — weighted-average price",
+            market: "mfrr",
+            stage: "energy_scheduled",
+            metric: "weighted_average_price",
+            direction: true,
+            session: false,
+            countries: ["ES"]
+        },
+
+        {
+            id: "mfrr_scheduled_market_es",
+            group: "REE/ESIOS mFRR",
+            label: "mFRR scheduled — market price",
+            market: "mfrr",
+            stage: "energy_scheduled",
+            metric: "market_price",
+            direction: false,
+            session: false,
+            countries: ["ES"]
+        },
+
+        {
+            id: "mfrr_direct_weighted_es",
+            group: "REE/ESIOS mFRR",
+            label: "mFRR direct — weighted-average price",
+            market: "mfrr",
+            stage: "energy_direct",
+            metric: "weighted_average_price",
+            direction: true,
+            session: false,
+            countries: ["ES"]
+        },
+
+        {
+            id: "mfrr_legacy_es",
+            group: "REE/ESIOS mFRR",
+            label: "mFRR scheduled — legacy marginal price",
+            market: "mfrr",
+            stage: "energy_scheduled_legacy",
+            metric: "marginal_price",
+            direction: true,
+            session: false,
+            countries: ["ES"]
         }
 
     ];"""
@@ -102,7 +186,8 @@ PUBLIC_DATA_GUIDE = """
                 <p style="margin-top: 0;">
                     This guide explains what each displayed price represents
                     and how the selected display frequency is calculated.
-                    Original OMIE observations are preserved in the database.
+                    Original OMIE and REE/ESIOS observations are preserved in
+                    the database.
                     Display transformations do not modify the source data.
                 </p>
 
@@ -267,7 +352,7 @@ PUBLIC_DATA_GUIDE = """
 
                     <p style="margin-top: 0;">
                         <strong>
-                            Educational preview — data not yet public.
+                            Public REE/ESIOS price series.
                         </strong>
 
                         These services are used by transmission-system
@@ -291,8 +376,8 @@ PUBLIC_DATA_GUIDE = """
                             The fastest reserve layer. Participating resources
                             automatically change output or consumption within
                             seconds to contain an immediate frequency
-                            deviation. No FCR price series is currently
-                            included in this public dashboard.
+                            deviation. No FCR price series is present in the
+                            validated local price dataset, so none is shown.
                         </dd>
 
 
@@ -559,8 +644,12 @@ PUBLIC_DATA_GUIDE = """
                         font-size: 12px;
                     "
                 >
-                    Source: OMIE. Market-time calculations use
-                    Europe/Madrid, consistent with the MIBEL market clock.
+                    Sources: OMIE and Red Eléctrica de España — ESIOS.
+                    ESIOS indicator IDs are retained in the downloadable data.
+                    Market-time calculations use Europe/Madrid. REE/ESIOS use
+                    and publication follow the
+                    <a href="https://www.ree.es/es/aviso-legal"
+                       target="_blank" rel="noopener">REE Legal Notice</a>.
                 </p>
 
             </div>
@@ -610,6 +699,7 @@ PUBLIC_DATA_GUIDE = """
                                 <th>Native resolution</th>
                                 <th>Important interpretation</th>
                             </tr>
+
 
                         </thead>
 
@@ -694,6 +784,37 @@ PUBLIC_DATA_GUIDE = """
 
                             </tr>
 
+
+                            <tr>
+
+                                <td>
+                                    <strong>REE/ESIOS balancing prices</strong><br>
+                                    Spain
+                                </td>
+
+                                <td>
+                                    Varies by aFRR or mFRR product and source
+                                    indicator. The selectors read the exact
+                                    first and last available dates from the
+                                    public catalog.
+                                </td>
+
+                                <td>
+                                    Preserved per official ESIOS indicator;
+                                    displayed frequencies use the methodology
+                                    above.
+                                </td>
+
+                                <td>
+                                    Capacity prices use EUR/MW; activated or
+                                    scheduled energy prices use EUR/MWh.
+                                    Upward and downward products, scheduled and
+                                    direct activation, and legacy and current
+                                    products remain distinct.
+                                </td>
+
+                            </tr>
+
                         </tbody>
 
                     </table>
@@ -730,7 +851,8 @@ PUBLIC_DATA_GUIDE = """
                     </li>
                     <li>
                         The deployment database is checked for SQLite integrity,
-                        allowed tables, allowed markets and OMIE-only sources.
+                        allowed tables, OMIE-only wholesale rows and
+                        REE/ESIOS-only Spanish balancing rows.
                     </li>
                     <li>
                         Market-design and resolution changes are stored as
@@ -850,7 +972,7 @@ def replace_subtitle(
     )
 
     new = (
-        "Public OMIE electricity-market data "
+        "Public OMIE and REE/ESIOS electricity-market prices "
         "for Spain and Portugal"
     )
 
@@ -897,11 +1019,11 @@ def add_public_note(
                 Public portfolio demo.
             </strong>
 
-            This version exposes historical OMIE wholesale-market data only:
-            day-ahead, intraday auctions and continuous intraday prices for
-            Spain and Portugal. The local research project also contains
-            additional Iberian market datasets that are not redistributed
-            through this public demo.
+            This version exposes historical OMIE wholesale prices for Spain
+            and Portugal plus authorized REE/ESIOS aFRR and mFRR price series
+            for Spain. Each product retains its official unit, direction,
+            source identifier and native resolution. REN data remain outside
+            this public release.
 
         </div>
 
@@ -962,8 +1084,6 @@ def validate_output(
 ) -> None:
 
     forbidden_terms = [
-        'id: "afrr_',
-        'id: "mfrr_',
         'id: "rr_',
     ]
 
@@ -983,10 +1103,17 @@ def validate_output(
         'id: "day_ahead"',
         'id: "intraday_auction"',
         'id: "intraday_continuous"',
+        'id: "afrr_energy_marginal"',
+        'id: "afrr_capacity_marginal"',
+        'id: "afrr_capacity_weighted"',
+        'id: "mfrr_scheduled_weighted_es"',
+        'id: "mfrr_scheduled_market_es"',
+        'id: "mfrr_direct_weighted_es"',
+        'id: "mfrr_legacy_es"',
         "Public portfolio demo.",
         "Price series &amp; frequency methodology",
         "household electricity tariff",
-        "Educational preview — data not yet public.",
+        "Public REE/ESIOS price series.",
         "FCR — Frequency Containment Reserve",
         "aFRR — automatic Frequency Restoration Reserve",
         "mFRR — manual Frequency Restoration Reserve",
@@ -1127,6 +1254,14 @@ def main() -> None:
         "  - Continuous intraday"
     )
 
+    print(
+        "  - REE/ESIOS aFRR prices"
+    )
+
+    print(
+        "  - REE/ESIOS mFRR prices"
+    )
+
     print()
 
 
@@ -1170,7 +1305,7 @@ def main() -> None:
 
 
     print(
-        "Balancing-market selectors: excluded"
+        "Balancing-market selectors: REE/ESIOS aFRR and mFRR"
     )
 
     print(

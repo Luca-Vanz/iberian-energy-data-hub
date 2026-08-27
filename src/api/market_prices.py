@@ -44,12 +44,23 @@ BALANCING_MARKETS = {
     "rr",
 }
 
+PUBLIC_BALANCING_MARKETS = {
+    "afrr",
+    "mfrr",
+}
+
+PUBLIC_MARKETS = (
+    WHOLESALE_MARKETS
+    | PUBLIC_BALANCING_MARKETS
+)
+
 
 def validate_public_market_access(
     market: str,
 ) -> None:
     """
-    Public mode deliberately exposes only OMIE wholesale data.
+    Public mode exposes OMIE wholesale data and the REE/ESIOS
+    balancing-price series cleared for public informational use.
 
     Local development can use the complete research database,
     including ESIOS and REN balancing-market data.
@@ -57,7 +68,7 @@ def validate_public_market_access(
 
     if (
         IS_PUBLIC
-        and market not in WHOLESALE_MARKETS
+        and market not in PUBLIC_MARKETS
     ):
         raise HTTPException(
             status_code=403,
@@ -166,10 +177,9 @@ def load_cached_market_catalog() -> dict:
 
     # Defence in depth:
     #
-    # The public database should already contain an OMIE-only
-    # catalogue. We filter it again here so balancing entries
-    # cannot accidentally appear if the public DB is rebuilt
-    # incorrectly.
+    # The public database should already contain only approved
+    # OMIE wholesale and REE/ESIOS balancing series. Filter the
+    # cached catalog again as defence in depth.
 
     if IS_PUBLIC:
 
@@ -183,9 +193,23 @@ def load_cached_market_catalog() -> dict:
             in WHOLESALE_MARKETS
         ]
 
+        balancing = [
+            row
+            for row in catalog.get(
+                "balancing",
+                [],
+            )
+            if (
+                row.get("market")
+                in PUBLIC_BALANCING_MARKETS
+                and row.get("country") == "ES"
+                and row.get("source") == "ESIOS"
+            )
+        ]
+
         return {
             "wholesale": wholesale,
-            "balancing": [],
+            "balancing": balancing,
         }
 
 
@@ -258,7 +282,7 @@ def market_prices(
         wholesale + balancing markets
 
     Public mode:
-        OMIE wholesale markets only
+        OMIE wholesale plus REE/ESIOS aFRR and mFRR prices
     """
 
     validate_public_market_access(
@@ -308,7 +332,7 @@ def market_catalog():
         complete catalogue
 
     Public mode:
-        wholesale OMIE catalogue only
+        approved OMIE and REE/ESIOS catalogue entries
     """
 
     try:
