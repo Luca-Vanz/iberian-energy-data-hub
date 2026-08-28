@@ -660,6 +660,101 @@ PUBLIC_DATA_GUIDE = """
         <details style="margin-top: 18px;">
 
             <summary>
+                Market evolution storyline
+            </summary>
+
+
+            <div
+                style="
+                    margin-top: 18px;
+                    color: #475467;
+                    font-size: 13px;
+                    line-height: 1.6;
+                "
+            >
+
+                <p style="margin-top: 0;">
+                    This chronology separates a market launch or redesign from
+                    the first date contained in this public database. A
+                    coverage start does not necessarily mean that the market
+                    itself began on that date.
+                </p>
+
+
+                <div style="border-left: 3px solid #7f56d9; padding-left: 18px;">
+
+                    <p>
+                        <strong>1 Jan 2018 — current historical package begins.</strong><br>
+                        The public database starts here for day-ahead, the
+                        regional intraday-auction structure and the legacy
+                        aFRR/mFRR indicators. These markets existed earlier;
+                        this is a data-coverage boundary.
+                    </p>
+
+                    <p>
+                        <strong>13 Jun 2018 — continuous intraday trading starts.</strong><br>
+                        Spain and Portugal join the European continuous
+                        intraday market. Continuous trades are summarized by
+                        delivery period using OMIE's volume-weighted average
+                        price.
+                    </p>
+
+                    <p>
+                        <strong>24 May 2022 — current mFRR weighted-price history begins.</strong><br>
+                        Upward and downward scheduled mFRR weighted-average
+                        prices begin in the validated ESIOS series. Direct
+                        upward activation begins on the same date; the direct
+                        downward series begins on 15 Aug 2022.
+                    </p>
+
+                    <p>
+                        <strong>14 Jun 2024 — intraday auctions are redesigned.</strong><br>
+                        The former regional session structure gives way to
+                        three pan-European intraday auctions. Old and new
+                        sessions remain separate rather than being merged into
+                        one synthetic history.
+                    </p>
+
+                    <p>
+                        <strong>20 Nov 2024 — upward aFRR capacity marginal series begins.</strong><br>
+                        This explains why selecting upward capacity marginal
+                        prices before this date returns no observations even
+                        though the downward series reaches back to 2018.
+                    </p>
+
+                    <p>
+                        <strong>10 Dec 2024 — mFRR scheduled-price transition.</strong><br>
+                        The legacy upward and downward marginal-price series
+                        end. The current scheduled market-price series begins
+                        as a distinct ESIOS product and is not spliced onto the
+                        legacy values.
+                    </p>
+
+                    <p>
+                        <strong>19 Mar 2025 — 15-minute intraday products.</strong><br>
+                        Intraday auctions and continuous intraday trading add
+                        quarter-hour products. Earlier hourly observations can
+                        still be repeated for a 15-minute display, where they
+                        are explicitly marked as upsampled.
+                    </p>
+
+                    <p style="margin-bottom: 0;">
+                        <strong>1 Oct 2025 — 15-minute day-ahead market.</strong><br>
+                        Day-ahead prices change from hourly to quarter-hourly
+                        native resolution. Coarser displays continue to use
+                        time-weighted means across the official periods.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </details>
+
+
+        <details style="margin-top: 18px;">
+
+            <summary>
                 Data coverage &amp; quality
             </summary>
 
@@ -1122,6 +1217,9 @@ def validate_output(
         "Start at earliest available",
         "Selected the earliest official data",
         "Data coverage &amp; quality",
+        "Market evolution storyline",
+        "20 Nov 2024 — upward aFRR capacity marginal series begins.",
+        "10 Dec 2024 — mFRR scheduled-price transition.",
         "How publication quality is protected",
         "Earlier official files have been requested",
         "known source gap",
@@ -1147,6 +1245,7 @@ def validate_output(
         "Download data",
         "Price chart",
         "Price series &amp; frequency methodology",
+        "Market evolution storyline",
         "Data coverage &amp; quality",
     ]
 

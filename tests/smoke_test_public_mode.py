@@ -296,10 +296,16 @@ def test_public_dashboard() -> None:
 
     required_download_features = [
         "Download data",
-        "Download full-range CSV",
+        "Download selected range as CSV",
         "Select full available range",
-        "Chart range limits do not apply.",
+        "Chart range limits",
+        "do not apply to the CSV download.",
+        "Preview exact data values",
         "function buildDownloadChunks()",
+        "function noDataCoverageMessage()",
+        "Available series —",
+        "native ${resolutions}",
+        "The data service is temporarily unavailable.",
     ]
 
     required_loading_features = [
@@ -335,6 +341,7 @@ def test_public_dashboard() -> None:
         "Download data",
         "Price chart",
         "Price series &amp; frequency methodology",
+        "Market evolution storyline",
         "Data coverage &amp; quality",
     ]
 
@@ -348,6 +355,15 @@ def test_public_dashboard() -> None:
         (
             "Public dashboard sections are not "
             f"in the expected order: {ordered_sections}"
+        ),
+    )
+
+    assert_true(
+        html.find("Preview exact data values")
+        < html.find("Price chart"),
+        (
+            "Exact-value preview should appear in "
+            "the Download data section."
         ),
     )
 

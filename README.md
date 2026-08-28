@@ -27,7 +27,12 @@ The live dashboard currently provides:
 - 15-minute, hourly, daily, weekly, monthly and yearly views
 - Separate Spain, Portugal and combined-country selections
 - Market-event and data-resolution context
-- Full-range CSV downloads independent of chart display limits
+- Selected-range CSV downloads independent of chart display limits, with the
+  exact-value preview beside the download controls
+- Product-specific no-data guidance showing available directions, native
+  resolutions and date ranges
+- A market-evolution storyline covering launches, redesigns and resolution
+  changes
 - A public price-series and frequency methodology
 - A data-coverage and publication-quality guide
 - Friendly progress feedback for larger graph requests

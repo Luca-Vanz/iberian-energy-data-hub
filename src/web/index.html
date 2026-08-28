@@ -587,7 +587,8 @@
 
         <p class="table-note">
             Download the selected price series at any supported frequency for
-            the complete selected date range. Chart range limits do not apply.
+            exactly the start and end dates selected above. Chart range limits
+            do not apply to the CSV download.
         </p>
 
 
@@ -596,8 +597,54 @@
             class="secondary"
             type="button"
         >
-            Download full-range CSV
+            Download selected range as CSV
         </button>
+
+
+        <details>
+
+            <summary>
+                Preview exact data values
+            </summary>
+
+
+            <div class="table-toolbar">
+
+                <div
+                    id="tableNote"
+                    class="table-note"
+                ></div>
+
+
+            </div>
+
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Market time</th>
+                            <th>Series</th>
+                            <th>Price</th>
+                            <th>Unit</th>
+                            <th>Native resolution</th>
+                            <th>Processing</th>
+                            <th>Source</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="dataTableBody"></tbody>
+
+                </table>
+
+            </div>
+
+        </details>
 
     </section>
 
@@ -653,52 +700,6 @@
             id="events"
             class="events"
         ></div>
-
-
-        <details>
-
-            <summary>
-                Preview exact data values
-            </summary>
-
-
-            <div class="table-toolbar">
-
-                <div
-                    id="tableNote"
-                    class="table-note"
-                ></div>
-
-
-            </div>
-
-
-            <div class="table-container">
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-                            <th>Market time</th>
-                            <th>Series</th>
-                            <th>Price</th>
-                            <th>Unit</th>
-                            <th>Native resolution</th>
-                            <th>Processing</th>
-                            <th>Source</th>
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody id="dataTableBody"></tbody>
-
-                </table>
-
-            </div>
-
-        </details>
 
     </section>
 
@@ -2046,6 +2047,144 @@
     }
 
 
+    function noDataCoverageMessage() {
+
+        const definition =
+            selectedDefinition();
+
+
+        if (
+            !catalog
+        ) {
+
+            return (
+                "No official data were returned for this selection. "
+                + "Availability details are still loading."
+            );
+        }
+
+
+        let rows =
+            matchingCatalogRows(
+                definition,
+                selectedCountries()
+            );
+
+
+        if (
+            definition.session
+        ) {
+
+            const selectedSession =
+                Number(
+                    sessionElement.value
+                );
+
+
+            const sessionRows =
+                rows.filter(
+                    row =>
+                        Number(
+                            row.session
+                        )
+                        === selectedSession
+                );
+
+
+            if (
+                sessionRows.length
+            ) {
+
+                rows =
+                    sessionRows;
+            }
+        }
+
+
+        if (
+            !rows.length
+        ) {
+
+            return (
+                `No validated ${definition.label} series exists `
+                + "for the selected country or product."
+            );
+        }
+
+
+        const descriptions =
+            rows.map(
+                row => {
+
+                    const identity = [];
+
+
+                    if (
+                        row.direction
+                        && row.direction !== "none"
+                    ) {
+
+                        identity.push(
+                            row.direction.toUpperCase()
+                        );
+                    }
+
+
+                    if (
+                        row.session
+                    ) {
+
+                        identity.push(
+                            `session ${row.session}`
+                        );
+                    }
+
+
+                    if (
+                        row.country
+                    ) {
+
+                        identity.push(
+                            row.country
+                        );
+                    }
+
+
+                    const resolutions =
+                        (
+                            row.native_resolutions_minutes
+                            || []
+                        )
+                            .map(
+                                value =>
+                                    `${value} min`
+                            )
+                            .join("/");
+
+
+                    return (
+                        `${identity.join(" ") || "series"}: `
+                        + `${normalizeDate(row.first_date)} to `
+                        + `${normalizeDate(row.last_date)}`
+                        + (
+                            resolutions
+                                ? `; native ${resolutions}`
+                                : ""
+                        )
+                    );
+                }
+            );
+
+
+        return (
+            "No official observations exist in the selected dates. "
+            + "Available series — "
+            + descriptions.join(". ")
+            + ". Missing source periods remain blank and are never filled."
+        );
+    }
+
+
     function updateAvailability() {
 
         if (
@@ -2440,7 +2579,15 @@
         } catch {
 
             throw new Error(
-                "The API returned an invalid response."
+                response.status >= 500
+                    ? (
+                        "The data service is temporarily unavailable. "
+                        + "Please wait a moment and try again."
+                    )
+                    : (
+                        "The data service returned an unreadable response. "
+                        + "Please refresh the page and try again."
+                    )
             );
         }
 
@@ -4735,7 +4882,7 @@
                 false;
 
             csvButton.textContent =
-                "Download full-range CSV";
+                "Download selected range as CSV";
         }
     }
 
@@ -4811,11 +4958,15 @@
                 !result.data.length
             ) {
 
+                const coverageMessage =
+                    noDataCoverageMessage();
+
+
+                emptyMessage.textContent =
+                    coverageMessage;
+
                 setStatus(
-                    (
-                        "No official price is available "
-                        + "for this selection."
-                    ),
+                    coverageMessage,
                     "warning"
                 );
 
@@ -4844,6 +4995,16 @@
                 error.message,
                 "error"
             );
+
+
+            emptyMessage.textContent =
+                error.message;
+
+            emptyMessage
+                .classList
+                .remove(
+                    "hidden"
+                );
 
 
         } finally {
