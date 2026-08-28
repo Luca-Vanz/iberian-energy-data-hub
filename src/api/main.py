@@ -44,6 +44,13 @@ WEB_FILE = (
     / WEB_PATH
 )
 
+RESEARCH_FILE = (
+    REPO_ROOT
+    / "src"
+    / "web"
+    / "research.html"
+)
+
 
 # ============================================================
 # APPLICATION
@@ -169,6 +176,21 @@ def root():
 def dashboard():
 
     return serve_dashboard()
+
+
+@app.get(
+    "/research",
+    include_in_schema=False,
+)
+def research():
+
+    if not RESEARCH_FILE.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Research page was not found.",
+        )
+
+    return FileResponse(RESEARCH_FILE)
 
 
 # ============================================================
