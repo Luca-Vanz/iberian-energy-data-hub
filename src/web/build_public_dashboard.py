@@ -149,6 +149,32 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
             direction: true,
             session: false,
             countries: ["ES"]
+        },
+
+        {
+            id: "rr_activation_pt",
+            group: "REN RR",
+            label: "Replacement reserve — activation price",
+            market: "rr",
+            metric: "activation_price",
+            direction: false,
+            session: false,
+            countries: ["PT"],
+            availabilityMode: "union",
+
+            components: [
+
+                {
+                    stage: "energy_legacy",
+                    metric: "activation_price"
+                },
+
+                {
+                    stage: "energy",
+                    metric: "activation_price"
+                }
+
+            ]
         }
 
     ];"""
@@ -186,8 +212,8 @@ PUBLIC_DATA_GUIDE = """
                 <p style="margin-top: 0;">
                     This guide explains what each displayed price represents
                     and how the selected display frequency is calculated.
-                    Original OMIE and REE/ESIOS observations are preserved in
-                    the database.
+                    Original OMIE, REE/ESIOS and REN observations are preserved
+                    in the database.
                     Display transformations do not modify the source data.
                 </p>
 
@@ -423,7 +449,11 @@ PUBLIC_DATA_GUIDE = """
                             reserves and maintain sufficient balancing
                             capability for later periods. An activation price
                             represents the price of energy activated through
-                            this reserve product.
+                            this reserve product. The public RR series is
+                            Portugal's REN activation price in EUR/MWh: the
+                            legacy hourly product through 15 April 2025 and the
+                            current 15-minute product from 16 April 2025 remain
+                            distinct official components.
                         </dd>
 
 
@@ -700,6 +730,12 @@ PUBLIC_DATA_GUIDE = """
                     </p>
 
                     <p>
+                        <strong>20 Oct 2020 — validated Portuguese RR history begins.</strong><br>
+                        REN's legacy hourly Replacement Reserve activation-price
+                        series begins at this public data-coverage boundary.
+                    </p>
+
+                    <p>
                         <strong>24 May 2022 — current mFRR weighted-price history begins.</strong><br>
                         Upward and downward scheduled mFRR weighted-average
                         prices begin in the validated ESIOS series. Direct
@@ -736,6 +772,14 @@ PUBLIC_DATA_GUIDE = """
                         quarter-hour products. Earlier hourly observations can
                         still be repeated for a 15-minute display, where they
                         are explicitly marked as upsampled.
+                    </p>
+
+                    <p>
+                        <strong>16 Apr 2025 — Portuguese RR product transition.</strong><br>
+                        REN's current 15-minute RR activation-price series starts
+                        after the legacy hourly series ends on 15 April. The two
+                        official products are displayed together without
+                        interpolating across gaps or blending observations.
                     </p>
 
                     <p style="margin-bottom: 0;">
@@ -883,19 +927,20 @@ PUBLIC_DATA_GUIDE = """
                             <tr>
 
                                 <td>
-                                    <strong>REE/ESIOS balancing prices</strong><br>
-                                    Spain
+                                    <strong>Balancing prices</strong><br>
+                                    REE/ESIOS Spain and REN Portugal
                                 </td>
 
                                 <td>
-                                    Varies by aFRR or mFRR product and source
+                                    Varies by aFRR, mFRR or RR product and source
                                     indicator. The selectors read the exact
                                     first and last available dates from the
                                     public catalog.
                                 </td>
 
                                 <td>
-                                    Preserved per official ESIOS indicator;
+                                    Preserved per official ESIOS indicator or
+                                    REN product;
                                     displayed frequencies use the methodology
                                     above.
                                 </td>
@@ -947,7 +992,8 @@ PUBLIC_DATA_GUIDE = """
                     <li>
                         The deployment database is checked for SQLite integrity,
                         allowed tables, OMIE-only wholesale rows and
-                        REE/ESIOS-only Spanish balancing rows.
+                        approved REE/ESIOS Spanish aFRR/mFRR rows and REN
+                        Portuguese RR rows only.
                     </li>
                     <li>
                         Market-design and resolution changes are stored as
@@ -1115,10 +1161,10 @@ def add_public_note(
             </strong>
 
             This version exposes historical OMIE wholesale prices for Spain
-            and Portugal plus authorized REE/ESIOS aFRR and mFRR price series
-            for Spain. Each product retains its official unit, direction,
-            source identifier and native resolution. REN data remain outside
-            this public release.
+            and Portugal, authorized REE/ESIOS aFRR and mFRR price series for
+            Spain, and REN Replacement Reserve prices for Portugal. Each product
+            retains its official unit, direction, source identifier and native
+            resolution.
 
         </div>
 
@@ -1178,9 +1224,7 @@ def validate_output(
     html: str,
 ) -> None:
 
-    forbidden_terms = [
-        'id: "rr_',
-    ]
+    forbidden_terms = []
 
     for term in forbidden_terms:
 
@@ -1205,6 +1249,7 @@ def validate_output(
         'id: "mfrr_scheduled_market_es"',
         'id: "mfrr_direct_weighted_es"',
         'id: "mfrr_legacy_es"',
+        'id: "rr_activation_pt"',
         "Public portfolio demo.",
         "Price series &amp; frequency methodology",
         "household electricity tariff",
@@ -1220,6 +1265,8 @@ def validate_output(
         "Market evolution storyline",
         "20 Nov 2024 — upward aFRR capacity marginal series begins.",
         "10 Dec 2024 — mFRR scheduled-price transition.",
+        "20 Oct 2020 — validated Portuguese RR history begins.",
+        "16 Apr 2025 — Portuguese RR product transition.",
         "How publication quality is protected",
         "Earlier official files have been requested",
         "known source gap",
@@ -1361,6 +1408,10 @@ def main() -> None:
         "  - REE/ESIOS mFRR prices"
     )
 
+    print(
+        "  - REN Portuguese RR prices"
+    )
+
     print()
 
 
@@ -1404,7 +1455,7 @@ def main() -> None:
 
 
     print(
-        "Balancing-market selectors: REE/ESIOS aFRR and mFRR"
+        "Balancing-market selectors: REE/ESIOS aFRR/mFRR and REN RR"
     )
 
     print(

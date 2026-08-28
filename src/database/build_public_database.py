@@ -511,14 +511,14 @@ def build_public_database() -> None:
 
 
         # ====================================================
-        # REE / ESIOS BALANCING PRICES
+        # APPROVED BALANCING PRICES
         #
-        # Copy only Spanish ESIOS aFRR and mFRR price rows.
-        # REN and every other source remain excluded.
+        # Copy Spanish ESIOS aFRR/mFRR and Portuguese REN RR.
+        # Every other balancing product remains excluded.
         # ====================================================
 
         print(
-            "Copying approved REE/ESIOS balancing prices..."
+            "Copying approved ESIOS and REN balancing prices..."
         )
 
         balancing_count = copy_query_in_batches(
@@ -541,9 +541,16 @@ def build_public_database() -> None:
                 source,
                 source_id
             FROM balancing_market_data
-            WHERE source = 'ESIOS'
-              AND country = 'ES'
-              AND service IN ('afrr', 'mfrr')
+            WHERE (
+                    source = 'ESIOS'
+                AND country = 'ES'
+                AND service IN ('afrr', 'mfrr')
+            )
+               OR (
+                    source = 'REN'
+                AND country = 'PT'
+                AND service = 'rr'
+            )
             ORDER BY
                 timestamp_utc,
                 service,
@@ -988,7 +995,7 @@ def build_public_database() -> None:
 
 
         # ----------------------------------------------------
-        # ONLY APPROVED REE/ESIOS BALANCING ROWS
+        # ONLY APPROVED ESIOS / REN BALANCING ROWS
         # ----------------------------------------------------
 
         forbidden_balancing_rows = (
@@ -996,10 +1003,16 @@ def build_public_database() -> None:
                 """
                 SELECT COUNT(*)
                 FROM balancing_market_data
-                WHERE source <> 'ESIOS'
-                   OR source IS NULL
-                   OR country <> 'ES'
-                   OR service NOT IN ('afrr', 'mfrr')
+                WHERE NOT (
+                    source = 'ESIOS'
+                    AND country = 'ES'
+                    AND service IN ('afrr', 'mfrr')
+                )
+                  AND NOT (
+                    source = 'REN'
+                    AND country = 'PT'
+                    AND service = 'rr'
+                )
                 """
             ).fetchone()[0]
         )
@@ -1017,7 +1030,7 @@ def build_public_database() -> None:
 
 
         # ----------------------------------------------------
-        # CATALOG BALANCING SERIES MUST BE REE/ESIOS ONLY
+        # CATALOG BALANCING SERIES MUST MATCH APPROVED SCOPE
         # ----------------------------------------------------
 
         cached_payload = (
@@ -1047,10 +1060,16 @@ def build_public_database() -> None:
                 [],
             )
             if (
-                row.get("source") != "ESIOS"
-                or row.get("country") != "ES"
-                or row.get("market")
-                not in {"afrr", "mfrr"}
+                not (
+                    row.get("source") == "ESIOS"
+                    and row.get("country") == "ES"
+                    and row.get("market") in {"afrr", "mfrr"}
+                )
+                and not (
+                    row.get("source") == "REN"
+                    and row.get("country") == "PT"
+                    and row.get("market") == "rr"
+                )
             )
         ]
 
@@ -1213,7 +1232,7 @@ def build_public_database() -> None:
     )
 
     print(
-        f"REE/ESIOS balancing rows: "
+        f"Approved balancing rows: "
         f"{balancing_count:,}"
     )
 
@@ -1280,7 +1299,7 @@ def build_public_database() -> None:
     )
 
     print(
-        f"Approved REE/ESIOS balancing rows: "
+        f"Approved balancing rows: "
         f"{balancing_count:,}"
     )
 

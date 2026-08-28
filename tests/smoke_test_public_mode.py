@@ -19,11 +19,10 @@ ALLOWED_PUBLIC_MARKETS = {
 ALLOWED_PUBLIC_BALANCING_MARKETS = {
     "afrr",
     "mfrr",
-}
-
-FORBIDDEN_PUBLIC_MARKETS = {
     "rr",
 }
+
+FORBIDDEN_PUBLIC_MARKETS = set()
 
 
 passed = 0
@@ -266,6 +265,7 @@ def test_public_dashboard() -> None:
         'id: "mfrr_scheduled_market_es"',
         'id: "mfrr_direct_weighted_es"',
         'id: "mfrr_legacy_es"',
+        'id: "rr_activation_pt"',
         "Public REE/ESIOS price series.",
     ]
 
@@ -279,9 +279,7 @@ def test_public_dashboard() -> None:
             ),
         )
 
-    forbidden_strings = [
-        'id: "rr_',
-    ]
+    forbidden_strings = []
 
     for forbidden in forbidden_strings:
 
@@ -407,7 +405,7 @@ def test_about() -> None:
     )
 
     assert_true(
-        sources == {"OMIE", "ESIOS"},
+        sources == {"OMIE", "ESIOS", "REN"},
         (
             "Unexpected public sources: "
             f"{sources}"
@@ -427,6 +425,7 @@ def test_about() -> None:
         "Continuous intraday",
         "aFRR",
         "mFRR",
+        "RR",
     }
 
     assert_true(
@@ -438,7 +437,7 @@ def test_about() -> None:
     )
 
     print(
-        "    Sources: OMIE and ESIOS"
+        "    Sources: OMIE, ESIOS and REN"
     )
 
 
@@ -467,9 +466,9 @@ def test_catalog() -> None:
     )
 
     assert_true(
-        len(balancing) == 13,
+        len(balancing) == 15,
         (
-            "Expected 13 REE/ESIOS balancing "
+            "Expected 15 approved balancing "
             f"catalog rows, got {len(balancing)}."
         ),
     )
@@ -484,11 +483,19 @@ def test_catalog() -> None:
 
     assert_true(
         all(
-            row.get("source") == "ESIOS"
-            and row.get("country") == "ES"
+            (
+                row.get("source") == "ESIOS"
+                and row.get("country") == "ES"
+                and row.get("market") in {"afrr", "mfrr"}
+            )
+            or (
+                row.get("source") == "REN"
+                and row.get("country") == "PT"
+                and row.get("market") == "rr"
+            )
             for row in balancing
         ),
-        "Public catalog contains a non-REE/ESIOS balancing row.",
+        "Public catalog contains an unapproved balancing row.",
     )
 
     assert_true(
@@ -796,7 +803,7 @@ def test_public_mfrr() -> None:
 
 
 # ============================================================
-# 10. RR REMAINS FORBIDDEN
+# 10. PUBLIC REN RR
 # ============================================================
 
 def test_forbidden_market(
@@ -849,10 +856,76 @@ def test_forbidden_market(
     )
 
 
-def test_rr_forbidden() -> None:
+def test_public_rr() -> None:
 
-    test_forbidden_market(
-        "rr"
+    payload, elapsed = request_json(
+        "/market/prices",
+        {
+            "market": "rr",
+            "country": "PT",
+            "start_date": "2025-04-16",
+            "end_date": "2025-04-16",
+            "frequency": "15min",
+            "direction": "none",
+            "stage": "energy",
+            "metric": "activation_price",
+        },
+    )
+
+    print_timing(elapsed)
+    rows = payload.get("data", [])
+
+    assert_true(
+        len(rows) > 0,
+        "Public RR returned no rows.",
+    )
+    assert_true(
+        {row.get("source") for row in rows} == {"REN"},
+        "Unexpected public RR source.",
+    )
+    assert_true(
+        {row.get("country") for row in rows} == {"PT"},
+        "Unexpected public RR country.",
+    )
+    assert_true(
+        {
+            row.get("native_resolution_minutes")
+            for row in rows
+        } == {15},
+        "Unexpected public RR native resolution.",
+    )
+
+    legacy_payload, legacy_elapsed = request_json(
+        "/market/prices",
+        {
+            "market": "rr",
+            "country": "PT",
+            "start_date": "2025-04-15",
+            "end_date": "2025-04-15",
+            "frequency": "15min",
+            "direction": "none",
+            "stage": "energy_legacy",
+            "metric": "activation_price",
+        },
+    )
+
+    print_timing(legacy_elapsed)
+    legacy_rows = legacy_payload.get("data", [])
+
+    assert_true(
+        len(legacy_rows) > 0,
+        "Public legacy RR returned no rows.",
+    )
+    assert_true(
+        {row.get("source") for row in legacy_rows} == {"REN"},
+        "Unexpected public legacy RR source.",
+    )
+    assert_true(
+        {
+            row.get("native_resolution_minutes")
+            for row in legacy_rows
+        } == {60},
+        "Unexpected public legacy RR native resolution.",
     )
 
 
@@ -957,8 +1030,8 @@ def main() -> int:
         ),
 
         (
-            "10. RR is forbidden publicly",
-            test_rr_forbidden,
+            "10. Public REN RR",
+            test_public_rr,
         ),
 
         (

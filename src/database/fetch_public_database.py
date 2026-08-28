@@ -62,6 +62,7 @@ ALLOWED_MARKETS = {
 ALLOWED_BALANCING_MARKETS = {
     "afrr",
     "mfrr",
+    "rr",
 }
 
 
@@ -248,10 +249,16 @@ def validate_database(
                 """
                 SELECT COUNT(*)
                 FROM balancing_market_data
-                WHERE source <> 'ESIOS'
-                   OR source IS NULL
-                   OR country <> 'ES'
-                   OR service NOT IN ('afrr', 'mfrr')
+                WHERE NOT (
+                    source = 'ESIOS'
+                    AND country = 'ES'
+                    AND service IN ('afrr', 'mfrr')
+                )
+                  AND NOT (
+                    source = 'REN'
+                    AND country = 'PT'
+                    AND service = 'rr'
+                )
                 """
             ).fetchone()[0]
         )
@@ -319,7 +326,7 @@ def validate_database(
         )
 
         print(
-            f"REE/ESIOS balancing rows: "
+            f"Approved balancing rows: "
             f"{balancing_row_count:,}"
         )
 
