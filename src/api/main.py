@@ -51,6 +51,13 @@ RESEARCH_FILE = (
     / "research.html"
 )
 
+ABOUT_PAGE_FILE = (
+    REPO_ROOT
+    / "src"
+    / "web"
+    / "about.html"
+)
+
 
 # ============================================================
 # APPLICATION
@@ -191,6 +198,21 @@ def research():
         )
 
     return FileResponse(RESEARCH_FILE)
+
+
+@app.get(
+    "/about/",
+    include_in_schema=False,
+)
+def about_page():
+
+    if not ABOUT_PAGE_FILE.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="About page was not found.",
+        )
+
+    return FileResponse(ABOUT_PAGE_FILE)
 
 
 # ============================================================
