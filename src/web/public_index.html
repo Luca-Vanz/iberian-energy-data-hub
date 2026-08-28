@@ -3764,23 +3764,54 @@
                 definition
             );
 
+        const chunks =
+            buildRequestChunks(
+                startDateElement.value,
+                endDateElement.value,
+                false
+            );
 
-        const requests =
-            components.map(
-                component =>
-                    fetchJson(
+        const results = [];
+
+
+        for (
+            let chunkIndex = 0;
+            chunkIndex < chunks.length;
+            chunkIndex += 1
+        ) {
+
+            const chunk =
+                chunks[chunkIndex];
+
+
+            if (
+                chunks.length > 1
+            ) {
+
+                setStatus(
+                    `Loading period ${chunkIndex + 1} of ${chunks.length}: `
+                    + `${chunk.start} to ${chunk.end}...`
+                );
+            }
+
+
+            for (
+                const component
+                of components
+            ) {
+
+                results.push(
+                    await fetchJson(
                         buildRequestUrl(
                             definition,
-                            component
+                            component,
+                            chunk.start,
+                            chunk.end
                         )
                     )
-            );
-
-
-        const results =
-            await Promise.all(
-                requests
-            );
+                );
+            }
+        }
 
 
         return mergeResults(
@@ -5350,52 +5381,24 @@
     }
 
 
-    function downloadChunkDays() {
-
-        const frequency =
-            frequencyElement.value;
-
-
-        if (
-            frequency === "15min"
-        ) {
-
-            return 90;
-        }
-
-
-        if (
-            frequency === "1h"
-        ) {
-
-            return 366;
-        }
-
-
-        return 3660;
-    }
-
-
-    function buildDownloadChunks() {
+    function boundedDateChunks(
+        startDate,
+        endDate,
+        chunkDays
+    ) {
 
         const chunks = [];
 
-        const finalDate =
-            endDateElement.value;
-
-        const chunkDays =
-            downloadChunkDays();
-
         let chunkStart =
-            startDateElement.value;
+            startDate;
 
 
         while (
-            chunkStart <= finalDate
+            chunkStart <= endDate
         ) {
 
             const chunkEnd = [
-                finalDate,
+                endDate,
                 datePlusDays(
                     chunkStart,
                     chunkDays - 1
@@ -5420,6 +5423,181 @@
 
 
         return chunks;
+    }
+
+
+    function calendarYearChunks(
+        startDate,
+        endDate
+    ) {
+
+        const chunks = [];
+
+        let chunkStart =
+            startDate;
+
+
+        while (
+            chunkStart <= endDate
+        ) {
+
+            const year =
+                chunkStart.slice(0, 4);
+
+            const chunkEnd = [
+                endDate,
+                `${year}-12-31`
+            ].sort()[0];
+
+
+            chunks.push(
+                {
+                    start: chunkStart,
+                    end: chunkEnd
+                }
+            );
+
+
+            chunkStart =
+                datePlusDays(
+                    chunkEnd,
+                    1
+                );
+        }
+
+
+        return chunks;
+    }
+
+
+    function weeklyChunks(
+        startDate,
+        endDate
+    ) {
+
+        const chunks = [];
+
+        let chunkStart =
+            startDate;
+
+
+        while (
+            chunkStart <= endDate
+        ) {
+
+            const candidate =
+                datePlusDays(
+                    chunkStart,
+                    363
+                );
+
+            const candidateDate =
+                new Date(
+                    `${candidate}T12:00:00Z`
+                );
+
+            const chunkEnd = [
+                endDate,
+                datePlusDays(
+                    candidate,
+                    -candidateDate.getUTCDay()
+                )
+            ].sort()[0];
+
+
+            chunks.push(
+                {
+                    start: chunkStart,
+                    end: chunkEnd
+                }
+            );
+
+
+            chunkStart =
+                datePlusDays(
+                    chunkEnd,
+                    1
+                );
+        }
+
+
+        return chunks;
+    }
+
+
+    function buildRequestChunks(
+        startDate,
+        endDate,
+        forDownload
+    ) {
+
+        const frequency =
+            frequencyElement.value;
+
+
+        if (
+            frequency === "15min"
+        ) {
+
+            return forDownload
+                ? boundedDateChunks(
+                    startDate,
+                    endDate,
+                    90
+                )
+                : [
+                    {
+                        start: startDate,
+                        end: endDate
+                    }
+                ];
+        }
+
+
+        if (
+            frequency === "1h"
+        ) {
+
+            return forDownload
+                ? boundedDateChunks(
+                    startDate,
+                    endDate,
+                    366
+                )
+                : [
+                    {
+                        start: startDate,
+                        end: endDate
+                    }
+                ];
+        }
+
+
+        if (
+            frequency === "weekly"
+        ) {
+
+            return weeklyChunks(
+                startDate,
+                endDate
+            );
+        }
+
+
+        return calendarYearChunks(
+            startDate,
+            endDate
+        );
+    }
+
+
+    function buildDownloadChunks() {
+
+        return buildRequestChunks(
+            startDateElement.value,
+            endDateElement.value,
+            true
+        );
     }
 
 

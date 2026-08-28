@@ -39,7 +39,8 @@ The live dashboard currently provides:
 
 The chart intentionally limits very large high-resolution selections for
 browser usability. CSV downloads can use any supported frequency across the
-complete selected availability range and are retrieved in bounded chunks when
+complete selected availability range and are retrieved in calendar-aligned,
+bounded chunks when
 necessary.
 
 ## Current public coverage
