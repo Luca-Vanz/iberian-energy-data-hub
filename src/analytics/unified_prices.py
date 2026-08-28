@@ -33,6 +33,62 @@ ALL_MARKETS = (
 )
 
 
+# Dated product and resolution changes used as chart markers. These are
+# fallback events so the storyline remains available for databases built
+# before the corresponding rows were added to ``market_events``.
+BUILTIN_MARKET_EVENTS = [
+    {
+        "event_date": "20180101", "country": "ES", "service": "afrr",
+        "event_type": "coverage_start",
+        "title": "aFRR historical indicator coverage begins",
+        "description": "The validated ESIOS aFRR price history starts at hourly resolution.",
+        "source": "ESIOS",
+    },
+    {
+        "event_date": "20220524", "country": "ES", "service": "afrr",
+        "event_type": "resolution_change",
+        "title": "aFRR energy and weighted capacity series move to 15-minute data",
+        "description": "The validated ESIOS series changes from hourly to quarter-hourly native observations.",
+        "source": "ESIOS",
+    },
+    {
+        "event_date": "20241120", "country": "ES", "service": "afrr",
+        "event_type": "series_start",
+        "title": "Upward aFRR capacity marginal series begins",
+        "description": "This specific marginal capacity product starts later than the other aFRR indicators.",
+        "source": "ESIOS",
+    },
+    {
+        "event_date": "20180101", "country": "ES", "service": "mfrr",
+        "event_type": "coverage_start",
+        "title": "mFRR legacy price coverage begins",
+        "description": "The validated legacy scheduled marginal-price history starts at hourly resolution.",
+        "source": "ESIOS",
+    },
+    {
+        "event_date": "20220524", "country": "ES", "service": "mfrr",
+        "event_type": "resolution_change",
+        "title": "mFRR weighted and legacy series move to 15-minute data",
+        "description": "The validated ESIOS series changes from hourly to quarter-hourly native observations.",
+        "source": "ESIOS",
+    },
+    {
+        "event_date": "20220815", "country": "ES", "service": "mfrr",
+        "event_type": "series_start",
+        "title": "Direct downward mFRR series begins",
+        "description": "The direct downward weighted-average product starts on this date.",
+        "source": "ESIOS",
+    },
+    {
+        "event_date": "20241210", "country": "ES", "service": "mfrr",
+        "event_type": "market_redesign",
+        "title": "mFRR scheduled market-price product replaces legacy marginal series",
+        "description": "The current scheduled market-price product is kept separate from the legacy series.",
+        "source": "ESIOS",
+    },
+]
+
+
 # ==================================================
 # DISPLAY FREQUENCIES
 # ==================================================
@@ -1368,20 +1424,12 @@ def load_market_events(
     end_date: str,
 ) -> list[dict]:
 
-    if not table_exists(
-        connection,
-        "market_events",
-    ):
+    rows = []
 
-        return []
-
-    placeholders = ",".join(
-        "?"
-        for _ in countries
-    )
-
-    rows = connection.execute(
-        f"""
+    if table_exists(connection, "market_events"):
+        placeholders = ",".join("?" for _ in countries)
+        rows = connection.execute(
+            f"""
         SELECT
 
             event_date,
@@ -1407,16 +1455,11 @@ def load_market_events(
             event_date,
             country,
             title;
-        """,
-        (
-            market,
-            *countries,
-            start_date,
-            end_date,
-        ),
-    ).fetchall()
+            """,
+            (market, *countries, start_date, end_date),
+        ).fetchall()
 
-    return [
+    loaded = [
         {
             "event_date":
                 readable_date(
@@ -1444,6 +1487,51 @@ def load_market_events(
 
         for row in rows
     ]
+
+    # Keep database events authoritative, while supplying dated balancing
+    # events to older deployments that predate the expanded event catalogue.
+    known = {
+        (
+            item["event_date"],
+            item["country"],
+            item["service"],
+            item["title"],
+        )
+        for item in loaded
+    }
+
+    for item in BUILTIN_MARKET_EVENTS:
+        if (
+            item["service"] != market
+            or item["country"] not in countries
+            or item["event_date"] < start_date
+            or item["event_date"] > end_date
+        ):
+            continue
+
+        key = (
+            item["event_date"],
+            item["country"],
+            item["service"],
+            item["title"],
+        )
+        if key not in known:
+            loaded.append(
+                {
+                    **item,
+                    "event_date": readable_date(item["event_date"]),
+                }
+            )
+            known.add(key)
+
+    return sorted(
+        loaded,
+        key=lambda item: (
+            item["event_date"],
+            item["country"],
+            item["title"],
+        ),
+    )
 
 
 # ==================================================

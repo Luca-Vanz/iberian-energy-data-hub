@@ -420,6 +420,12 @@ PUBLIC_DATA_GUIDE = """
                             prices pay for reserve availability in EUR/MW;
                             energy prices value activated electricity in
                             EUR/MWh. Upward and downward products are distinct.
+                            In the validated Spanish history, aFRR energy
+                            marginal prices run from 1 January 2018; they are
+                            hourly through 23 May 2022 and quarter-hourly from
+                            24 May 2022. Capacity products have their own
+                            starts, so an empty early period is not a zero
+                            price.
                         </dd>
 
 
@@ -434,7 +440,12 @@ PUBLIC_DATA_GUIDE = """
                             system needs a sustained upward or downward change
                             in generation or consumption. Scheduled and direct
                             activations are separate processes and can have
-                            different price definitions.
+                            different price definitions. The validated legacy
+                            scheduled marginal series begins hourly in 2018,
+                            moves to 15-minute data on 24 May 2022, and ends
+                            on 9 December 2024. The current scheduled market
+                            price starts on 10 December 2024; direct downward
+                            activation starts on 15 August 2022.
                         </dd>
 
 
@@ -707,7 +718,9 @@ PUBLIC_DATA_GUIDE = """
                     This chronology separates a market launch or redesign from
                     the first date contained in this public database. A
                     coverage start does not necessarily mean that the market
-                    itself began on that date.
+                    itself began on that date. Matching events are also drawn
+                    as dashed vertical markers on the chart for the selected
+                    series and date range.
                 </p>
 
 
@@ -932,17 +945,18 @@ PUBLIC_DATA_GUIDE = """
                                 </td>
 
                                 <td>
-                                    Varies by aFRR, mFRR or RR product and source
-                                    indicator. The selectors read the exact
-                                    first and last available dates from the
-                                    public catalog.
+                                    aFRR energy: 1 Jan 2018–20 Aug 2026;<br>
+                                    mFRR products: 1 Jan 2018–20 Aug 2026;<br>
+                                    Portuguese RR: 20 Oct 2020–30 Dec 2025.
+                                    Product-specific dates are shown by the
+                                    live availability catalog.
                                 </td>
 
                                 <td>
-                                    Preserved per official ESIOS indicator or
-                                    REN product;
-                                    displayed frequencies use the methodology
-                                    above.
+                                    Hourly and 15-minute native observations
+                                    are preserved per official indicator or
+                                    REN product. Display frequencies use the
+                                    methodology above.
                                 </td>
 
                                 <td>
@@ -950,7 +964,9 @@ PUBLIC_DATA_GUIDE = """
                                     scheduled energy prices use EUR/MWh.
                                     Upward and downward products, scheduled and
                                     direct activation, and legacy and current
-                                    products remain distinct.
+                                    products remain distinct. RR currently
+                                    refers to the Portuguese REN series in this
+                                    public database.
                                 </td>
 
                             </tr>
