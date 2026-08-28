@@ -24,6 +24,14 @@
     .note h3 { margin:0 0 8px; font-size:20px; }
     .note p { color:var(--muted); line-height:1.6; }
     .meta { color:var(--muted); font-size:12px; }
+    .metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin:20px 0; }
+    .metric { padding:15px; border:1px solid var(--border); border-radius:9px; background:#fbfcfd; }
+    .metric strong { display:block; font-size:23px; }
+    .metric span { color:var(--muted); font-size:12px; }
+    table { width:100%; border-collapse:collapse; font-size:13px; margin-top:16px; }
+    th, td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--border); }
+    th { color:var(--muted); font-size:12px; }
+    .note small { color:var(--muted); line-height:1.5; }
     .tag { display:inline-block; margin-right:8px; color:var(--primary); font-size:12px; font-weight:650; }
     .links { margin-top:18px; display:flex; gap:16px; flex-wrap:wrap; }
     .links a { color:var(--primary); font-size:13px; font-weight:650; }
@@ -44,7 +52,31 @@
     <article class="note">
       <div class="meta"><span class="tag">Spain</span><span class="tag">Wholesale prices</span>Research note in preparation</div>
       <h3>When and why do electricity prices turn negative in Spain?</h3>
-      <p>This first research note will examine the historical development and time patterns of negative Spanish day-ahead prices. Findings will be added only after the required datasets and calculations have been audited.</p>
+      <p>Negative prices are a recent feature of the available Spanish day-ahead history. In this snapshot, they first appear in 2024 and are concentrated in daylight delivery periods. The data shows when the outcome occurs; it does not, by itself, establish that renewable output or demand caused it.</p>
+      <div class="metrics" aria-label="Headline metrics">
+        <div class="metric"><strong>3,385</strong><span>negative delivery observations</span></div>
+        <div class="metric"><strong>3.4%</strong><span>of 99,023 Spanish observations</span></div>
+        <div class="metric"><strong>−15 €/MWh</strong><span>lowest observed price</span></div>
+        <div class="metric"><strong>2024–2026</strong><span>years with negative observations</span></div>
+      </div>
+      <h4>Observed development</h4>
+      <table>
+        <thead><tr><th>Year</th><th>Observations</th><th>Negative</th><th>Share</th><th>Lowest price</th></tr></thead>
+        <tbody>
+          <tr><td>2018</td><td>8,760</td><td>0</td><td>0.00%</td><td>2.06 €/MWh</td></tr>
+          <tr><td>2019</td><td>8,760</td><td>0</td><td>0.00%</td><td>0.03 €/MWh</td></tr>
+          <tr><td>2020</td><td>8,784</td><td>0</td><td>0.00%</td><td>1.02 €/MWh</td></tr>
+          <tr><td>2021</td><td>8,760</td><td>0</td><td>0.00%</td><td>0.01 €/MWh</td></tr>
+          <tr><td>2022</td><td>8,760</td><td>0</td><td>0.00%</td><td>0.00 €/MWh</td></tr>
+          <tr><td>2023</td><td>8,760</td><td>0</td><td>0.00%</td><td>0.00 €/MWh</td></tr>
+          <tr><td>2024</td><td>8,784</td><td>247</td><td>2.81%</td><td>−2.00 €/MWh</td></tr>
+          <tr><td>2025*</td><td>15,387</td><td>601</td><td>3.91%</td><td>−15.00 €/MWh</td></tr>
+          <tr><td>2026*</td><td>22,268</td><td>2,537</td><td>11.39%</td><td>−10.00 €/MWh</td></tr>
+        </tbody>
+      </table>
+      <small>*2025 and 2026 are partial years in the current database snapshot. Counts are delivery-period observations, not necessarily distinct calendar hours after the 15-minute market transition.</small>
+      <h4>Method and limits</h4>
+      <p>The snapshot uses Spanish OMIE day-ahead observations from 1 January 2018 through 20 August 2026. A negative observation is one with a price below 0 €/MWh. Hourly and 15-minute native observations are counted as published; no interpolation or gap filling is applied. Solar, wind, demand, imports and exports are not currently joined to this research note, so causal explanations remain hypotheses for a later data phase.</p>
       <div class="links"><a href="/">Explore the underlying Data Hub →</a></div>
     </article>
   </main>
