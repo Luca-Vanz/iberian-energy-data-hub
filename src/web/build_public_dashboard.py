@@ -381,12 +381,28 @@ PUBLIC_DATA_GUIDE = """
                             Public REE/ESIOS price series.
                         </strong>
 
-                        These services are used by transmission-system
-                        operators after wholesale trading to keep electricity
-                        supply and demand balanced in real time. Their prices
-                        are different products from wholesale energy prices
-                        and must not be interpreted as alternative day-ahead
-                        or intraday prices.
+                        Electricity must be balanced continuously: at every
+                        moment, generation and imports must match consumption
+                        and exports. Forecast errors, outages and changing
+                        renewable output create a mismatch after the wholesale
+                        markets have cleared. The system operator corrects
+                        that mismatch by procuring reserve capacity in advance
+                        and activating balancing energy when needed. These are
+                        separate products from day-ahead and intraday energy
+                        prices.
+                    </p>
+
+                    <p>
+                        <strong>Up and down.</strong>
+                        <em>Upward</em> means increasing net injection into
+                        the system: a generator produces more, a consumer
+                        reduces demand, or an importer increases imports.
+                        <em>Downward</em> means reducing net injection: a
+                        generator produces less, a consumer increases demand,
+                        or an exporter increases exports. Up and down prices
+                        are not positive and negative versions of one series;
+                        they price opposite operational actions and must be
+                        analysed separately.
                     </p>
 
 
@@ -414,18 +430,21 @@ PUBLIC_DATA_GUIDE = """
                         </dt>
 
                         <dd style="margin: 3px 0 12px 20px;">
-                            Automatically activated balancing capacity and
-                            energy used to restore system frequency and the
-                            control-area balance after a disturbance. Capacity
-                            prices pay for reserve availability in EUR/MW;
-                            energy prices value activated electricity in
-                            EUR/MWh. Upward and downward products are distinct.
-                            In the validated Spanish history, aFRR energy
-                            marginal prices run from 1 January 2018; they are
+                            aFRR is the automatic “fine correction” layer.
+                            The control system sends an automatic signal to
+                            participating resources to restore frequency and
+                            the area balance over minutes. <strong>Energy
+                            price</strong> is the price of the activated
+                            electricity (EUR/MWh). <strong>Capacity
+                            price</strong> is the payment for keeping response
+                            capability available (EUR/MW), whether or not it
+                            is later activated. “Marginal” means the price of
+                            the last accepted offer; “weighted-average” means
+                            the awarded quantities are used as weights. Up and
+                            down are separate directions. In the validated
+                            Spanish history, aFRR energy marginal prices are
                             hourly through 23 May 2022 and quarter-hourly from
-                            24 May 2022. Capacity products have their own
-                            starts, so an empty early period is not a zero
-                            price.
+                            24 May 2022.
                         </dd>
 
 
@@ -436,16 +455,21 @@ PUBLIC_DATA_GUIDE = """
                         </dt>
 
                         <dd style="margin: 3px 0 12px 20px;">
-                            Manually activated balancing energy used when the
-                            system needs a sustained upward or downward change
-                            in generation or consumption. Scheduled and direct
-                            activations are separate processes and can have
-                            different price definitions. The validated legacy
-                            scheduled marginal series begins hourly in 2018,
-                            moves to 15-minute data on 24 May 2022, and ends
-                            on 9 December 2024. The current scheduled market
-                            price starts on 10 December 2024; direct downward
-                            activation starts on 15 August 2022.
+                            mFRR is the slower, manually dispatched layer used
+                            for a sustained correction after the automatic
+                            response. An operator selects bids to increase or
+                            decrease generation or demand. <strong>Scheduled
+                            weighted-average</strong> is the quantity-weighted
+                            price of the standard scheduled activations;
+                            <strong>direct weighted-average</strong> is the
+                            corresponding price for direct activations.
+                            <strong>Market price</strong> is the common current
+                            scheduled product. <strong>Legacy marginal
+                            price</strong> is the historical product and is
+                            not spliced onto the current market price. These
+                            differences describe distinct procurement or
+                            activation processes, not alternative ways of
+                            averaging the same observation.
                         </dd>
 
 
@@ -456,15 +480,16 @@ PUBLIC_DATA_GUIDE = """
                         </dt>
 
                         <dd style="margin: 3px 0 12px 20px;">
-                            A slower reserve used to replace earlier activated
-                            reserves and maintain sufficient balancing
-                            capability for later periods. An activation price
-                            represents the price of energy activated through
-                            this reserve product. The public RR series is
-                            Portugal's REN activation price in EUR/MWh: the
-                            legacy hourly product through 15 April 2025 and the
-                            current 15-minute product from 16 April 2025 remain
-                            distinct official components.
+                            RR is the reserve-replacement layer: it restores
+                            the reserve headroom used by faster services so
+                            the system is ready for the next imbalance. The
+                            activation price is the EUR/MWh price assigned to
+                            the replacement-reserve energy activated in that
+                            period. It is an energy price, not a capacity
+                            availability price, and its direction still means
+                            upward or downward net injection. The public RR
+                            series is Portugal's REN product; its legacy hourly
+                            and current 15-minute components remain separate.
                         </dd>
 
 
