@@ -247,15 +247,10 @@ def about():
             "Day-ahead",
             "Intraday auctions",
             "Continuous intraday",
-            "aFRR",
-            "mFRR",
-            "RR",
         ]
 
         sources = [
             "OMIE",
-            "ESIOS",
-            "REN",
         ]
 
     else:

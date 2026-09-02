@@ -1345,11 +1345,11 @@
                 <div style="border-left: 3px solid #7f56d9; padding-left: 18px;">
 
                     <p>
-                        <strong>1 Jan 2018 — current historical package begins.</strong><br>
-                        The public database starts here for day-ahead, the
-                        regional intraday-auction structure and the legacy
-                        aFRR/mFRR indicators. These markets existed earlier;
-                        this is a data-coverage boundary.
+                        <strong>1 Jan 1998 — Spanish day-ahead history begins.</strong><br>
+                        OMIE's official historical workbook begins with hourly
+                        Spanish day-ahead prices on this date. Portuguese
+                        day-ahead prices begin on 1 July 2007, when Portugal
+                        joined the Iberian market.
                     </p>
 
                     <p>
@@ -1445,8 +1445,7 @@
 
                 <p style="margin-top: 0;">
                     Coverage below describes the current public database
-                    release, not the earliest date that may exist in OMIE's
-                    historical archives. The selector above the chart reads
+                    release. The selector above the chart reads
                     the exact first and last dates for the chosen country,
                     product and auction session from the database catalog.
                 </p>
@@ -1480,11 +1479,11 @@
 
                                 <td>
                                     <strong>Day-ahead</strong><br>
-                                    Spain and Portugal
+                                    Spain
                                 </td>
 
                                 <td>
-                                    1 Jan 2018–20 Aug 2026
+                                    1 Jan 1998–20 Aug 2026
                                 </td>
 
                                 <td>
@@ -1493,9 +1492,33 @@
                                 </td>
 
                                 <td>
-                                    The current database begins in 2018.
-                                    Earlier official files have been requested
-                                    from OMIE and are not silently inferred.
+                                    OMIE-supplied hourly history is joined to
+                                    the regularly collected series without
+                                    changing official values.
+                                </td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>
+                                    <strong>Day-ahead</strong><br>
+                                    Portugal
+                                </td>
+
+                                <td>
+                                    1 Jul 2007–20 Aug 2026
+                                </td>
+
+                                <td>
+                                    Hourly before 1 Oct 2025;<br>
+                                    15-minute from 1 Oct 2025
+                                </td>
+
+                                <td>
+                                    Portuguese coverage starts with the
+                                    official OMIE history supplied for the
+                                    Portuguese bidding zone.
                                 </td>
 
                             </tr>
@@ -1714,116 +1737,6 @@
             metric: null,
             direction: false,
             session: false
-        },
-
-        {
-            id: "afrr_energy_marginal",
-            group: "REE/ESIOS aFRR",
-            label: "aFRR energy — marginal price",
-            market: "afrr",
-            stage: "energy",
-            metric: "marginal_price",
-            direction: true,
-            session: false,
-            countries: ["ES"]
-        },
-
-        {
-            id: "afrr_capacity_marginal",
-            group: "REE/ESIOS aFRR",
-            label: "aFRR capacity — marginal price",
-            market: "afrr",
-            stage: "capacity",
-            metric: "marginal_price",
-            direction: true,
-            session: false,
-            countries: ["ES"]
-        },
-
-        {
-            id: "afrr_capacity_weighted",
-            group: "REE/ESIOS aFRR",
-            label: "aFRR capacity — weighted-average price",
-            market: "afrr",
-            stage: "capacity",
-            metric: "weighted_average_price",
-            direction: true,
-            session: false,
-            countries: ["ES"]
-        },
-
-        {
-            id: "mfrr_scheduled_weighted_es",
-            group: "REE/ESIOS mFRR",
-            label: "mFRR scheduled — weighted-average price",
-            market: "mfrr",
-            stage: "energy_scheduled",
-            metric: "weighted_average_price",
-            direction: true,
-            session: false,
-            countries: ["ES"]
-        },
-
-        {
-            id: "mfrr_scheduled_market_es",
-            group: "REE/ESIOS mFRR",
-            label: "mFRR scheduled — market price",
-            market: "mfrr",
-            stage: "energy_scheduled",
-            metric: "market_price",
-            direction: false,
-            session: false,
-            countries: ["ES"]
-        },
-
-        {
-            id: "mfrr_direct_weighted_es",
-            group: "REE/ESIOS mFRR",
-            label: "mFRR direct — weighted-average price",
-            market: "mfrr",
-            stage: "energy_direct",
-            metric: "weighted_average_price",
-            direction: true,
-            session: false,
-            countries: ["ES"]
-        },
-
-        {
-            id: "mfrr_legacy_es",
-            group: "REE/ESIOS mFRR",
-            label: "mFRR scheduled — legacy marginal price",
-            market: "mfrr",
-            stage: "energy_scheduled_legacy",
-            metric: "marginal_price",
-            direction: true,
-            session: false,
-            countries: ["ES"]
-        },
-
-        {
-            id: "rr_activation_pt",
-            group: "REN RR",
-            label: "Replacement reserve — activation price",
-            market: "rr",
-            metric: "activation_price",
-            direction: false,
-            session: false,
-            countries: ["PT"],
-            availabilityMode: "union",
-
-            components: [
-
-                {
-                    stage: "energy_legacy",
-                    metric: "activation_price"
-                },
-
-                {
-                    stage: "energy",
-                    metric: "activation_price"
-                }
-
-            ]
         }
 
     ];

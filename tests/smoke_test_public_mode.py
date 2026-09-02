@@ -16,13 +16,7 @@ ALLOWED_PUBLIC_MARKETS = {
     "intraday_continuous",
 }
 
-ALLOWED_PUBLIC_BALANCING_MARKETS = {
-    "afrr",
-    "mfrr",
-    "rr",
-}
-
-FORBIDDEN_PUBLIC_MARKETS = set()
+FORBIDDEN_PUBLIC_MARKETS = {"afrr", "mfrr", "rr"}
 
 
 passed = 0
@@ -257,7 +251,7 @@ def test_public_dashboard() -> None:
         ),
     )
 
-    required_balancing_strings = [
+    forbidden_strings = [
         'id: "afrr_energy_marginal"',
         'id: "afrr_capacity_marginal"',
         'id: "afrr_capacity_weighted"',
@@ -266,29 +260,15 @@ def test_public_dashboard() -> None:
         'id: "mfrr_direct_weighted_es"',
         'id: "mfrr_legacy_es"',
         'id: "rr_activation_pt"',
-        "Public REE/ESIOS price series.",
     ]
-
-    for required in required_balancing_strings:
-
-        assert_true(
-            required in html,
-            (
-                "Public dashboard is missing "
-                f"REE/ESIOS content: {required}"
-            ),
-        )
-
-    forbidden_strings = []
 
     for forbidden in forbidden_strings:
 
         assert_true(
             forbidden not in html,
             (
-                "Public dashboard contains "
-                f"forbidden balancing selector: "
-                f"{forbidden}"
+                "Public dashboard contains a forbidden "
+                f"balancing selector: {forbidden}"
             ),
         )
 
@@ -369,8 +349,7 @@ def test_public_dashboard() -> None:
     )
 
     print(
-        "    OMIE wholesale and REE/ESIOS "
-        "balancing selectors with full-range downloads"
+        "    OMIE-only wholesale selectors with full-range downloads"
     )
 
 
@@ -405,7 +384,7 @@ def test_about() -> None:
     )
 
     assert_true(
-        sources == {"OMIE", "ESIOS", "REN"},
+        sources == {"OMIE"},
         (
             "Unexpected public sources: "
             f"{sources}"
@@ -423,9 +402,6 @@ def test_about() -> None:
         "Day-ahead",
         "Intraday auctions",
         "Continuous intraday",
-        "aFRR",
-        "mFRR",
-        "RR",
     }
 
     assert_true(
@@ -437,7 +413,7 @@ def test_about() -> None:
     )
 
     print(
-        "    Sources: OMIE, ESIOS and REN"
+        "    Source: OMIE"
     )
 
 
@@ -466,36 +442,11 @@ def test_catalog() -> None:
     )
 
     assert_true(
-        len(balancing) == 15,
+        len(balancing) == 0,
         (
-            "Expected 15 approved balancing "
+            "Expected no public balancing "
             f"catalog rows, got {len(balancing)}."
         ),
-    )
-
-    assert_true(
-        {
-            row.get("market")
-            for row in balancing
-        } == ALLOWED_PUBLIC_BALANCING_MARKETS,
-        "Unexpected public balancing markets.",
-    )
-
-    assert_true(
-        all(
-            (
-                row.get("source") == "ESIOS"
-                and row.get("country") == "ES"
-                and row.get("market") in {"afrr", "mfrr"}
-            )
-            or (
-                row.get("source") == "REN"
-                and row.get("country") == "PT"
-                and row.get("market") == "rr"
-            )
-            for row in balancing
-        ),
-        "Public catalog contains an unapproved balancing row.",
     )
 
     assert_true(
@@ -533,6 +484,19 @@ def test_catalog() -> None:
         ),
     )
 
+    day_ahead_dates = {
+        row.get("country"): row.get("first_date")
+        for row in wholesale
+        if row.get("market") == "day_ahead"
+    }
+    assert_true(
+        day_ahead_dates == {
+            "ES": "1998-01-01",
+            "PT": "2007-07-01",
+        },
+        f"Unexpected day-ahead start dates: {day_ahead_dates}",
+    )
+
     print(
         f"    Wholesale catalog rows: "
         f"{len(wholesale)}"
@@ -548,6 +512,22 @@ def test_catalog() -> None:
 # ============================================================
 
 def test_day_ahead() -> None:
+
+    earliest_payload, earliest_elapsed = request_json(
+        "/market/prices",
+        {
+            "market": "day_ahead",
+            "country": "ES",
+            "start_date": "1998-01-01",
+            "end_date": "1998-01-01",
+            "frequency": "1h",
+        },
+    )
+    print_timing(earliest_elapsed)
+    assert_true(
+        len(earliest_payload.get("data", [])) == 24,
+        "Expected 24 Spanish day-ahead points on 1998-01-01.",
+    )
 
     payload, elapsed = request_json(
         "/market/prices",
@@ -930,7 +910,31 @@ def test_public_rr() -> None:
 
 
 # ============================================================
-# 11. DASHBOARD ALIAS
+# 8. BALANCING MARKETS ARE LOCAL-ONLY
+# ============================================================
+
+def test_balancing_markets_forbidden() -> None:
+    for market in sorted(FORBIDDEN_PUBLIC_MARKETS):
+        response, elapsed = request(
+            "/market/prices",
+            {
+                "market": market,
+                "country": "ES",
+                "start_date": "2025-12-30",
+                "end_date": "2025-12-30",
+                "frequency": "1h",
+            },
+        )
+        print_timing(elapsed)
+        assert_true(
+            response.status_code == 403,
+            f"Expected HTTP 403 for public {market}; "
+            f"got {response.status_code}.",
+        )
+
+
+# ============================================================
+# 9. DASHBOARD ALIAS
 # ============================================================
 
 def test_dashboard_alias() -> None:
@@ -1020,22 +1024,12 @@ def main() -> int:
         ),
 
         (
-            "8. Public REE/ESIOS aFRR",
-            test_public_afrr,
+            "8. Public balancing markets are forbidden",
+            test_balancing_markets_forbidden,
         ),
 
         (
-            "9. Public REE/ESIOS mFRR",
-            test_public_mfrr,
-        ),
-
-        (
-            "10. Public REN RR",
-            test_public_rr,
-        ),
-
-        (
-            "11. Dashboard alias is public-safe",
+            "9. Dashboard alias is public-safe",
             test_dashboard_alias,
         ),
     ]

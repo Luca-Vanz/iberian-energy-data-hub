@@ -45,7 +45,6 @@ DEFAULT_PUBLIC_DB_URL = (
 
 
 EXPECTED_TABLES = {
-    "balancing_market_data",
     "market_catalog_cache",
     "market_events",
     "market_price_data",
@@ -58,13 +57,6 @@ ALLOWED_MARKETS = {
     "intraday_auction",
     "intraday_continuous",
 }
-
-ALLOWED_BALANCING_MARKETS = {
-    "afrr",
-    "mfrr",
-    "rr",
-}
-
 
 def download_database(
     url: str,
@@ -244,36 +236,6 @@ def validate_database(
             )
 
 
-        forbidden_balancing_rows = (
-            connection.execute(
-                """
-                SELECT COUNT(*)
-                FROM balancing_market_data
-                WHERE NOT (
-                    source = 'ESIOS'
-                    AND country = 'ES'
-                    AND service IN ('afrr', 'mfrr')
-                )
-                  AND NOT (
-                    source = 'REN'
-                    AND country = 'PT'
-                    AND service = 'rr'
-                )
-                """
-            ).fetchone()[0]
-        )
-
-        if forbidden_balancing_rows:
-
-            raise RuntimeError(
-                (
-                    "Public database contains "
-                    f"{forbidden_balancing_rows:,} "
-                    "unapproved balancing rows."
-                )
-            )
-
-
         balancing_catalog_count = (
             connection.execute(
                 """
@@ -290,16 +252,6 @@ def validate_database(
             raise RuntimeError(
                 "Market catalog cache is missing."
             )
-
-
-        balancing_row_count = (
-            connection.execute(
-                """
-                SELECT COUNT(*)
-                FROM balancing_market_data
-                """
-            ).fetchone()[0]
-        )
 
 
         row_count = (
@@ -325,10 +277,7 @@ def validate_database(
             "Wholesale source: OMIE"
         )
 
-        print(
-            f"Approved balancing rows: "
-            f"{balancing_row_count:,}"
-        )
+        print("Balancing data: excluded")
 
     finally:
 

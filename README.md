@@ -46,7 +46,8 @@ necessary.
 
 | Product | Coverage in the current public database | Native resolution |
 | --- | --- | --- |
-| Day-ahead, ES and PT | 1 Jan 2018–20 Aug 2026 | Hourly before 1 Oct 2025; 15-minute from 1 Oct 2025 |
+| Day-ahead, ES | 1 Jan 1998–20 Aug 2026 | Hourly before 1 Oct 2025; 15-minute from 1 Oct 2025 |
+| Day-ahead, PT | 1 Jul 2007–20 Aug 2026 | Hourly before 1 Oct 2025; 15-minute from 1 Oct 2025 |
 | Intraday auctions, ES and PT | Mainly from 1 Jan 2018; session 1 includes a 31 Dec 2017 delivery-horizon record; end dates vary by session | Historically hourly; 15-minute products from 19 Mar 2025 |
 | Continuous intraday, ES and PT | 13 Jun 2018–19 Aug 2026 | Historically hourly; 15-minute products from 19 Mar 2025 |
 
@@ -57,8 +58,10 @@ Important interpretation notes:
   structure from 14 Jun 2024.
 - Continuous intraday starts on 13 Jun 2018 because that is the market start.
 - A known continuous-intraday source gap remains on 29 Apr 2025.
-- Earlier official day-ahead and auction files have been requested from OMIE;
+- OMIE's supplied day-ahead workbook is integrated through 30 Sep 2025;
   unavailable observations are not inferred or interpolated.
+- OMIE's supplied intraday-auction archive is being validated separately
+  because its historical format differs from the modern daily files.
 
 Coverage is product-specific and will change as new validated official data is
 added. The live catalog is the authoritative source for selectable dates.

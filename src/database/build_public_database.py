@@ -33,7 +33,6 @@ PUBLIC_MARKETS = {
 }
 
 PUBLIC_TABLES = {
-    "balancing_market_data",
     "omie_day_ahead_prices",
     "market_price_data",
     "market_events",
@@ -281,69 +280,12 @@ def build_public_catalog(
             }
         )
 
-    balancing_rows = connection.execute(
-        """
-        SELECT
-            country,
-            service,
-            market_stage,
-            metric,
-            direction,
-            unit,
-            source,
-            source_id,
-            MIN(market_date),
-            MAX(market_date),
-            GROUP_CONCAT(DISTINCT resolution_minutes)
-        FROM balancing_market_data
-        GROUP BY
-            country,
-            service,
-            market_stage,
-            metric,
-            direction,
-            unit,
-            source,
-            source_id
-        ORDER BY
-            service,
-            market_stage,
-            metric,
-            direction,
-            source_id
-        """
-    ).fetchall()
-
-    balancing = []
-
-    for row in balancing_rows:
-
-        balancing.append(
-            {
-                "country": row[0],
-                "market": row[1],
-                "market_stage": row[2],
-                "metric": row[3],
-                "direction": row[4],
-                "unit": row[5],
-                "source": row[6],
-                "source_id": row[7],
-                "first_date": readable_date(row[8]),
-                "last_date": readable_date(row[9]),
-                "native_resolutions_minutes": sorted(
-                    int(value)
-                    for value in str(row[10] or "").split(",")
-                    if value
-                ),
-            }
-        )
-
     return {
         "wholesale":
             wholesale,
 
         "balancing":
-            balancing,
+            [],
     }
 
 
@@ -432,7 +374,6 @@ def build_public_database() -> None:
         # ----------------------------------------------------
 
         required_source_tables = {
-            "balancing_market_data",
             "omie_day_ahead_prices",
             "market_price_data",
             "market_events",
@@ -475,7 +416,6 @@ def build_public_database() -> None:
         )
 
         for table_name in [
-            "balancing_market_data",
             "omie_day_ahead_prices",
             "market_price_data",
             "market_events",
@@ -513,79 +453,10 @@ def build_public_database() -> None:
         # ====================================================
         # APPROVED BALANCING PRICES
         #
-        # Copy Spanish ESIOS aFRR/mFRR and Portuguese REN RR.
-        # Every other balancing product remains excluded.
+        # Balancing data are intentionally excluded from the public build.
         # ====================================================
 
-        print(
-            "Copying approved ESIOS and REN balancing prices..."
-        )
-
-        balancing_count = copy_query_in_batches(
-            source_connection,
-            public_connection,
-            """
-            SELECT
-                timestamp_utc,
-                timestamp_market,
-                market_date,
-                period,
-                country,
-                service,
-                market_stage,
-                metric,
-                direction,
-                value,
-                unit,
-                resolution_minutes,
-                source,
-                source_id
-            FROM balancing_market_data
-            WHERE (
-                    source = 'ESIOS'
-                AND country = 'ES'
-                AND service IN ('afrr', 'mfrr')
-            )
-               OR (
-                    source = 'REN'
-                AND country = 'PT'
-                AND service = 'rr'
-            )
-            ORDER BY
-                timestamp_utc,
-                service,
-                market_stage,
-                metric,
-                direction,
-                source_id
-            """,
-            """
-            INSERT INTO balancing_market_data (
-                timestamp_utc,
-                timestamp_market,
-                market_date,
-                period,
-                country,
-                service,
-                market_stage,
-                metric,
-                direction,
-                value,
-                unit,
-                resolution_minutes,
-                source,
-                source_id
-            )
-            VALUES (
-                ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?
-            )
-            """,
-        )
-
-        public_connection.commit()
-
-        print()
+        balancing_count = 0
 
 
         # ====================================================
@@ -813,7 +684,6 @@ def build_public_database() -> None:
         )
 
         for table_name in [
-            "balancing_market_data",
             "omie_day_ahead_prices",
             "market_price_data",
             "market_events",
@@ -998,24 +868,7 @@ def build_public_database() -> None:
         # ONLY APPROVED ESIOS / REN BALANCING ROWS
         # ----------------------------------------------------
 
-        forbidden_balancing_rows = (
-            public_connection.execute(
-                """
-                SELECT COUNT(*)
-                FROM balancing_market_data
-                WHERE NOT (
-                    source = 'ESIOS'
-                    AND country = 'ES'
-                    AND service IN ('afrr', 'mfrr')
-                )
-                  AND NOT (
-                    source = 'REN'
-                    AND country = 'PT'
-                    AND service = 'rr'
-                )
-                """
-            ).fetchone()[0]
-        )
+        forbidden_balancing_rows = 0
 
         if forbidden_balancing_rows != 0:
 
@@ -1232,8 +1085,7 @@ def build_public_database() -> None:
     )
 
     print(
-        f"Approved balancing rows: "
-        f"{balancing_count:,}"
+            "Balancing rows: excluded"
     )
 
     print(
@@ -1299,8 +1151,7 @@ def build_public_database() -> None:
     )
 
     print(
-        f"Approved balancing rows: "
-        f"{balancing_count:,}"
+        "Balancing rows: excluded"
     )
 
     print(

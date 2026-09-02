@@ -179,6 +179,13 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
 
     ];"""
 
+# Public production deliberately exposes only OMIE wholesale series.
+_FIRST_BALANCING_SERIES = '\n        {\n            id: "afrr_energy_marginal"'
+PUBLIC_SERIES_BLOCK = (
+    PUBLIC_SERIES_BLOCK.split(_FIRST_BALANCING_SERIES, 1)[0].rstrip(",\n")
+    + "\n\n    ];"
+)
+
 
 # ============================================================
 # PUBLIC DATA GUIDE
@@ -781,11 +788,11 @@ PUBLIC_DATA_GUIDE = """
                 <div style="border-left: 3px solid #7f56d9; padding-left: 18px;">
 
                     <p>
-                        <strong>1 Jan 2018 — current historical package begins.</strong><br>
-                        The public database starts here for day-ahead, the
-                        regional intraday-auction structure and the legacy
-                        aFRR/mFRR indicators. These markets existed earlier;
-                        this is a data-coverage boundary.
+                        <strong>1 Jan 1998 — Spanish day-ahead history begins.</strong><br>
+                        OMIE's official historical workbook begins with hourly
+                        Spanish day-ahead prices on this date. Portuguese
+                        day-ahead prices begin on 1 July 2007, when Portugal
+                        joined the Iberian market.
                     </p>
 
                     <p>
@@ -881,8 +888,7 @@ PUBLIC_DATA_GUIDE = """
 
                 <p style="margin-top: 0;">
                     Coverage below describes the current public database
-                    release, not the earliest date that may exist in OMIE's
-                    historical archives. The selector above the chart reads
+                    release. The selector above the chart reads
                     the exact first and last dates for the chosen country,
                     product and auction session from the database catalog.
                 </p>
@@ -916,11 +922,11 @@ PUBLIC_DATA_GUIDE = """
 
                                 <td>
                                     <strong>Day-ahead</strong><br>
-                                    Spain and Portugal
+                                    Spain
                                 </td>
 
                                 <td>
-                                    1 Jan 2018–20 Aug 2026
+                                    1 Jan 1998–20 Aug 2026
                                 </td>
 
                                 <td>
@@ -929,9 +935,33 @@ PUBLIC_DATA_GUIDE = """
                                 </td>
 
                                 <td>
-                                    The current database begins in 2018.
-                                    Earlier official files have been requested
-                                    from OMIE and are not silently inferred.
+                                    OMIE-supplied hourly history is joined to
+                                    the regularly collected series without
+                                    changing official values.
+                                </td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>
+                                    <strong>Day-ahead</strong><br>
+                                    Portugal
+                                </td>
+
+                                <td>
+                                    1 Jul 2007–20 Aug 2026
+                                </td>
+
+                                <td>
+                                    Hourly before 1 Oct 2025;<br>
+                                    15-minute from 1 Oct 2025
+                                </td>
+
+                                <td>
+                                    Portuguese coverage starts with the
+                                    official OMIE history supplied for the
+                                    Portuguese bidding zone.
                                 </td>
 
                             </tr>
@@ -1294,7 +1324,16 @@ def validate_output(
     html: str,
 ) -> None:
 
-    forbidden_terms = []
+    forbidden_terms = [
+        'id: "afrr_energy_marginal"',
+        'id: "afrr_capacity_marginal"',
+        'id: "afrr_capacity_weighted"',
+        'id: "mfrr_scheduled_weighted_es"',
+        'id: "mfrr_scheduled_market_es"',
+        'id: "mfrr_direct_weighted_es"',
+        'id: "mfrr_legacy_es"',
+        'id: "rr_activation_pt"',
+    ]
 
     for term in forbidden_terms:
 
@@ -1312,18 +1351,9 @@ def validate_output(
         'id: "day_ahead"',
         'id: "intraday_auction"',
         'id: "intraday_continuous"',
-        'id: "afrr_energy_marginal"',
-        'id: "afrr_capacity_marginal"',
-        'id: "afrr_capacity_weighted"',
-        'id: "mfrr_scheduled_weighted_es"',
-        'id: "mfrr_scheduled_market_es"',
-        'id: "mfrr_direct_weighted_es"',
-        'id: "mfrr_legacy_es"',
-        'id: "rr_activation_pt"',
         "Public portfolio demo.",
         "Price series &amp; frequency methodology",
         "household electricity tariff",
-        "Public REE/ESIOS price series.",
         "FCR — Frequency Containment Reserve",
         "aFRR — automatic Frequency Restoration Reserve",
         "mFRR — manual Frequency Restoration Reserve",
@@ -1338,7 +1368,7 @@ def validate_output(
         "20 Oct 2020 — validated Portuguese RR history begins.",
         "16 Apr 2025 — Portuguese RR product transition.",
         "How publication quality is protected",
-        "Earlier official files have been requested",
+        "OMIE-supplied hourly history",
         "known source gap",
         "Why time-weighted?",
         "Missing official observations are kept missing.",
@@ -1471,21 +1501,6 @@ def main() -> None:
     )
 
     print(
-        "  - REE/ESIOS aFRR prices"
-    )
-
-    print(
-        "  - REE/ESIOS mFRR prices"
-    )
-
-    print(
-        "  - REN Portuguese RR prices"
-    )
-
-    print()
-
-
-    print(
         "Methodology guide:"
     )
 
@@ -1525,7 +1540,7 @@ def main() -> None:
 
 
     print(
-        "Balancing-market selectors: REE/ESIOS aFRR/mFRR and REN RR"
+        "Balancing-market selectors: excluded from public mode"
     )
 
     print(

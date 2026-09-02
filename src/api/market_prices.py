@@ -44,25 +44,14 @@ BALANCING_MARKETS = {
     "rr",
 }
 
-PUBLIC_BALANCING_MARKETS = {
-    "afrr",
-    "mfrr",
-    "rr",
-}
-
-PUBLIC_MARKETS = (
-    WHOLESALE_MARKETS
-    | PUBLIC_BALANCING_MARKETS
-)
+PUBLIC_MARKETS = WHOLESALE_MARKETS
 
 
 def validate_public_market_access(
     market: str,
 ) -> None:
     """
-    Public mode exposes OMIE wholesale data, the REE/ESIOS
-    aFRR and mFRR series, and the REN Portuguese RR series
-    cleared for public informational use.
+    Public mode exposes OMIE wholesale data only.
 
     Local development can use the complete research database,
     including ESIOS and REN balancing-market data.
@@ -195,29 +184,9 @@ def load_cached_market_catalog() -> dict:
             in WHOLESALE_MARKETS
         ]
 
-        balancing = [
-            row
-            for row in catalog.get(
-                "balancing",
-                [],
-            )
-            if (
-                (
-                    row.get("market") in {"afrr", "mfrr"}
-                    and row.get("country") == "ES"
-                    and row.get("source") == "ESIOS"
-                )
-                or (
-                    row.get("market") == "rr"
-                    and row.get("country") == "PT"
-                    and row.get("source") == "REN"
-                )
-            )
-        ]
-
         return {
             "wholesale": wholesale,
-            "balancing": balancing,
+            "balancing": [],
         }
 
 
@@ -290,8 +259,7 @@ def market_prices(
         wholesale + balancing markets
 
     Public mode:
-        OMIE wholesale, REE/ESIOS aFRR and mFRR prices,
-        and REN Portuguese RR prices
+        OMIE wholesale prices only
     """
 
     validate_public_market_access(
