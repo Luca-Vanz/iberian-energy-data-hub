@@ -11,6 +11,8 @@ interactive web dashboard.
 
 [Open the Iberian Energy Data Hub](https://iberian-energy-data-hub.onrender.com/)
 
+[Download the current public database release](https://github.com/Luca-Vanz/iberian-energy-data-hub/releases/tag/public-db-2026-09-02-ancillary)
+
 The public deployment contains sanitized **OMIE wholesale prices** and
 authorized **Spanish REE/ESIOS aFRR and mFRR price series**. Spanish RR will be
 published only after its historical ingestion is complete and validated;
@@ -23,6 +25,8 @@ The live dashboard currently provides:
 - Day-ahead prices for Spain and Portugal
 - Intraday-auction prices with sessions kept separate
 - Continuous-intraday weighted-average prices
+- Spanish REE/ESIOS aFRR energy and capacity prices
+- Spanish REE/ESIOS scheduled and direct mFRR prices
 - 15-minute, hourly, daily, weekly, monthly and yearly views
 - Separate Spain, Portugal and combined-country selections
 - Market-event and data-resolution context
@@ -50,6 +54,10 @@ necessary.
 | Day-ahead, PT | 1 Jul 2007–20 Aug 2026 | Hourly before 1 Oct 2025; 15-minute from 1 Oct 2025 |
 | Intraday auctions, ES and PT | Mainly from 1 Jan 2018; session 1 includes a 31 Dec 2017 delivery-horizon record; end dates vary by session | Historically hourly; 15-minute products from 19 Mar 2025 |
 | Continuous intraday, ES and PT | 13 Jun 2018–19 Aug 2026 | Historically hourly; 15-minute products from 19 Mar 2025 |
+| aFRR energy, ES | 1 Jan 2018–20 Aug 2026 | Hourly and 15-minute, depending on date and indicator |
+| aFRR capacity, ES | Downward series from 1 Jan 2018; upward marginal series from 20 Nov 2024; through 20 Aug 2026 | Hourly and 15-minute, depending on date and indicator |
+| mFRR scheduled, ES | Legacy marginal series from 1 Jan 2018–10 Dec 2024; current weighted-average series from 24 May 2022 and market-price series from 10 Dec 2024; through 20 Aug 2026 | Hourly legacy observations and 15-minute current products |
+| mFRR direct, ES | Upward from 24 May 2022; downward from 15 Aug 2022; through 20 Aug 2026 | 15 minutes |
 
 Important interpretation notes:
 
@@ -62,6 +70,11 @@ Important interpretation notes:
   unavailable observations are not inferred or interpolated.
 - OMIE's supplied intraday-auction archive is being validated separately
   because its historical format differs from the modern daily files.
+- aFRR capacity prices are measured in EUR/MW; balancing-energy prices are
+  measured in EUR/MWh. These economically different variables remain separate.
+- Upward means increasing net system energy; downward means reducing net
+  system energy. Directions are never combined unless the user explicitly
+  selects both for display.
 
 Coverage is product-specific and will change as new validated official data is
 added. The live catalog is the authoritative source for selectable dates.
@@ -119,6 +132,13 @@ Supported frequencies are `15min`, `1h`, `daily`, `weekly`, `monthly` and
 
 Legacy OMIE endpoints remain available for backward compatibility.
 
+Public ancillary examples:
+
+```text
+/market/prices?market=afrr&country=ES&start_date=2026-08-03&end_date=2026-08-03&frequency=15min&direction=both&stage=energy&metric=marginal_price
+/market/prices?market=mfrr&country=ES&start_date=2026-08-03&end_date=2026-08-03&frequency=15min&direction=both&stage=energy_scheduled&metric=weighted_average_price
+```
+
 ## Architecture
 
 ```text
@@ -149,7 +169,9 @@ Official sources (OMIE / REE-ESIOS / local research sources)
 The public SQLite database is built separately. Its wholesale table is
 validated as OMIE-only, while its balancing table is restricted to Spanish
 REE/ESIOS aFRR and mFRR prices. Every other
-balancing series remains excluded. The database is compressed as a deployment artifact and fetched
+balancing series remains excluded. The current build contains 1,522,979 OMIE
+observations and 1,446,763 approved Spanish ESIOS observations across 13
+ancillary catalogue series. The database is compressed as a deployment artifact and fetched
 during the Render build, which verifies SQLite integrity, allowed tables,
 markets, countries and sources before serving it.
 
@@ -236,3 +258,11 @@ and direct activation, and legacy and current products remain separate. FCR is
 not shown because no validated FCR price series is present locally. Spanish RR
 is also withheld until its full history is ingested and validated; REN and
 other balancing datasets remain outside the public release.
+
+Current production release:
+
+- Application commit: `b351662`
+- Database tag: `public-db-2026-09-02-ancillary`
+- Decompressed database: approximately 975.02 MB
+- Compressed release asset: approximately 86.92 MB
+- Public-mode smoke test: 11 passed, 0 failed, 0 warnings
