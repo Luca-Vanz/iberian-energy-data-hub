@@ -33,6 +33,7 @@ PUBLIC_MARKETS = {
 }
 
 PUBLIC_TABLES = {
+    "balancing_market_data",
     "omie_day_ahead_prices",
     "market_price_data",
     "market_events",
@@ -284,8 +285,29 @@ def build_public_catalog(
         "wholesale":
             wholesale,
 
-        "balancing":
-            [],
+        "balancing": [
+            {
+                "country": row[0], "market": row[1], "market_stage": row[2],
+                "metric": row[3], "direction": row[4], "unit": row[5],
+                "source": row[6], "source_id": row[7],
+                "first_date": readable_date(row[8]),
+                "last_date": readable_date(row[9]),
+                "native_resolutions_minutes": sorted(
+                    int(value) for value in str(row[10] or "").split(",") if value
+                ),
+            }
+            for row in connection.execute(
+                """
+                SELECT country, service, market_stage, metric, direction, unit,
+                       source, source_id, MIN(market_date), MAX(market_date),
+                       GROUP_CONCAT(DISTINCT resolution_minutes)
+                FROM balancing_market_data
+                GROUP BY country, service, market_stage, metric, direction,
+                         unit, source, source_id
+                ORDER BY service, market_stage, metric, direction, source_id
+                """
+            ).fetchall()
+        ],
     }
 
 
@@ -374,6 +396,7 @@ def build_public_database() -> None:
         # ----------------------------------------------------
 
         required_source_tables = {
+            "balancing_market_data",
             "omie_day_ahead_prices",
             "market_price_data",
             "market_events",
@@ -416,6 +439,7 @@ def build_public_database() -> None:
         )
 
         for table_name in [
+            "balancing_market_data",
             "omie_day_ahead_prices",
             "market_price_data",
             "market_events",
@@ -453,10 +477,31 @@ def build_public_database() -> None:
         # ====================================================
         # APPROVED BALANCING PRICES
         #
-        # Balancing data are intentionally excluded from the public build.
+        # Only validated Spanish REE/ESIOS aFRR and mFRR are public.
         # ====================================================
 
-        balancing_count = 0
+        print("Copying approved Spanish ESIOS aFRR/mFRR prices...")
+        balancing_count = copy_query_in_batches(
+            source_connection, public_connection,
+            """
+            SELECT timestamp_utc, timestamp_market, market_date, period,
+                   country, service, market_stage, metric, direction, value,
+                   unit, resolution_minutes, source, source_id
+            FROM balancing_market_data
+            WHERE source = 'ESIOS' AND country = 'ES'
+              AND service IN ('afrr', 'mfrr')
+            ORDER BY timestamp_utc, service, market_stage, metric, direction,
+                     source_id
+            """,
+            """
+            INSERT INTO balancing_market_data (
+                timestamp_utc, timestamp_market, market_date, period, country,
+                service, market_stage, metric, direction, value, unit,
+                resolution_minutes, source, source_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+        )
+        public_connection.commit()
 
 
         # ====================================================
@@ -684,6 +729,7 @@ def build_public_database() -> None:
         )
 
         for table_name in [
+            "balancing_market_data",
             "omie_day_ahead_prices",
             "market_price_data",
             "market_events",
@@ -868,7 +914,15 @@ def build_public_database() -> None:
         # ONLY APPROVED ESIOS / REN BALANCING ROWS
         # ----------------------------------------------------
 
-        forbidden_balancing_rows = 0
+        forbidden_balancing_rows = public_connection.execute(
+            """
+            SELECT COUNT(*) FROM balancing_market_data
+            WHERE NOT (
+                source = 'ESIOS' AND country = 'ES'
+                AND service IN ('afrr', 'mfrr')
+            )
+            """
+        ).fetchone()[0]
 
         if forbidden_balancing_rows != 0:
 
@@ -917,11 +971,6 @@ def build_public_database() -> None:
                     row.get("source") == "ESIOS"
                     and row.get("country") == "ES"
                     and row.get("market") in {"afrr", "mfrr"}
-                )
-                and not (
-                    row.get("source") == "REN"
-                    and row.get("country") == "PT"
-                    and row.get("market") == "rr"
                 )
             )
         ]
@@ -1084,9 +1133,7 @@ def build_public_database() -> None:
         f"{public_market_count:,}"
     )
 
-    print(
-            "Balancing rows: excluded"
-    )
+    print(f"Approved Spanish ESIOS balancing rows: {balancing_count:,}")
 
     print(
         f"Wholesale event rows: "
@@ -1150,9 +1197,7 @@ def build_public_database() -> None:
         "Non-OMIE unified rows: 0"
     )
 
-    print(
-        "Balancing rows: excluded"
-    )
+    print(f"Approved Spanish ESIOS balancing rows: {balancing_count:,}")
 
     print(
         f"Balancing catalog rows: "

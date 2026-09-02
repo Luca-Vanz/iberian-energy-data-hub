@@ -16,7 +16,8 @@ ALLOWED_PUBLIC_MARKETS = {
     "intraday_continuous",
 }
 
-FORBIDDEN_PUBLIC_MARKETS = {"afrr", "mfrr", "rr"}
+ALLOWED_PUBLIC_BALANCING_MARKETS = {"afrr", "mfrr"}
+FORBIDDEN_PUBLIC_MARKETS = {"rr"}
 
 
 passed = 0
@@ -252,6 +253,10 @@ def test_public_dashboard() -> None:
     )
 
     forbidden_strings = [
+        'id: "rr_activation_pt"',
+    ]
+
+    for required in [
         'id: "afrr_energy_marginal"',
         'id: "afrr_capacity_marginal"',
         'id: "afrr_capacity_weighted"',
@@ -259,8 +264,8 @@ def test_public_dashboard() -> None:
         'id: "mfrr_scheduled_market_es"',
         'id: "mfrr_direct_weighted_es"',
         'id: "mfrr_legacy_es"',
-        'id: "rr_activation_pt"',
-    ]
+    ]:
+        assert_true(required in html, f"Missing approved selector: {required}")
 
     for forbidden in forbidden_strings:
 
@@ -349,7 +354,7 @@ def test_public_dashboard() -> None:
     )
 
     print(
-        "    OMIE-only wholesale selectors with full-range downloads"
+        "    OMIE wholesale and Spanish ESIOS selectors with full-range downloads"
     )
 
 
@@ -384,7 +389,7 @@ def test_about() -> None:
     )
 
     assert_true(
-        sources == {"OMIE"},
+        sources == {"OMIE", "ESIOS"},
         (
             "Unexpected public sources: "
             f"{sources}"
@@ -402,6 +407,8 @@ def test_about() -> None:
         "Day-ahead",
         "Intraday auctions",
         "Continuous intraday",
+        "aFRR",
+        "mFRR",
     }
 
     assert_true(
@@ -413,7 +420,7 @@ def test_about() -> None:
     )
 
     print(
-        "    Source: OMIE"
+        "    Sources: OMIE and ESIOS"
     )
 
 
@@ -442,11 +449,18 @@ def test_catalog() -> None:
     )
 
     assert_true(
-        len(balancing) == 0,
+        len(balancing) == 13,
         (
-            "Expected no public balancing "
+            "Expected 13 approved Spanish balancing "
             f"catalog rows, got {len(balancing)}."
         ),
+    )
+
+    assert_true(
+        all(row.get("source") == "ESIOS" and row.get("country") == "ES"
+            and row.get("market") in ALLOWED_PUBLIC_BALANCING_MARKETS
+            for row in balancing),
+        "Public catalog contains an unapproved balancing row.",
     )
 
     assert_true(
@@ -913,7 +927,7 @@ def test_public_rr() -> None:
 # 8. BALANCING MARKETS ARE LOCAL-ONLY
 # ============================================================
 
-def test_balancing_markets_forbidden() -> None:
+def test_unapproved_balancing_markets_forbidden() -> None:
     for market in sorted(FORBIDDEN_PUBLIC_MARKETS):
         response, elapsed = request(
             "/market/prices",
@@ -1024,12 +1038,22 @@ def main() -> int:
         ),
 
         (
-            "8. Public balancing markets are forbidden",
-            test_balancing_markets_forbidden,
+            "8. Public REE/ESIOS aFRR",
+            test_public_afrr,
         ),
 
         (
-            "9. Dashboard alias is public-safe",
+            "9. Public REE/ESIOS mFRR",
+            test_public_mfrr,
+        ),
+
+        (
+            "10. Unapproved RR is forbidden",
+            test_unapproved_balancing_markets_forbidden,
+        ),
+
+        (
+            "11. Dashboard alias is public-safe",
             test_dashboard_alias,
         ),
     ]

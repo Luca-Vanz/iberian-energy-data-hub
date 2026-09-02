@@ -1078,7 +1078,7 @@
                     <p>
                         <strong>What the selectors mean.</strong>
                         The labels below describe the exact variable returned by
-                        the selected REE/ESIOS or REN product; they are not
+                        the selected Spanish REE/ESIOS product; they are not
                         interchangeable measures of one balancing price.
                     </p>
 
@@ -1099,7 +1099,6 @@
                                 <tr><td><strong>mFRR scheduled — market price</strong></td><td>The common scheduled mFRR market price published for the period; it is a separate current product, not a continuation of the legacy series.</td><td>EUR/MWh</td></tr>
                                 <tr><td><strong>mFRR direct — weighted-average price</strong></td><td>Weighted-average price of manually activated energy dispatched directly, outside the scheduled activation product.</td><td>EUR/MWh</td></tr>
                                 <tr><td><strong>mFRR scheduled — legacy marginal price</strong></td><td>Historical marginal price of the former scheduled tertiary-regulation product. It is kept separate from current mFRR market prices.</td><td>EUR/MWh</td></tr>
-                                <tr><td><strong>Replacement reserve — activation price</strong></td><td>REN's Portuguese RR energy activation price: the price assigned to replacement-reserve energy activated in the selected quarter-hour or hour.</td><td>EUR/MWh</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1361,12 +1360,6 @@
                     </p>
 
                     <p>
-                        <strong>20 Oct 2020 — validated Portuguese RR history begins.</strong><br>
-                        REN's legacy hourly Replacement Reserve activation-price
-                        series begins at this public data-coverage boundary.
-                    </p>
-
-                    <p>
                         <strong>24 May 2022 — current mFRR weighted-price history begins.</strong><br>
                         Upward and downward scheduled mFRR weighted-average
                         prices begin in the validated ESIOS series. Direct
@@ -1403,14 +1396,6 @@
                         quarter-hour products. Earlier hourly observations can
                         still be repeated for a 15-minute display, where they
                         are explicitly marked as upsampled.
-                    </p>
-
-                    <p>
-                        <strong>16 Apr 2025 — Portuguese RR product transition.</strong><br>
-                        REN's current 15-minute RR activation-price series starts
-                        after the legacy hourly series ends on 15 April. The two
-                        official products are displayed together without
-                        interpolating across gaps or blending observations.
                     </p>
 
                     <p style="margin-bottom: 0;">
@@ -1582,21 +1567,20 @@
 
                                 <td>
                                     <strong>Balancing prices</strong><br>
-                                    REE/ESIOS Spain and REN Portugal
+                                    REE/ESIOS Spain
                                 </td>
 
                                 <td>
                                     aFRR energy: 1 Jan 2018–20 Aug 2026;<br>
-                                    mFRR products: 1 Jan 2018–20 Aug 2026;<br>
-                                    Portuguese RR: 20 Oct 2020–30 Dec 2025.
+                                    mFRR products: 1 Jan 2018–20 Aug 2026.
                                     Product-specific dates are shown by the
                                     live availability catalog.
                                 </td>
 
                                 <td>
                                     Hourly and 15-minute native observations
-                                    are preserved per official indicator or
-                                    REN product. Display frequencies use the
+                                    are preserved per official indicator.
+                                    Display frequencies use the
                                     methodology above.
                                 </td>
 
@@ -1605,9 +1589,9 @@
                                     scheduled energy prices use EUR/MWh.
                                     Upward and downward products, scheduled and
                                     direct activation, and legacy and current
-                                    products remain distinct. RR currently
-                                    refers to the Portuguese REN series in this
-                                    public database.
+                                    products remain distinct. Spanish RR will
+                                    appear only after its historical data have
+                                    been fully ingested and validated.
                                 </td>
 
                             </tr>
@@ -1649,8 +1633,7 @@
                     <li>
                         The deployment database is checked for SQLite integrity,
                         allowed tables, OMIE-only wholesale rows and
-                        approved REE/ESIOS Spanish aFRR/mFRR rows and REN
-                        Portuguese RR rows only.
+                        approved REE/ESIOS Spanish aFRR/mFRR rows only.
                     </li>
                     <li>
                         Market-design and resolution changes are stored as
@@ -1737,6 +1720,90 @@
             metric: null,
             direction: false,
             session: false
+        },
+
+        {
+            id: "afrr_energy_marginal",
+            group: "REE/ESIOS aFRR",
+            label: "aFRR energy — marginal price",
+            market: "afrr",
+            stage: "energy",
+            metric: "marginal_price",
+            direction: true,
+            session: false,
+            countries: ["ES"]
+        },
+
+        {
+            id: "afrr_capacity_marginal",
+            group: "REE/ESIOS aFRR",
+            label: "aFRR capacity — marginal price",
+            market: "afrr",
+            stage: "capacity",
+            metric: "marginal_price",
+            direction: true,
+            session: false,
+            countries: ["ES"]
+        },
+
+        {
+            id: "afrr_capacity_weighted",
+            group: "REE/ESIOS aFRR",
+            label: "aFRR capacity — weighted-average price",
+            market: "afrr",
+            stage: "capacity",
+            metric: "weighted_average_price",
+            direction: true,
+            session: false,
+            countries: ["ES"]
+        },
+
+        {
+            id: "mfrr_scheduled_weighted_es",
+            group: "REE/ESIOS mFRR",
+            label: "mFRR scheduled — weighted-average price",
+            market: "mfrr",
+            stage: "energy_scheduled",
+            metric: "weighted_average_price",
+            direction: true,
+            session: false,
+            countries: ["ES"]
+        },
+
+        {
+            id: "mfrr_scheduled_market_es",
+            group: "REE/ESIOS mFRR",
+            label: "mFRR scheduled — market price",
+            market: "mfrr",
+            stage: "energy_scheduled",
+            metric: "market_price",
+            direction: false,
+            session: false,
+            countries: ["ES"]
+        },
+
+        {
+            id: "mfrr_direct_weighted_es",
+            group: "REE/ESIOS mFRR",
+            label: "mFRR direct — weighted-average price",
+            market: "mfrr",
+            stage: "energy_direct",
+            metric: "weighted_average_price",
+            direction: true,
+            session: false,
+            countries: ["ES"]
+        },
+
+        {
+            id: "mfrr_legacy_es",
+            group: "REE/ESIOS mFRR",
+            label: "mFRR scheduled — legacy marginal price",
+            market: "mfrr",
+            stage: "energy_scheduled_legacy",
+            metric: "marginal_price",
+            direction: true,
+            session: false,
+            countries: ["ES"]
         }
 
     ];

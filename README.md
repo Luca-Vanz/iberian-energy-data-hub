@@ -11,10 +11,10 @@ interactive web dashboard.
 
 [Open the Iberian Energy Data Hub](https://iberian-energy-data-hub.onrender.com/)
 
-The public deployment contains sanitized **OMIE wholesale prices**, authorized
-**Spanish REE/ESIOS aFRR and mFRR price series**, and authorized **Portuguese
-REN Replacement Reserve prices**. Other balancing-market and REN fundamental
-datasets remain in the local research environment.
+The public deployment contains sanitized **OMIE wholesale prices** and
+authorized **Spanish REE/ESIOS aFRR and mFRR price series**. Spanish RR will be
+published only after its historical ingestion is complete and validated;
+Portuguese REN balancing data remain in the local research environment.
 
 ## Public dashboard
 
@@ -91,7 +91,7 @@ The application has two explicit modes controlled by `IBERIAN_APP_MODE`:
 
 | Mode | Database | Dashboard scope |
 | --- | --- | --- |
-| `public` | `deployment/iberian_energy_public.db` by default | OMIE wholesale prices, Spanish REE/ESIOS aFRR and mFRR prices, and Portuguese REN RR prices; other balancing series remain blocked |
+| `public` | `deployment/iberian_energy_public.db` by default | OMIE wholesale prices and Spanish REE/ESIOS aFRR and mFRR prices; RR and Portuguese balancing series remain blocked |
 | `local` | `data/database/iberian_energy.db` by default | Full research environment, including locally held fundamentals and balancing-market work |
 
 An alternative database path can be supplied with `IBERIAN_DB_PATH`.
@@ -148,7 +148,7 @@ Official sources (OMIE / REE-ESIOS / local research sources)
 
 The public SQLite database is built separately. Its wholesale table is
 validated as OMIE-only, while its balancing table is restricted to Spanish
-REE/ESIOS aFRR and mFRR prices and Portuguese REN RR prices. Every other
+REE/ESIOS aFRR and mFRR prices. Every other
 balancing series remains excluded. The database is compressed as a deployment artifact and fetched
 during the Render build, which verifies SQLite integrity, allowed tables,
 markets, countries and sources before serving it.
@@ -230,9 +230,9 @@ validators and the read-only OMIE historical-package inspector tests.
 ## Project status
 
 The current public release combines OMIE wholesale-market prices with the
-authorized Spanish REE/ESIOS aFRR and mFRR price series and Portuguese REN RR
-activation prices. Capacity prices
+authorized Spanish REE/ESIOS aFRR and mFRR price series. Capacity prices
 (EUR/MW) and energy prices (EUR/MWh), upward and downward directions, scheduled
 and direct activation, and legacy and current products remain separate. FCR is
-not shown because no validated FCR price series is present locally. Other REN
-and balancing datasets remain outside the public release.
+not shown because no validated FCR price series is present locally. Spanish RR
+is also withheld until its full history is ingested and validated; REN and
+other balancing datasets remain outside the public release.

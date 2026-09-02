@@ -45,6 +45,7 @@ DEFAULT_PUBLIC_DB_URL = (
 
 
 EXPECTED_TABLES = {
+    "balancing_market_data",
     "market_catalog_cache",
     "market_events",
     "market_price_data",
@@ -57,6 +58,8 @@ ALLOWED_MARKETS = {
     "intraday_auction",
     "intraday_continuous",
 }
+
+ALLOWED_BALANCING_MARKETS = {"afrr", "mfrr"}
 
 def download_database(
     url: str,
@@ -236,6 +239,21 @@ def validate_database(
             )
 
 
+        forbidden_balancing_rows = connection.execute(
+            """
+            SELECT COUNT(*) FROM balancing_market_data
+            WHERE NOT (
+                source = 'ESIOS' AND country = 'ES'
+                AND service IN ('afrr', 'mfrr')
+            )
+            """
+        ).fetchone()[0]
+        if forbidden_balancing_rows:
+            raise RuntimeError(
+                f"Public database contains {forbidden_balancing_rows:,} "
+                "unapproved balancing rows."
+            )
+
         balancing_catalog_count = (
             connection.execute(
                 """
@@ -277,7 +295,10 @@ def validate_database(
             "Wholesale source: OMIE"
         )
 
-        print("Balancing data: excluded")
+        balancing_row_count = connection.execute(
+            "SELECT COUNT(*) FROM balancing_market_data"
+        ).fetchone()[0]
+        print(f"Approved Spanish ESIOS balancing rows: {balancing_row_count:,}")
 
     finally:
 

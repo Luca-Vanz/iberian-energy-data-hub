@@ -44,14 +44,16 @@ BALANCING_MARKETS = {
     "rr",
 }
 
-PUBLIC_MARKETS = WHOLESALE_MARKETS
+PUBLIC_BALANCING_MARKETS = {"afrr", "mfrr"}
+PUBLIC_MARKETS = WHOLESALE_MARKETS | PUBLIC_BALANCING_MARKETS
 
 
 def validate_public_market_access(
     market: str,
 ) -> None:
     """
-    Public mode exposes OMIE wholesale data only.
+    Public mode exposes OMIE wholesale data and validated Spanish
+    REE/ESIOS aFRR and mFRR price series.
 
     Local development can use the complete research database,
     including ESIOS and REN balancing-market data.
@@ -184,10 +186,14 @@ def load_cached_market_catalog() -> dict:
             in WHOLESALE_MARKETS
         ]
 
-        return {
-            "wholesale": wholesale,
-            "balancing": [],
-        }
+        balancing = [
+            row for row in catalog.get("balancing", [])
+            if row.get("market") in PUBLIC_BALANCING_MARKETS
+            and row.get("country") == "ES"
+            and row.get("source") == "ESIOS"
+        ]
+
+        return {"wholesale": wholesale, "balancing": balancing}
 
 
     return catalog
@@ -259,12 +265,18 @@ def market_prices(
         wholesale + balancing markets
 
     Public mode:
-        OMIE wholesale prices only
+        OMIE wholesale and validated Spanish REE/ESIOS aFRR/mFRR prices
     """
 
     validate_public_market_access(
         market
     )
+
+    if IS_PUBLIC and market in PUBLIC_BALANCING_MARKETS and country != "ES":
+        raise HTTPException(
+            status_code=403,
+            detail="Public ancillary-service prices are available for Spain only.",
+        )
 
     try:
 

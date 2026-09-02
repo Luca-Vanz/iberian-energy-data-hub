@@ -179,10 +179,12 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
 
     ];"""
 
-# Public production deliberately exposes only OMIE wholesale series.
-_FIRST_BALANCING_SERIES = '\n        {\n            id: "afrr_energy_marginal"'
+# Portuguese RR stays local until separately authorized. The RR definition is
+# the final entry in the source selector block, so trim only that entry while
+# preserving all validated Spanish REE/ESIOS aFRR and mFRR selectors.
+_PORTUGUESE_RR_SERIES = '\n        {\n            id: "rr_activation_pt"'
 PUBLIC_SERIES_BLOCK = (
-    PUBLIC_SERIES_BLOCK.split(_FIRST_BALANCING_SERIES, 1)[0].rstrip(",\n")
+    PUBLIC_SERIES_BLOCK.split(_PORTUGUESE_RR_SERIES, 1)[0].rstrip(",\n")
     + "\n\n    ];"
 )
 
@@ -521,7 +523,7 @@ PUBLIC_DATA_GUIDE = """
                     <p>
                         <strong>What the selectors mean.</strong>
                         The labels below describe the exact variable returned by
-                        the selected REE/ESIOS or REN product; they are not
+                        the selected Spanish REE/ESIOS product; they are not
                         interchangeable measures of one balancing price.
                     </p>
 
@@ -542,7 +544,6 @@ PUBLIC_DATA_GUIDE = """
                                 <tr><td><strong>mFRR scheduled — market price</strong></td><td>The common scheduled mFRR market price published for the period; it is a separate current product, not a continuation of the legacy series.</td><td>EUR/MWh</td></tr>
                                 <tr><td><strong>mFRR direct — weighted-average price</strong></td><td>Weighted-average price of manually activated energy dispatched directly, outside the scheduled activation product.</td><td>EUR/MWh</td></tr>
                                 <tr><td><strong>mFRR scheduled — legacy marginal price</strong></td><td>Historical marginal price of the former scheduled tertiary-regulation product. It is kept separate from current mFRR market prices.</td><td>EUR/MWh</td></tr>
-                                <tr><td><strong>Replacement reserve — activation price</strong></td><td>REN's Portuguese RR energy activation price: the price assigned to replacement-reserve energy activated in the selected quarter-hour or hour.</td><td>EUR/MWh</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -804,12 +805,6 @@ PUBLIC_DATA_GUIDE = """
                     </p>
 
                     <p>
-                        <strong>20 Oct 2020 — validated Portuguese RR history begins.</strong><br>
-                        REN's legacy hourly Replacement Reserve activation-price
-                        series begins at this public data-coverage boundary.
-                    </p>
-
-                    <p>
                         <strong>24 May 2022 — current mFRR weighted-price history begins.</strong><br>
                         Upward and downward scheduled mFRR weighted-average
                         prices begin in the validated ESIOS series. Direct
@@ -846,14 +841,6 @@ PUBLIC_DATA_GUIDE = """
                         quarter-hour products. Earlier hourly observations can
                         still be repeated for a 15-minute display, where they
                         are explicitly marked as upsampled.
-                    </p>
-
-                    <p>
-                        <strong>16 Apr 2025 — Portuguese RR product transition.</strong><br>
-                        REN's current 15-minute RR activation-price series starts
-                        after the legacy hourly series ends on 15 April. The two
-                        official products are displayed together without
-                        interpolating across gaps or blending observations.
                     </p>
 
                     <p style="margin-bottom: 0;">
@@ -1025,21 +1012,20 @@ PUBLIC_DATA_GUIDE = """
 
                                 <td>
                                     <strong>Balancing prices</strong><br>
-                                    REE/ESIOS Spain and REN Portugal
+                                    REE/ESIOS Spain
                                 </td>
 
                                 <td>
                                     aFRR energy: 1 Jan 2018–20 Aug 2026;<br>
-                                    mFRR products: 1 Jan 2018–20 Aug 2026;<br>
-                                    Portuguese RR: 20 Oct 2020–30 Dec 2025.
+                                    mFRR products: 1 Jan 2018–20 Aug 2026.
                                     Product-specific dates are shown by the
                                     live availability catalog.
                                 </td>
 
                                 <td>
                                     Hourly and 15-minute native observations
-                                    are preserved per official indicator or
-                                    REN product. Display frequencies use the
+                                    are preserved per official indicator.
+                                    Display frequencies use the
                                     methodology above.
                                 </td>
 
@@ -1048,9 +1034,9 @@ PUBLIC_DATA_GUIDE = """
                                     scheduled energy prices use EUR/MWh.
                                     Upward and downward products, scheduled and
                                     direct activation, and legacy and current
-                                    products remain distinct. RR currently
-                                    refers to the Portuguese REN series in this
-                                    public database.
+                                    products remain distinct. Spanish RR will
+                                    appear only after its historical data have
+                                    been fully ingested and validated.
                                 </td>
 
                             </tr>
@@ -1092,8 +1078,7 @@ PUBLIC_DATA_GUIDE = """
                     <li>
                         The deployment database is checked for SQLite integrity,
                         allowed tables, OMIE-only wholesale rows and
-                        approved REE/ESIOS Spanish aFRR/mFRR rows and REN
-                        Portuguese RR rows only.
+                        approved REE/ESIOS Spanish aFRR/mFRR rows only.
                     </li>
                     <li>
                         Market-design and resolution changes are stored as
@@ -1325,13 +1310,6 @@ def validate_output(
 ) -> None:
 
     forbidden_terms = [
-        'id: "afrr_energy_marginal"',
-        'id: "afrr_capacity_marginal"',
-        'id: "afrr_capacity_weighted"',
-        'id: "mfrr_scheduled_weighted_es"',
-        'id: "mfrr_scheduled_market_es"',
-        'id: "mfrr_direct_weighted_es"',
-        'id: "mfrr_legacy_es"',
         'id: "rr_activation_pt"',
     ]
 
@@ -1351,6 +1329,13 @@ def validate_output(
         'id: "day_ahead"',
         'id: "intraday_auction"',
         'id: "intraday_continuous"',
+        'id: "afrr_energy_marginal"',
+        'id: "afrr_capacity_marginal"',
+        'id: "afrr_capacity_weighted"',
+        'id: "mfrr_scheduled_weighted_es"',
+        'id: "mfrr_scheduled_market_es"',
+        'id: "mfrr_direct_weighted_es"',
+        'id: "mfrr_legacy_es"',
         "Public portfolio demo.",
         "Price series &amp; frequency methodology",
         "household electricity tariff",
@@ -1365,8 +1350,6 @@ def validate_output(
         "Market evolution storyline",
         "20 Nov 2024 — upward aFRR capacity marginal series begins.",
         "10 Dec 2024 — mFRR scheduled-price transition.",
-        "20 Oct 2020 — validated Portuguese RR history begins.",
-        "16 Apr 2025 — Portuguese RR product transition.",
         "How publication quality is protected",
         "OMIE-supplied hourly history",
         "known source gap",
@@ -1500,6 +1483,9 @@ def main() -> None:
         "  - Continuous intraday"
     )
 
+    print("  - Spanish REE/ESIOS aFRR")
+    print("  - Spanish REE/ESIOS mFRR")
+
     print(
         "Methodology guide:"
     )
@@ -1540,7 +1526,7 @@ def main() -> None:
 
 
     print(
-        "Balancing-market selectors: excluded from public mode"
+        "Balancing-market selectors: Spanish REE/ESIOS aFRR and mFRR"
     )
 
     print(
