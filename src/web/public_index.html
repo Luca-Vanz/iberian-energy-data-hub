@@ -472,7 +472,11 @@
                     Price series
                 </label>
 
-                <select id="series"></select>
+                <select id="series" multiple size="8"></select>
+                <div class="availability">
+                    Select one or more series. Use Ctrl (Windows) or Command
+                    (Mac) to add/remove individual series.
+                </div>
 
             </div>
 
@@ -1944,6 +1948,13 @@
         );
     }
 
+    function selectedDefinitions() {
+
+        const ids = Array.from(seriesElement.selectedOptions).map(option => option.value);
+
+        return SERIES.filter(item => ids.includes(item.id));
+    }
+
 
     function normalizeDate(
         value
@@ -2195,7 +2206,14 @@
     function populateSeries() {
 
         const previous =
-            seriesElement.value;
+            new Set(
+                Array.from(
+                    seriesElement.selectedOptions
+                ).map(
+                    option =>
+                        option.value
+                )
+            );
 
         seriesElement.innerHTML =
             "";
@@ -2280,14 +2298,23 @@
             );
 
 
-        if (
-            values.includes(
-                previous
-            )
+        for (
+            const option
+            of seriesElement.options
         ) {
 
-            seriesElement.value =
-                previous;
+            option.selected =
+                previous.has(
+                    option.value
+                );
+        }
+
+        if (
+            seriesElement.selectedOptions.length === 0
+            && seriesElement.options.length
+        ) {
+
+            seriesElement.options[0].selected = true;
         }
     }
 
@@ -3901,14 +3928,11 @@
         validateRequestedRange();
 
 
-        const definition =
-            selectedDefinition();
+        const definitions = selectedDefinitions();
 
-
-        const components =
-            definitionComponents(
-                definition
-            );
+        if (!definitions.length) {
+            throw new Error("Select at least one price series.");
+        }
 
         const chunks =
             buildRequestChunks(
@@ -3917,14 +3941,14 @@
                 false
             );
 
-        const results = [];
+        const combinedData = [];
+        const combinedEvents = [];
 
+        for (const definition of definitions) {
 
-        for (
-            let chunkIndex = 0;
-            chunkIndex < chunks.length;
-            chunkIndex += 1
-        ) {
+            const components = definitionComponents(definition);
+
+            for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex += 1) {
 
             const chunk =
                 chunks[chunkIndex];
@@ -3935,7 +3959,7 @@
             ) {
 
                 setStatus(
-                    `Loading period ${chunkIndex + 1} of ${chunks.length}: `
+                    `Loading ${definition.label}, period ${chunkIndex + 1} of ${chunks.length}: `
                     + `${chunk.start} to ${chunk.end}...`
                 );
             }
@@ -3946,24 +3970,37 @@
                 of components
             ) {
 
-                results.push(
-                    await fetchJson(
+                const response = await fetchJson(
                         buildRequestUrl(
                             definition,
                             component,
                             chunk.start,
                             chunk.end
                         )
-                    )
-                );
+                    );
+
+                combinedData.push(...(response.data || []).map(row => ({
+                    ...row,
+                    comparison_definition_id: definition.id,
+                    comparison_definition_label: definition.label,
+                    comparison_has_session: definition.session
+                })));
+                combinedEvents.push(...(response.events || []));
             }
         }
+        }
 
+        const units = [...new Set(combinedData.map(row => row.unit).filter(Boolean))];
+        if (units.length > 1) {
+            throw new Error("The selected series use incompatible units. Compare EUR/MWh prices separately from EUR/MW capacity prices.");
+        }
 
-        return mergeResults(
-            definition,
-            results
-        );
+        const eventMap = new Map();
+        for (const event of combinedEvents) {
+            eventMap.set([event.event_date,event.country,event.service,event.event_type,event.title].join("|"), event);
+        }
+
+        return {definition: definitions[0], definitions, data: combinedData, events: [...eventMap.values()]};
     }
 
 
@@ -3978,7 +4015,7 @@
 
         return [
 
-            definition.id,
+            row.comparison_definition_id || definition.id,
 
             row.country
             || "",
@@ -3986,7 +4023,7 @@
             row.direction
             || "none",
 
-            definition.session
+            row.comparison_has_session ?? definition.session
                 ? row.session
                 : 0
 
@@ -3999,9 +4036,7 @@
         definition
     ) {
 
-        const parts = [
-            row.country
-        ];
+        const parts = [row.comparison_definition_label || definition.label, row.country];
 
 
         if (
@@ -4018,7 +4053,7 @@
 
 
         if (
-            definition.session
+            (row.comparison_has_session ?? definition.session)
             && row.session
         ) {
 
@@ -5137,7 +5172,9 @@
 
             [
                 "Series",
-                result.definition.label
+                (result.definitions || [result.definition])
+                    .map(definition => definition.label)
+                    .join(" + ")
             ],
 
             [

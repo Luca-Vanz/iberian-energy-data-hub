@@ -294,6 +294,25 @@ def test_public_dashboard() -> None:
         "The data service is temporarily unavailable.",
     ]
 
+    required_comparison_features = [
+        'id="series" multiple size="8"',
+        "function selectedDefinitions()",
+        "comparison_definition_id",
+        "selected series use incompatible units",
+        '.join(" + ")',
+    ]
+
+    for required in required_comparison_features:
+
+        assert_true(
+            required in html,
+            (
+                "Public dashboard is missing "
+                "the multi-series price comparison feature: "
+                f"{required}"
+            ),
+        )
+
     required_loading_features = [
         'id="chartLoading"',
         "Crunching the megawatts...",
