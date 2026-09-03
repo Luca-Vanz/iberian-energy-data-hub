@@ -35,6 +35,12 @@
     .tag { display:inline-block; margin-right:8px; color:var(--primary); font-size:12px; font-weight:650; }
     .links { margin-top:18px; display:flex; gap:16px; flex-wrap:wrap; }
     .links a { color:var(--primary); font-size:13px; font-weight:650; }
+    .controls { display:flex; gap:12px; align-items:end; flex-wrap:wrap; margin:18px 0; }
+    .controls label { display:grid; gap:5px; color:var(--muted); font-size:12px; font-weight:650; }
+    select { min-width:170px; padding:9px 10px; border:1px solid var(--border); border-radius:7px; background:#fff; color:var(--text); }
+    .chart-wrap { position:relative; height:430px; margin-top:14px; }
+    .chart-status { color:var(--muted); font-size:13px; min-height:20px; }
+    .method { padding:12px 14px; border-left:3px solid var(--primary); background:#f7fbff; font-size:13px; }
   </style>
 </head>
 <body>
@@ -49,6 +55,24 @@
     <div class="eyebrow">Research notes</div>
     <h2>Evidence-led analysis of Iberian power markets</h2>
     <p class="intro">This section will publish concise, reproducible research notes built from the platform’s official market data. Each note will separate observed results from interpretation and document its sources, calculations and limitations.</p>
+    <article class="note">
+      <div class="meta"><span class="tag">Spain &amp; Portugal</span><span class="tag">Power-system fundamentals</span>Official ENTSO-E data</div>
+      <h3>Installed generation capacity by technology</h3>
+      <p>Installed net capacity is the maximum generating capability recorded by the transmission-system data provider for units of at least 1 MW, grouped by production technology. It describes the fleet available on 1 January of each year—not the electricity actually produced.</p>
+      <div class="controls"><label>Country<select id="capacity-country"><option value="ES">Spain</option><option value="PT">Portugal</option></select></label></div>
+      <div id="capacity-status" class="chart-status">Loading official capacity data…</div>
+      <div class="chart-wrap"><canvas id="capacity-chart" aria-label="Installed generation capacity by technology"></canvas></div>
+      <p class="method"><strong>Method.</strong> Annual MW values are displayed as published by ENTSO-E (document type A68). Technologies are not interpolated between reporting years. A missing technology/year remains missing.</p>
+    </article>
+    <article class="note">
+      <div class="meta"><span class="tag">Spain &amp; Portugal</span><span class="tag">Generation mix</span>Official ENTSO-E data</div>
+      <h3>Electricity generation by technology</h3>
+      <p>This graph shows the electrical energy produced each month by each technology. It answers “what generated the electricity?”, whereas the capacity graph answers “what generating equipment was installed?”.</p>
+      <div class="controls"><label>Country<select id="generation-country"><option value="ES">Spain</option><option value="PT">Portugal</option></select></label></div>
+      <div id="generation-status" class="chart-status">Loading official generation data…</div>
+      <div class="chart-wrap"><canvas id="generation-chart" aria-label="Monthly electricity generation by technology"></canvas></div>
+      <p class="method"><strong>Method.</strong> Each published average MW observation is multiplied by its native interval duration and summed to monthly GWh (document type A75). Hourly and 15-minute observations therefore receive their correct duration weights. Missing source intervals are not replaced with zero; months below 99% observed-hour coverage are flagged above the graph.</p>
+    </article>
     <article class="note">
       <div class="meta"><span class="tag">Spain</span><span class="tag">Wholesale prices</span>Research note in preparation</div>
       <h3>When and why do electricity prices turn negative in Spain?</h3>
@@ -80,5 +104,27 @@
       <div class="links"><a href="/">Explore the underlying Data Hub →</a></div>
     </article>
   </main>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script>
+    const labels = {biomass:'Biomass',lignite:'Lignite',coal_gas:'Coal-derived gas',natural_gas:'Natural gas',hard_coal:'Hard coal',oil:'Oil',oil_shale:'Oil shale',peat:'Peat',geothermal:'Geothermal',hydro_pumped_storage:'Pumped storage',hydro_run_of_river:'Run-of-river hydro',hydro_reservoir:'Reservoir hydro',marine:'Marine',nuclear:'Nuclear',other_renewable:'Other renewable',solar:'Solar',waste:'Waste',wind_offshore:'Offshore wind',wind_onshore:'Onshore wind',other:'Other',energy_storage:'Energy storage'};
+    const colors = ['#1769aa','#2f9e44','#f59f00','#e03131','#7048e8','#0c8599','#862e9c','#5c940d','#d9480f','#495057','#1098ad','#c2255c','#66a80f','#1971c2','#f08c00','#6741d9','#087f5b','#a61e4d','#364fc7','#e8590c','#868e96'];
+    let capacityChart, generationChart;
+    function datasets(rows, timeKey, valueKey, stacked) {
+      const times=[...new Set(rows.map(r=>String(r[timeKey])))].sort();
+      const technologies=[...new Set(rows.map(r=>r.technology))].filter(t=>rows.some(r=>r.technology===t && Number(r[valueKey])!==0));
+      return {times,datasets:technologies.map((t,i)=>({label:labels[t]||t,data:times.map(x=>{const r=rows.find(v=>String(v[timeKey])===x&&v.technology===t);return r?Number(r[valueKey]):null}),borderColor:colors[i%colors.length],backgroundColor:colors[i%colors.length]+'99',borderWidth:2,pointRadius:stacked?0:2,tension:.15,fill:stacked}))};
+    }
+    async function loadCapacity(country) {
+      const status=document.getElementById('capacity-status'); status.textContent='Loading official capacity data…';
+      try { const r=await fetch('/fundamentals/installed-capacity?country='+country); if(!r.ok) throw new Error(); const rows=await r.json(); const d=datasets(rows,'year','capacity_mw',false); capacityChart?.destroy(); capacityChart=new Chart(document.getElementById('capacity-chart'),{type:'line',data:{labels:d.times,datasets:d.datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{title:{display:true,text:(country==='ES'?'Spain':'Portugal')+' — installed capacity (MW)'}},scales:{y:{beginAtZero:true,title:{display:true,text:'MW'}}}}}); status.textContent=rows.length?`Source: ENTSO-E · ${d.times[0]}–${d.times.at(-1)} · annual observations`:'No installed-capacity observations are available.'; } catch { status.textContent='Installed-capacity data is temporarily unavailable.'; }
+    }
+    async function loadGeneration(country) {
+      const status=document.getElementById('generation-status'); status.textContent='Loading official generation data…';
+      try { const r=await fetch('/fundamentals/generation?country='+country); if(!r.ok) throw new Error(); const rows=await r.json(); const d=datasets(rows,'month','generation_gwh',true); const incomplete=[...new Set(rows.filter(x=>Number(x.coverage_ratio)<.99).map(x=>x.month))]; generationChart?.destroy(); generationChart=new Chart(document.getElementById('generation-chart'),{type:'line',data:{labels:d.times,datasets:d.datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{title:{display:true,text:(country==='ES'?'Spain':'Portugal')+' — monthly generation (GWh)'}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,title:{display:true,text:'GWh'}}}}}); status.textContent=rows.length?`Source: ENTSO-E · ${d.times[0]}–${d.times.at(-1)}${incomplete.length?' · '+incomplete.length+' month(s) contain at least one incomplete technology series':''}`:'No generation observations are available.'; } catch { status.textContent='Generation data is temporarily unavailable.'; }
+    }
+    document.getElementById('capacity-country').addEventListener('change',e=>loadCapacity(e.target.value));
+    document.getElementById('generation-country').addEventListener('change',e=>loadGeneration(e.target.value));
+    loadCapacity('ES'); loadGeneration('ES');
+  </script>
 </body>
 </html>

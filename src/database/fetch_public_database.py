@@ -50,6 +50,8 @@ EXPECTED_TABLES = {
     "market_events",
     "market_price_data",
     "omie_day_ahead_prices",
+    "entsoe_generation_monthly",
+    "entsoe_installed_capacity",
 }
 
 
@@ -253,6 +255,14 @@ def validate_database(
                 f"Public database contains {forbidden_balancing_rows:,} "
                 "unapproved balancing rows."
             )
+
+        for table in ("entsoe_generation_monthly", "entsoe_installed_capacity"):
+            invalid = connection.execute(
+                f"""SELECT COUNT(*) FROM {table}
+                WHERE source <> 'ENTSO-E' OR country NOT IN ('ES', 'PT')"""
+            ).fetchone()[0]
+            if invalid:
+                raise RuntimeError(f"Public database contains {invalid:,} invalid {table} rows.")
 
         balancing_catalog_count = (
             connection.execute(

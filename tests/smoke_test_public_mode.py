@@ -389,7 +389,7 @@ def test_about() -> None:
     )
 
     assert_true(
-        sources == {"OMIE", "ESIOS"},
+        sources == {"OMIE", "ESIOS", "ENTSO-E"},
         (
             "Unexpected public sources: "
             f"{sources}"
@@ -409,6 +409,8 @@ def test_about() -> None:
         "Continuous intraday",
         "aFRR",
         "mFRR",
+        "Generation by technology",
+        "Installed capacity by technology",
     }
 
     assert_true(
@@ -420,7 +422,7 @@ def test_about() -> None:
     )
 
     print(
-        "    Sources: OMIE and ESIOS"
+        "    Sources: OMIE, ESIOS and ENTSO-E"
     )
 
 

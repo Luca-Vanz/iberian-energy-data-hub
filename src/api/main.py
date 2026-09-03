@@ -20,6 +20,7 @@ from src.analytics.omie import (
 from src.api.market_prices import (
     router as market_prices_router,
 )
+from src.api.fundamentals import router as fundamentals_router
 
 from src.config import (
     APP_MODE,
@@ -85,6 +86,7 @@ app = FastAPI(
 app.include_router(
     market_prices_router
 )
+app.include_router(fundamentals_router)
 
 
 # ============================================================
@@ -249,11 +251,14 @@ def about():
             "Continuous intraday",
             "aFRR",
             "mFRR",
+            "Generation by technology",
+            "Installed capacity by technology",
         ]
 
         sources = [
             "OMIE",
             "ESIOS",
+            "ENTSO-E",
         ]
 
     else:
@@ -265,12 +270,15 @@ def about():
             "aFRR",
             "mFRR",
             "RR",
+            "Generation by technology",
+            "Installed capacity by technology",
         ]
 
         sources = [
             "OMIE",
             "ESIOS",
             "REN",
+            "ENTSO-E",
         ]
 
     return {

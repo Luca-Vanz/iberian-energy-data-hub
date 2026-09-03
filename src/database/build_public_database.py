@@ -38,6 +38,8 @@ PUBLIC_TABLES = {
     "market_price_data",
     "market_events",
     "market_catalog_cache",
+    "entsoe_generation_monthly",
+    "entsoe_installed_capacity",
 }
 
 COPY_BATCH_SIZE = 50_000
@@ -400,6 +402,8 @@ def build_public_database() -> None:
             "omie_day_ahead_prices",
             "market_price_data",
             "market_events",
+            "entsoe_generation_monthly",
+            "entsoe_installed_capacity",
         }
 
         missing_tables = {
@@ -443,6 +447,8 @@ def build_public_database() -> None:
             "omie_day_ahead_prices",
             "market_price_data",
             "market_events",
+            "entsoe_generation_monthly",
+            "entsoe_installed_capacity",
         ]:
 
             public_connection.execute(
@@ -471,6 +477,35 @@ def build_public_database() -> None:
             "    Schemas created."
         )
 
+        print()
+
+        # ====================================================
+        # ENTSO-E FUNDAMENTALS (SPAIN AND PORTUGAL)
+        # ====================================================
+
+        print("Copying ENTSO-E generation and installed capacity...")
+        generation_count = copy_query_in_batches(
+            source_connection, public_connection,
+            """SELECT month, country, technology, generation_mwh,
+                      observed_hours, expected_hours, source
+               FROM entsoe_generation_monthly
+               WHERE source = 'ENTSO-E' AND country IN ('ES', 'PT')
+               ORDER BY month, country, technology""",
+            """INSERT INTO entsoe_generation_monthly
+               (month, country, technology, generation_mwh, observed_hours,
+                expected_hours, source) VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        )
+        capacity_count = copy_query_in_batches(
+            source_connection, public_connection,
+            """SELECT year, country, technology, capacity_mw, source
+               FROM entsoe_installed_capacity
+               WHERE source = 'ENTSO-E' AND country IN ('ES', 'PT')
+               ORDER BY year, country, technology""",
+            """INSERT INTO entsoe_installed_capacity
+               (year, country, technology, capacity_mw, source)
+               VALUES (?, ?, ?, ?, ?)""",
+        )
+        public_connection.commit()
         print()
 
 
@@ -733,6 +768,8 @@ def build_public_database() -> None:
             "omie_day_ahead_prices",
             "market_price_data",
             "market_events",
+            "entsoe_generation_monthly",
+            "entsoe_installed_capacity",
         ]:
 
             for index_sql in get_index_sql(
@@ -1134,6 +1171,8 @@ def build_public_database() -> None:
     )
 
     print(f"Approved Spanish ESIOS balancing rows: {balancing_count:,}")
+    print(f"ENTSO-E monthly generation rows: {generation_count:,}")
+    print(f"ENTSO-E installed-capacity rows: {capacity_count:,}")
 
     print(
         f"Wholesale event rows: "

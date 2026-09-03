@@ -39,6 +39,8 @@ The live dashboard currently provides:
 - A public price-series and frequency methodology
 - A data-coverage and publication-quality guide
 - Friendly progress feedback for larger graph requests
+- Research graphs for installed capacity and monthly generation by technology
+  in Spain and Portugal, using official ENTSO-E data
 
 The chart intentionally limits very large high-resolution selections for
 browser usability. CSV downloads can use any supported frequency across the
@@ -58,6 +60,8 @@ necessary.
 | aFRR capacity, ES | Downward series from 1 Jan 2018; upward marginal series from 20 Nov 2024; through 20 Aug 2026 | Hourly and 15-minute, depending on date and indicator |
 | mFRR scheduled, ES | Legacy marginal series from 1 Jan 2018–10 Dec 2024; current weighted-average series from 24 May 2022 and market-price series from 10 Dec 2024; through 20 Aug 2026 | Hourly legacy observations and 15-minute current products |
 | mFRR direct, ES | Upward from 24 May 2022; downward from 15 Aug 2022; through 20 Aug 2026 | 15 minutes |
+| Installed capacity, ES and PT | Annual observations, 2018–2026 | Annual |
+| Generation by technology, ES and PT | Monthly energy totals, Jan 2018–Sep 2026 (current month partial) | Calculated from native hourly or 15-minute observations |
 
 Important interpretation notes:
 
@@ -118,6 +122,8 @@ The unified endpoints are:
 - `GET /market/prices` — unified price-series query
 - `GET /health` — application mode and service status
 - `GET /about` — deployment scope and source summary
+- `GET /fundamentals/installed-capacity?country=ES` — annual capacity by technology
+- `GET /fundamentals/generation?country=PT` — monthly generation and coverage by technology
 - `GET /docs` — interactive FastAPI documentation
 
 Example:
@@ -142,7 +148,7 @@ Public ancillary examples:
 ## Architecture
 
 ```text
-Official sources (OMIE / REE-ESIOS / local research sources)
+Official sources (OMIE / REE-ESIOS / ENTSO-E)
                          |
                          v
                  Python collectors
@@ -171,8 +177,10 @@ validated as OMIE-only, while its balancing table is restricted to Spanish
 REE/ESIOS aFRR and mFRR prices. Every other
 balancing series remains excluded. The current build contains 1,522,979 OMIE
 observations and 1,446,763 approved Spanish ESIOS observations across 13
-ancillary catalogue series. The database is compressed as a deployment artifact and fetched
-during the Render build, which verifies SQLite integrity, allowed tables,
+ancillary catalogue series. It also contains 3,134 ENTSO-E monthly generation
+rows and 361 ENTSO-E installed-capacity rows for Spain and Portugal. The
+database is compressed as a deployment artifact and fetched during the Render
+build, which verifies SQLite integrity, allowed tables,
 markets, countries and sources before serving it.
 
 ## Data-quality principles
