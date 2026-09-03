@@ -1247,9 +1247,9 @@ def add_public_note(
 
             This version exposes historical OMIE wholesale prices for Spain
             and Portugal, authorized REE/ESIOS aFRR and mFRR price series for
-            Spain, and REN Replacement Reserve prices for Portugal. Each product
-            retains its official unit, direction, source identifier and native
-            resolution.
+            Spain, plus ENTSO-E generation and installed-capacity fundamentals
+            for Spain and Portugal. Each price product retains its official
+            unit, direction, source identifier and native resolution.
 
         </div>
 

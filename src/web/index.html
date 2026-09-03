@@ -234,6 +234,19 @@
             height: 590px;
         }
 
+        .fundamentals-chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 430px;
+            margin-top: 14px;
+        }
+
+        .fundamentals-intro {
+            color: var(--muted);
+            line-height: 1.6;
+            margin: -5px 0 16px;
+        }
+
         #emptyMessage,
         #chartLoading {
             position: absolute;
@@ -720,6 +733,24 @@
             class="events"
         ></div>
 
+    </section>
+
+    <section class="panel">
+        <h2 class="panel-title">Installed generation capacity by technology</h2>
+        <p class="fundamentals-intro">Installed net capacity describes the generating fleet available on 1 January of each year. It is measured in MW and is different from the electricity actually produced.</p>
+        <div class="controls"><div class="control"><label for="capacityCountry">Country</label><select id="capacityCountry"><option value="ES">Spain</option><option value="PT">Portugal</option></select></div></div>
+        <div id="capacityStatus" class="availability">Loading official ENTSO-E capacity data…</div>
+        <div class="fundamentals-chart-wrapper"><canvas id="capacityChart"></canvas></div>
+        <div class="note"><strong>Method.</strong> Annual installed net capacity is displayed by production technology as published by ENTSO-E (A68). Values are not interpolated between years; missing observations remain missing.</div>
+    </section>
+
+    <section class="panel">
+        <h2 class="panel-title">Electricity generation by technology</h2>
+        <p class="fundamentals-intro">Monthly generation shows which technologies produced electricity. Native average-MW observations are converted into energy using their actual interval duration and summed to GWh.</p>
+        <div class="controls"><div class="control"><label for="generationCountry">Country</label><select id="generationCountry"><option value="ES">Spain</option><option value="PT">Portugal</option></select></div></div>
+        <div id="generationStatus" class="availability">Loading official ENTSO-E generation data…</div>
+        <div class="fundamentals-chart-wrapper"><canvas id="generationChart"></canvas></div>
+        <div class="note"><strong>Method.</strong> ENTSO-E generation by production type (A75) is duration-weighted from its native hourly or 15-minute resolution. Storage consumption is excluded. Missing source intervals are never filled with zero, and incomplete technology-months are reported above the graph.</div>
     </section>
 
 </main>
@@ -5356,10 +5387,81 @@
 
 
     // ==================================================
+    // GENERATION AND CAPACITY FUNDAMENTALS
+    // ==================================================
+
+    const fundamentalLabels = {biomass:'Biomass',lignite:'Lignite',coal_gas:'Coal-derived gas',natural_gas:'Natural gas',hard_coal:'Hard coal',oil:'Oil',oil_shale:'Oil shale',peat:'Peat',geothermal:'Geothermal',hydro_pumped_storage:'Pumped storage',hydro_run_of_river:'Run-of-river hydro',hydro_reservoir:'Reservoir hydro',marine:'Marine',nuclear:'Nuclear',other_renewable:'Other renewable',solar:'Solar',waste:'Waste',wind_offshore:'Offshore wind',wind_onshore:'Onshore wind',other:'Other',energy_storage:'Energy storage'};
+    const fundamentalColors = ['#1769aa','#2f9e44','#f59f00','#e03131','#7048e8','#0c8599','#862e9c','#5c940d','#d9480f','#495057','#1098ad','#c2255c','#66a80f','#1971c2','#f08c00','#6741d9','#087f5b','#a61e4d','#364fc7','#e8590c','#868e96'];
+    let capacityFundamentalsChart = null;
+    let generationFundamentalsChart = null;
+
+    async function waitForChartLibrary() {
+        for (let attempt = 0; attempt < 100 && typeof Chart === "undefined"; attempt += 1) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        if (typeof Chart === "undefined") throw new Error("Chart library unavailable");
+    }
+
+    function fundamentalDatasets(rows, timeKey, valueKey, fill) {
+        const times = [...new Set(rows.map(row => String(row[timeKey])))].sort();
+        const technologies = [...new Set(rows.map(row => row.technology))]
+            .filter(technology => rows.some(row => row.technology === technology && Number(row[valueKey]) !== 0));
+        return {times, datasets: technologies.map((technology, index) => ({
+            label: fundamentalLabels[technology] || technology,
+            data: times.map(time => {
+                const row = rows.find(item => String(item[timeKey]) === time && item.technology === technology);
+                return row ? Number(row[valueKey]) : null;
+            }),
+            borderColor: fundamentalColors[index % fundamentalColors.length],
+            backgroundColor: fundamentalColors[index % fundamentalColors.length] + "99",
+            borderWidth: 2, pointRadius: fill ? 0 : 2, tension: 0.15, fill
+        }))};
+    }
+
+    async function loadCapacityFundamentals(country) {
+        const status = document.getElementById("capacityStatus");
+        status.textContent = "Loading official ENTSO-E capacity data…";
+        try {
+            const response = await fetch(`/fundamentals/installed-capacity?country=${country}`);
+            if (!response.ok) throw new Error();
+            const rows = await response.json();
+            await waitForChartLibrary();
+            const data = fundamentalDatasets(rows, "year", "capacity_mw", false);
+            capacityFundamentalsChart?.destroy();
+            capacityFundamentalsChart = new Chart(document.getElementById("capacityChart"), {type:"line",data:{labels:data.times,datasets:data.datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{title:{display:true,text:`${country === "ES" ? "Spain" : "Portugal"} — installed capacity (MW)`}},scales:{y:{beginAtZero:true,title:{display:true,text:"MW"}}}}});
+            status.textContent = rows.length ? `Source: ENTSO-E · ${data.times[0]}–${data.times.at(-1)} · annual observations` : "No installed-capacity observations are available.";
+        } catch { status.textContent = "Installed-capacity data is temporarily unavailable."; }
+    }
+
+    async function loadGenerationFundamentals(country) {
+        const status = document.getElementById("generationStatus");
+        status.textContent = "Loading official ENTSO-E generation data…";
+        try {
+            const response = await fetch(`/fundamentals/generation?country=${country}`);
+            if (!response.ok) throw new Error();
+            const rows = await response.json();
+            await waitForChartLibrary();
+            const data = fundamentalDatasets(rows, "month", "generation_gwh", true);
+            const incomplete = [...new Set(rows.filter(row => Number(row.coverage_ratio) < 0.99 && Number(row.generation_gwh) > 0).map(row => row.month))];
+            generationFundamentalsChart?.destroy();
+            generationFundamentalsChart = new Chart(document.getElementById("generationChart"), {type:"line",data:{labels:data.times,datasets:data.datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{title:{display:true,text:`${country === "ES" ? "Spain" : "Portugal"} — monthly generation (GWh)`}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,title:{display:true,text:"GWh"}}}}});
+            status.textContent = rows.length ? `Source: ENTSO-E · ${data.times[0]}–${data.times.at(-1)}${incomplete.length ? ` · ${incomplete.length} month(s) contain an incomplete active technology series` : ""}` : "No generation observations are available.";
+        } catch { status.textContent = "Generation data is temporarily unavailable."; }
+    }
+
+    function initialiseFundamentals() {
+        document.getElementById("capacityCountry").addEventListener("change", event => loadCapacityFundamentals(event.target.value));
+        document.getElementById("generationCountry").addEventListener("change", event => loadGenerationFundamentals(event.target.value));
+        loadCapacityFundamentals("ES");
+        loadGenerationFundamentals("ES");
+    }
+
+    // ==================================================
     // START
     // ==================================================
 
     initialiseImmediateUI();
+    initialiseFundamentals();
 
 </script>
 
