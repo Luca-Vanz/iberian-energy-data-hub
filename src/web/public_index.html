@@ -6300,6 +6300,8 @@
     let generationFundamentalsChart = null;
     let capacityFundamentalsRows = [];
     let generationFundamentalsRows = [];
+    let capacityFundamentalsRequest = 0;
+    let generationFundamentalsRequest = 0;
 
     async function waitForChartLibrary() {
         for (let attempt = 0; attempt < 100 && typeof Chart === "undefined"; attempt += 1) {
@@ -6335,6 +6337,7 @@
     }
 
     async function loadCapacityFundamentals() {
+        const requestId = ++capacityFundamentalsRequest;
         const status = document.getElementById("capacityStatus");
         const country = document.getElementById("capacityCountry").value;
         const startYear = document.getElementById("capacityStartYear").value;
@@ -6344,16 +6347,20 @@
             const response = await fetch(`/fundamentals/installed-capacity?country=${country}&start_year=${startYear}&end_year=${endYear}`);
             if (!response.ok) throw new Error((await response.json()).detail || "Request failed");
             const rows = await response.json();
+            if (requestId !== capacityFundamentalsRequest) return;
             capacityFundamentalsRows = rows;
             await waitForChartLibrary();
             const data = fundamentalDatasets(rows, "year", "capacity_mw", false);
             capacityFundamentalsChart?.destroy();
             capacityFundamentalsChart = new Chart(document.getElementById("capacityChart"), {type:"line",data:{labels:data.times,datasets:data.datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{title:{display:true,text:`${country === "ES" ? "Spain" : "Portugal"} — installed capacity (MW)`}},scales:{y:{beginAtZero:true,title:{display:true,text:"MW"}}}}});
             status.textContent = rows.length ? `Source: ENTSO-E · ${data.times[0]}–${data.times.at(-1)} · annual observations` : "No installed-capacity observations are available.";
-        } catch (error) { status.textContent = error.message || "Installed-capacity data is temporarily unavailable."; }
+        } catch (error) {
+            if (requestId === capacityFundamentalsRequest) status.textContent = error.message || "Installed-capacity data is temporarily unavailable.";
+        }
     }
 
     async function loadGenerationFundamentals() {
+        const requestId = ++generationFundamentalsRequest;
         const status = document.getElementById("generationStatus");
         const country = document.getElementById("generationCountry").value;
         const startDate = document.getElementById("generationStartDate").value;
@@ -6364,6 +6371,7 @@
             const response = await fetch(`/fundamentals/generation?country=${country}&start_date=${startDate}-01&end_date=${endDate}-01&frequency=${frequency}`);
             if (!response.ok) throw new Error((await response.json()).detail || "Request failed");
             const rows = await response.json();
+            if (requestId !== generationFundamentalsRequest) return;
             generationFundamentalsRows = rows;
             await waitForChartLibrary();
             const data = fundamentalDatasets(rows, "period", "generation_gwh", true);
@@ -6371,7 +6379,9 @@
             generationFundamentalsChart?.destroy();
             generationFundamentalsChart = new Chart(document.getElementById("generationChart"), {type:"line",data:{labels:data.times,datasets:data.datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{title:{display:true,text:`${country === "ES" ? "Spain" : "Portugal"} — monthly generation (GWh)`}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,title:{display:true,text:"GWh"}}}}});
             status.textContent = rows.length ? `Source: ENTSO-E · ${data.times[0]}–${data.times.at(-1)} · ${frequency}${incomplete.length ? ` · ${incomplete.length} incomplete active technology period(s)` : ""}` : "No generation observations are available.";
-        } catch (error) { status.textContent = error.message || "Generation data is temporarily unavailable."; }
+        } catch (error) {
+            if (requestId === generationFundamentalsRequest) status.textContent = error.message || "Generation data is temporarily unavailable.";
+        }
     }
 
     function initialiseFundamentals() {
