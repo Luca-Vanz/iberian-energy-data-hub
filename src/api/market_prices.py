@@ -12,10 +12,6 @@ from fastapi import (
     Query,
 )
 
-from src.analytics.unified_prices import (
-    get_unified_prices,
-)
-
 from src.config import (
     DATABASE_PATH,
     IS_PUBLIC,
@@ -267,6 +263,8 @@ def market_prices(
     Public mode:
         OMIE wholesale and validated Spanish REE/ESIOS aFRR/mFRR prices
     """
+
+    from src.analytics.unified_prices import get_unified_prices
 
     validate_public_market_access(
         market

@@ -11,12 +11,6 @@ from fastapi import (
 
 from fastapi.responses import FileResponse
 
-from src.analytics.omie import (
-    get_daily_market_summary,
-    get_intraday_prices,
-    get_prices,
-)
-
 from src.api.market_prices import (
     router as market_prices_router,
 )
@@ -337,6 +331,8 @@ def omie_daily_summary(
     end_date: str | None = None,
 ):
 
+    from src.analytics.omie import get_daily_market_summary
+
     validate_date_range(
         start_date,
         end_date,
@@ -386,6 +382,8 @@ def omie_prices(
     end_date: str | None = None,
 ):
 
+    from src.analytics.omie import get_prices
+
     validate_date_range(
         start_date,
         end_date,
@@ -430,6 +428,8 @@ def omie_prices(
 def omie_intraday(
     date: str,
 ):
+
+    from src.analytics.omie import get_intraday_prices
 
     validate_date(
         date
