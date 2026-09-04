@@ -295,7 +295,9 @@ def test_public_dashboard() -> None:
     ]
 
     required_comparison_features = [
-        'id="series" multiple size="8"',
+        'id="seriesChecklist"',
+        'checkbox.type = "checkbox"',
+        "Check every price series",
         "function selectedDefinitions()",
         "comparison_definition_id",
         "selected series use incompatible units",

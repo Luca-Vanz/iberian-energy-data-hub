@@ -121,6 +121,52 @@
             gap: 6px;
         }
 
+        .series-control {
+            grid-column: 1 / -1;
+        }
+
+        .series-checklist {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+            gap: 10px;
+            padding: 11px;
+            border: 1px solid #cbd3dc;
+            border-radius: 7px;
+            background: white;
+        }
+
+        .series-group {
+            min-width: 0;
+            padding: 8px 10px 10px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+        }
+
+        .series-group legend {
+            padding: 0 5px;
+            color: #344054;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .series-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-top: 8px;
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .series-option input {
+            flex: 0 0 auto;
+            min-height: auto;
+            margin: 2px 0 0;
+            accent-color: var(--primary);
+        }
+
         label {
             font-size: 12px;
             font-weight: 650;
@@ -439,16 +485,16 @@
         <div class="controls">
 
 
-            <div class="control">
+            <div class="control series-control">
 
-                <label for="series">
+                <label>
                     Price series
                 </label>
 
-                <select id="series" multiple size="8"></select>
+                <select id="series" multiple class="hidden" aria-hidden="true"></select>
+                <div id="seriesChecklist" class="series-checklist" role="group" aria-label="Price series"></div>
                 <div class="availability">
-                    Select one or more series. Use Ctrl (Windows) or Command
-                    (Mac) to add/remove individual series.
+                    Check every price series you want to display together.
                 </div>
 
             </div>
@@ -1012,6 +1058,9 @@
     const seriesElement =
         document.getElementById("series");
 
+    const seriesChecklist =
+        document.getElementById("seriesChecklist");
+
     const countryElement =
         document.getElementById("country");
 
@@ -1476,6 +1525,42 @@
         ) {
 
             seriesElement.options[0].selected = true;
+        }
+
+        seriesChecklist.innerHTML = "";
+
+        const checklistGroups = new Map();
+        for (const definition of definitions) {
+            if (!checklistGroups.has(definition.group)) checklistGroups.set(definition.group, []);
+            checklistGroups.get(definition.group).push(definition);
+        }
+
+        for (const [groupName, groupDefinitions] of checklistGroups) {
+            const fieldset = document.createElement("fieldset");
+            fieldset.className = "series-group";
+            const legend = document.createElement("legend");
+            legend.textContent = groupName;
+            fieldset.appendChild(legend);
+
+            for (const definition of groupDefinitions) {
+                const label = document.createElement("label");
+                label.className = "series-option";
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.value = definition.id;
+                checkbox.checked = Array.from(seriesElement.selectedOptions).some(option => option.value === definition.id);
+                checkbox.addEventListener("change", () => {
+                    const option = Array.from(seriesElement.options).find(item => item.value === definition.id);
+                    option.selected = checkbox.checked;
+                    seriesElement.dispatchEvent(new Event("change"));
+                });
+                const text = document.createElement("span");
+                text.textContent = definition.label;
+                label.append(checkbox, text);
+                fieldset.appendChild(label);
+            }
+
+            seriesChecklist.appendChild(fieldset);
         }
     }
 
@@ -2002,6 +2087,10 @@
 
         const definition =
             selectedDefinition();
+
+        if (!definition) {
+            return [];
+        }
 
 
         const countries =
