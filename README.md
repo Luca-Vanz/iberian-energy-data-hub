@@ -11,7 +11,7 @@ interactive web dashboard.
 
 [Open the Iberian Energy Data Hub](https://iberian-energy-data-hub.onrender.com/)
 
-[Download the current public database release](https://github.com/Luca-Vanz/iberian-energy-data-hub/releases/tag/public-db-2026-09-03-fundamentals)
+[Download the current public database release](https://github.com/Luca-Vanz/iberian-energy-data-hub/releases/tag/public-db-2026-09-04-current)
 
 The public deployment contains sanitized **OMIE wholesale prices** and
 authorized **Spanish REE/ESIOS aFRR and mFRR price series**. Spanish RR will be
@@ -269,8 +269,8 @@ other balancing datasets remain outside the public release.
 
 Current production release:
 
-- Application commit: `b351662`
-- Database tag: `public-db-2026-09-02-ancillary`
-- Decompressed database: approximately 975.02 MB
-- Compressed release asset: approximately 86.92 MB
-- Public-mode smoke test: 11 passed, 0 failed, 0 warnings
+- Database snapshot: 4 September 2026
+- Database tag: `public-db-2026-09-04-current`
+- Decompressed database: approximately 979.50 MB
+- Compressed release asset: approximately 94.50 MB
+- Local API smoke test: 16 passed, 0 failed, 0 warnings
