@@ -1729,7 +1729,8 @@
     function populateDirections() {
 
         const definition =
-            selectedDefinition();
+            selectedDefinitions()
+                .find(item => item.direction);
 
 
         if (
@@ -1932,7 +1933,8 @@
     function populateSessions() {
 
         const definition =
-            selectedDefinition();
+            selectedDefinitions()
+                .find(item => item.session);
 
 
         if (
@@ -2776,9 +2778,20 @@
             !response.ok
         ) {
 
+            const detail =
+                payload.detail;
+
+            const message =
+                typeof detail === "string"
+                    ? detail
+                    : Array.isArray(detail)
+                        ? detail.map(item => item.msg || JSON.stringify(item)).join("; ")
+                        : detail && typeof detail === "object"
+                            ? detail.message || detail.msg || JSON.stringify(detail)
+                            : `HTTP ${response.status}`;
+
             throw new Error(
-                payload.detail
-                || `HTTP ${response.status}`
+                message
             );
         }
 
@@ -2938,6 +2951,24 @@
     // QUERY
     // ==================================================
 
+    function requestCountryForDefinition(definition) {
+        const requested = countryElement.value;
+        const available = availableCountriesForDefinition(definition);
+
+        if (requested === "both") {
+            if (available.includes("ES") && available.includes("PT")) return "both";
+            if (available.includes("ES")) return "ES";
+            if (available.includes("PT")) return "PT";
+        }
+
+        if (!available.includes(requested)) {
+            const countryName = requested === "ES" ? "Spain" : "Portugal";
+            throw new Error(`${definition.label} is not available for ${countryName}. Choose a compatible country selection.`);
+        }
+
+        return requested;
+    }
+
     function buildRequestUrl(
         definition,
         component,
@@ -2956,7 +2987,7 @@
 
         params.set(
             "country",
-            countryElement.value
+            requestCountryForDefinition(definition)
         );
 
         params.set(
@@ -2981,7 +3012,7 @@
 
             params.set(
                 "direction",
-                directionElement.value
+                directionElement.value || "both"
             );
         }
 
@@ -2993,6 +3024,8 @@
             params.set(
                 "session",
                 sessionElement.value
+                || definition.sessions?.[0]
+                || 1
             );
         }
 

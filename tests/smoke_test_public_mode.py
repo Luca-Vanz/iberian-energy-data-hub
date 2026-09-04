@@ -302,6 +302,9 @@ def test_public_dashboard() -> None:
         "comparison_definition_id",
         "selected series use incompatible units",
         '.join(" + ")',
+        "function requestCountryForDefinition(",
+        'if (available.includes("ES")) return "ES";',
+        'typeof detail === "string"',
     ]
 
     required_fundamentals_features = [
