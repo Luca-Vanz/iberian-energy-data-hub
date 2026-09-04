@@ -302,6 +302,26 @@ def test_public_dashboard() -> None:
         '.join(" + ")',
     ]
 
+    required_fundamentals_features = [
+        'id="capacityStartYear"',
+        'id="capacityEndYear"',
+        'id="capacityDownload"',
+        'id="capacityLoad"',
+        'id="generationStartDate"',
+        'id="generationEndDate"',
+        'id="generationFrequency"',
+        'id="generationDownload"',
+        'id="generationLoad"',
+        "function fundamentalsCsv(",
+        "earlier official ENTSO-E observations exist",
+    ]
+
+    for required in required_fundamentals_features:
+        assert_true(
+            required in html,
+            f"Public dashboard is missing a fundamentals range/download feature: {required}",
+        )
+
     for required in required_comparison_features:
 
         assert_true(

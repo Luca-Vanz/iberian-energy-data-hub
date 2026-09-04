@@ -742,19 +742,33 @@
     <section class="panel">
         <h2 class="panel-title">Installed generation capacity by technology</h2>
         <p class="fundamentals-intro">Installed net capacity describes the generating fleet available on 1 January of each year. It is measured in MW and is different from the electricity actually produced.</p>
-        <div class="controls"><div class="control"><label for="capacityCountry">Country</label><select id="capacityCountry"><option value="ES">Spain</option><option value="PT">Portugal</option></select></div></div>
+        <div class="controls">
+            <div class="control"><label for="capacityCountry">Country</label><select id="capacityCountry"><option value="ES">Spain</option><option value="PT">Portugal</option></select></div>
+            <div class="control"><label for="capacityStartYear">Start year</label><input id="capacityStartYear" type="number" min="2018" max="2026" value="2018"></div>
+            <div class="control"><label for="capacityEndYear">End year</label><input id="capacityEndYear" type="number" min="2018" max="2026" value="2026"></div>
+            <div class="control"><label>Frequency</label><select disabled><option>Yearly (official)</option></select></div>
+        </div>
+        <button id="capacityLoad" type="button">Update capacity chart</button>
+        <button id="capacityDownload" type="button">Download displayed capacity as CSV</button>
         <div id="capacityStatus" class="availability">Loading official ENTSO-E capacity data…</div>
         <div class="fundamentals-chart-wrapper"><canvas id="capacityChart"></canvas></div>
-        <div class="note"><strong>Method.</strong> Annual installed net capacity is displayed by production technology as published by ENTSO-E (A68). Values are not interpolated between years; missing observations remain missing.</div>
+        <div class="note"><strong>Method.</strong> Annual installed net capacity is displayed by production technology as published by ENTSO-E (A68). Capacity has only a yearly frequency because the official series is annual. Values are not interpolated between years; missing observations remain missing. The current Hub archive starts in 2018, although earlier official ENTSO-E observations exist and can be added in a future archive extension.</div>
     </section>
 
     <section class="panel">
         <h2 class="panel-title">Electricity generation by technology</h2>
         <p class="fundamentals-intro">Monthly generation shows which technologies produced electricity. Native average-MW observations are converted into energy using their actual interval duration and summed to GWh.</p>
-        <div class="controls"><div class="control"><label for="generationCountry">Country</label><select id="generationCountry"><option value="ES">Spain</option><option value="PT">Portugal</option></select></div></div>
+        <div class="controls">
+            <div class="control"><label for="generationCountry">Country</label><select id="generationCountry"><option value="ES">Spain</option><option value="PT">Portugal</option></select></div>
+            <div class="control"><label for="generationStartDate">Start month</label><input id="generationStartDate" type="month" min="2018-01" value="2018-01"></div>
+            <div class="control"><label for="generationEndDate">End month</label><input id="generationEndDate" type="month" min="2018-01" value="2026-09"></div>
+            <div class="control"><label for="generationFrequency">Frequency</label><select id="generationFrequency"><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></div>
+        </div>
+        <button id="generationLoad" type="button">Update generation chart</button>
+        <button id="generationDownload" type="button">Download displayed generation as CSV</button>
         <div id="generationStatus" class="availability">Loading official ENTSO-E generation data…</div>
         <div class="fundamentals-chart-wrapper"><canvas id="generationChart"></canvas></div>
-        <div class="note"><strong>Method.</strong> ENTSO-E generation by production type (A75) is duration-weighted from its native hourly or 15-minute resolution. Storage consumption is excluded. Missing source intervals are never filled with zero, and incomplete technology-months are reported above the graph.</div>
+        <div class="note"><strong>Method.</strong> ENTSO-E generation by production type (A75) is duration-weighted from its native hourly or 15-minute resolution and stored here as monthly energy. Monthly values can be summed into yearly totals; finer frequencies cannot be reconstructed from this monthly public table. Storage consumption is excluded. Missing source intervals are never filled with zero, and incomplete technology-periods are reported above the graph. The current Hub archive starts in 2018, although earlier official ENTSO-E observations exist.</div>
     </section>
 
 </main>
@@ -5431,6 +5445,8 @@
     const fundamentalColors = ['#1769aa','#2f9e44','#f59f00','#e03131','#7048e8','#0c8599','#862e9c','#5c940d','#d9480f','#495057','#1098ad','#c2255c','#66a80f','#1971c2','#f08c00','#6741d9','#087f5b','#a61e4d','#364fc7','#e8590c','#868e96'];
     let capacityFundamentalsChart = null;
     let generationFundamentalsChart = null;
+    let capacityFundamentalsRows = [];
+    let generationFundamentalsRows = [];
 
     async function waitForChartLibrary() {
         for (let attempt = 0; attempt < 100 && typeof Chart === "undefined"; attempt += 1) {
@@ -5455,42 +5471,65 @@
         }))};
     }
 
-    async function loadCapacityFundamentals(country) {
+    function fundamentalsCsv(rows, columns, filename) {
+        const escape = value => `"${String(value ?? "").replaceAll('"', '""')}"`;
+        const csv = [columns.join(","), ...rows.map(row => columns.map(column => escape(row[column])).join(","))].join("\n");
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(new Blob([csv], {type:"text/csv;charset=utf-8"}));
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+
+    async function loadCapacityFundamentals() {
         const status = document.getElementById("capacityStatus");
+        const country = document.getElementById("capacityCountry").value;
+        const startYear = document.getElementById("capacityStartYear").value;
+        const endYear = document.getElementById("capacityEndYear").value;
         status.textContent = "Loading official ENTSO-E capacity data…";
         try {
-            const response = await fetch(`/fundamentals/installed-capacity?country=${country}`);
-            if (!response.ok) throw new Error();
+            const response = await fetch(`/fundamentals/installed-capacity?country=${country}&start_year=${startYear}&end_year=${endYear}`);
+            if (!response.ok) throw new Error((await response.json()).detail || "Request failed");
             const rows = await response.json();
+            capacityFundamentalsRows = rows;
             await waitForChartLibrary();
             const data = fundamentalDatasets(rows, "year", "capacity_mw", false);
             capacityFundamentalsChart?.destroy();
             capacityFundamentalsChart = new Chart(document.getElementById("capacityChart"), {type:"line",data:{labels:data.times,datasets:data.datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{title:{display:true,text:`${country === "ES" ? "Spain" : "Portugal"} — installed capacity (MW)`}},scales:{y:{beginAtZero:true,title:{display:true,text:"MW"}}}}});
             status.textContent = rows.length ? `Source: ENTSO-E · ${data.times[0]}–${data.times.at(-1)} · annual observations` : "No installed-capacity observations are available.";
-        } catch { status.textContent = "Installed-capacity data is temporarily unavailable."; }
+        } catch (error) { status.textContent = error.message || "Installed-capacity data is temporarily unavailable."; }
     }
 
-    async function loadGenerationFundamentals(country) {
+    async function loadGenerationFundamentals() {
         const status = document.getElementById("generationStatus");
+        const country = document.getElementById("generationCountry").value;
+        const startDate = document.getElementById("generationStartDate").value;
+        const endDate = document.getElementById("generationEndDate").value;
+        const frequency = document.getElementById("generationFrequency").value;
         status.textContent = "Loading official ENTSO-E generation data…";
         try {
-            const response = await fetch(`/fundamentals/generation?country=${country}`);
-            if (!response.ok) throw new Error();
+            const response = await fetch(`/fundamentals/generation?country=${country}&start_date=${startDate}-01&end_date=${endDate}-01&frequency=${frequency}`);
+            if (!response.ok) throw new Error((await response.json()).detail || "Request failed");
             const rows = await response.json();
+            generationFundamentalsRows = rows;
             await waitForChartLibrary();
-            const data = fundamentalDatasets(rows, "month", "generation_gwh", true);
-            const incomplete = [...new Set(rows.filter(row => Number(row.coverage_ratio) < 0.99 && Number(row.generation_gwh) > 0).map(row => row.month))];
+            const data = fundamentalDatasets(rows, "period", "generation_gwh", true);
+            const incomplete = [...new Set(rows.filter(row => Number(row.coverage_ratio) < 0.99 && Number(row.generation_gwh) > 0).map(row => row.period))];
             generationFundamentalsChart?.destroy();
             generationFundamentalsChart = new Chart(document.getElementById("generationChart"), {type:"line",data:{labels:data.times,datasets:data.datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{title:{display:true,text:`${country === "ES" ? "Spain" : "Portugal"} — monthly generation (GWh)`}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,title:{display:true,text:"GWh"}}}}});
-            status.textContent = rows.length ? `Source: ENTSO-E · ${data.times[0]}–${data.times.at(-1)}${incomplete.length ? ` · ${incomplete.length} month(s) contain an incomplete active technology series` : ""}` : "No generation observations are available.";
-        } catch { status.textContent = "Generation data is temporarily unavailable."; }
+            status.textContent = rows.length ? `Source: ENTSO-E · ${data.times[0]}–${data.times.at(-1)} · ${frequency}${incomplete.length ? ` · ${incomplete.length} incomplete active technology period(s)` : ""}` : "No generation observations are available.";
+        } catch (error) { status.textContent = error.message || "Generation data is temporarily unavailable."; }
     }
 
     function initialiseFundamentals() {
-        document.getElementById("capacityCountry").addEventListener("change", event => loadCapacityFundamentals(event.target.value));
-        document.getElementById("generationCountry").addEventListener("change", event => loadGenerationFundamentals(event.target.value));
-        loadCapacityFundamentals("ES");
-        loadGenerationFundamentals("ES");
+        for (const id of ["capacityCountry", "capacityStartYear", "capacityEndYear"]) document.getElementById(id).addEventListener("change", loadCapacityFundamentals);
+        for (const id of ["generationCountry", "generationStartDate", "generationEndDate", "generationFrequency"]) document.getElementById(id).addEventListener("change", loadGenerationFundamentals);
+        document.getElementById("capacityLoad").addEventListener("click", loadCapacityFundamentals);
+        document.getElementById("generationLoad").addEventListener("click", loadGenerationFundamentals);
+        document.getElementById("capacityDownload").addEventListener("click", () => fundamentalsCsv(capacityFundamentalsRows, ["year", "technology", "capacity_mw", "source"], "installed_capacity.csv"));
+        document.getElementById("generationDownload").addEventListener("click", () => fundamentalsCsv(generationFundamentalsRows, ["period", "technology", "generation_gwh", "coverage_ratio", "source"], "generation.csv"));
+        loadCapacityFundamentals();
+        loadGenerationFundamentals();
     }
 
     // ==================================================

@@ -122,8 +122,8 @@ The unified endpoints are:
 - `GET /market/prices` — unified price-series query
 - `GET /health` — application mode and service status
 - `GET /about` — deployment scope and source summary
-- `GET /fundamentals/installed-capacity?country=ES` — annual capacity by technology
-- `GET /fundamentals/generation?country=PT` — monthly generation and coverage by technology
+- `GET /fundamentals/installed-capacity?country=ES&start_year=2020&end_year=2026` — annual capacity by technology for a selected range
+- `GET /fundamentals/generation?country=PT&start_date=2020-01-01&end_date=2026-12-31&frequency=yearly` — monthly or yearly generation and coverage by technology
 - `GET /docs` — interactive FastAPI documentation
 
 Example:
