@@ -61,7 +61,7 @@ ALLOWED_MARKETS = {
     "intraday_continuous",
 }
 
-ALLOWED_BALANCING_MARKETS = {"afrr", "mfrr"}
+ALLOWED_BALANCING_MARKETS = {"afrr", "mfrr", "rr"}
 
 def download_database(
     url: str,
@@ -245,8 +245,11 @@ def validate_database(
             """
             SELECT COUNT(*) FROM balancing_market_data
             WHERE NOT (
-                source = 'ESIOS' AND country = 'ES'
-                AND service IN ('afrr', 'mfrr')
+                (source = 'ESIOS' AND country = 'ES'
+                 AND service IN ('afrr', 'mfrr'))
+                OR
+                (source = 'REN' AND country = 'PT'
+                 AND service IN ('afrr', 'mfrr', 'rr'))
             )
             """
         ).fetchone()[0]
@@ -308,7 +311,7 @@ def validate_database(
         balancing_row_count = connection.execute(
             "SELECT COUNT(*) FROM balancing_market_data"
         ).fetchone()[0]
-        print(f"Approved Spanish ESIOS balancing rows: {balancing_row_count:,}")
+        print(f"Approved ESIOS and REN balancing rows: {balancing_row_count:,}")
 
     finally:
 

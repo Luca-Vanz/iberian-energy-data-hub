@@ -78,7 +78,8 @@ The local research database contains:
 The public production database may contain:
 - OMIE wholesale data;
 - validated Spanish REE/ESIOS aFRR and mFRR price series;
-- validated Spanish REE/ESIOS RR price series once its historical ingestion is complete.
+- validated Spanish REE/ESIOS RR price series once its historical ingestion is complete;
+- validated Portuguese REN aFRR, mFRR and RR price series, with REN attribution.
 
 Publicly allowed markets:
 - `day_ahead`
@@ -87,7 +88,7 @@ Publicly allowed markets:
 
 Publicly forbidden:
 - incomplete or unvalidated Spanish RR history;
-- Portuguese RR and all other REN balancing data until separately authorized;
+- unvalidated REN products or source/country combinations other than Portuguese aFRR, mFRR and RR;
 - any ESIOS product outside the explicitly validated Spanish aFRR, mFRR, and RR price series.
 
 The public API may serve the approved Spanish ESIOS series above. It must reject
@@ -113,9 +114,9 @@ The public dashboard is `src/web/public_index.html`.
 
 The full/local dashboard is `src/web/index.html`.
 
-The public dashboard may present only ancillary selectors backed by approved,
-validated Spanish ESIOS data. Do not present Portuguese RR or an empty Spanish
-RR selector.
+The public dashboard may present ancillary selectors backed by approved,
+validated Spanish ESIOS data and Portuguese REN aFRR, mFRR and RR data. Do not
+present an empty Spanish RR selector.
 
 Use a separate browser cache key for the public market catalog.
 
@@ -170,7 +171,8 @@ Do not rebuild or re-upload the public DB for frontend-only changes.
 
 Purpose:
 - build `deployment/iberian_energy_public.db`;
-- include OMIE wholesale data and approved Spanish ESIOS aFRR/mFRR data;
+- include OMIE wholesale data, approved Spanish ESIOS aFRR/mFRR data and
+  approved Portuguese REN aFRR/mFRR/RR data;
 - preserve legacy day-ahead compatibility;
 - copy wholesale market events;
 - create public catalog cache;
@@ -187,8 +189,8 @@ balancing_market_data
 
 Expected public-data rules:
 - unified wholesale source must be OMIE only;
-- balancing rows must be Spanish ESIOS aFRR/mFRR only;
-- no REN rows;
+- balancing rows must be Spanish ESIOS aFRR/mFRR or Portuguese REN
+  aFRR/mFRR/RR only;
 - SQLite integrity must pass.
 
 `deployment/iberian_energy_public.db` and its `.gz` file are generated deployment artifacts and must remain ignored by Git.
@@ -209,7 +211,8 @@ Validation includes:
 - SQLite quick/integrity check;
 - exact expected tables;
 - OMIE-only unified wholesale sources;
-- Spanish ESIOS aFRR/mFRR-only balancing rows;
+- Spanish ESIOS aFRR/mFRR-only and Portuguese REN aFRR/mFRR/RR-only
+  balancing rows;
 - allowed wholesale-market set;
 - market catalog availability.
 

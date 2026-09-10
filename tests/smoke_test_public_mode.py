@@ -16,8 +16,8 @@ ALLOWED_PUBLIC_MARKETS = {
     "intraday_continuous",
 }
 
-ALLOWED_PUBLIC_BALANCING_MARKETS = {"afrr", "mfrr"}
-FORBIDDEN_PUBLIC_MARKETS = {"rr"}
+ALLOWED_PUBLIC_BALANCING_MARKETS = {"afrr", "mfrr", "rr"}
+FORBIDDEN_PUBLIC_MARKETS = set()
 
 
 passed = 0
@@ -252,9 +252,7 @@ def test_public_dashboard() -> None:
         ),
     )
 
-    forbidden_strings = [
-        'id: "rr_activation_pt"',
-    ]
+    forbidden_strings = []
 
     for required in [
         'id: "afrr_energy_marginal"',
@@ -264,6 +262,13 @@ def test_public_dashboard() -> None:
         'id: "mfrr_scheduled_market_es"',
         'id: "mfrr_direct_weighted_es"',
         'id: "mfrr_legacy_es"',
+        'id: "afrr_capacity_adjusted_pt"',
+        'id: "afrr_capacity_final_pt"',
+        'id: "mfrr_scheduled_activation_pt"',
+        'id: "mfrr_direct_qt_pt"',
+        'id: "mfrr_direct_q1t_pt"',
+        'id: "mfrr_legacy_pt"',
+        'id: "rr_activation_pt"',
     ]:
         assert_true(required in html, f"Missing approved selector: {required}")
 
@@ -398,7 +403,7 @@ def test_public_dashboard() -> None:
     )
 
     print(
-        "    OMIE wholesale and Spanish ESIOS selectors with full-range downloads"
+        "    OMIE, Spanish ESIOS and Portuguese REN selectors with full-range downloads"
     )
 
 
@@ -433,7 +438,7 @@ def test_about() -> None:
     )
 
     assert_true(
-        sources == {"OMIE", "ESIOS", "ENTSO-E"},
+        sources == {"OMIE", "ESIOS", "REN", "ENTSO-E"},
         (
             "Unexpected public sources: "
             f"{sources}"
@@ -453,6 +458,7 @@ def test_about() -> None:
         "Continuous intraday",
         "aFRR",
         "mFRR",
+        "RR",
         "Generation by technology",
         "Installed capacity by technology",
     }
@@ -466,7 +472,7 @@ def test_about() -> None:
     )
 
     print(
-        "    Sources: OMIE, ESIOS and ENTSO-E"
+        "    Sources: OMIE, ESIOS, REN and ENTSO-E"
     )
 
 
@@ -495,17 +501,26 @@ def test_catalog() -> None:
     )
 
     assert_true(
-        len(balancing) == 13,
+        len(balancing) == 31,
         (
-            "Expected 13 approved Spanish balancing "
+            "Expected 31 approved Iberian balancing "
             f"catalog rows, got {len(balancing)}."
         ),
     )
 
     assert_true(
-        all(row.get("source") == "ESIOS" and row.get("country") == "ES"
-            and row.get("market") in ALLOWED_PUBLIC_BALANCING_MARKETS
-            for row in balancing),
+        all(
+            (
+                row.get("source") == "ESIOS"
+                and row.get("country") == "ES"
+                and row.get("market") in {"afrr", "mfrr"}
+            ) or (
+                row.get("source") == "REN"
+                and row.get("country") == "PT"
+                and row.get("market") in {"afrr", "mfrr", "rr"}
+            )
+            for row in balancing
+        ),
         "Public catalog contains an unapproved balancing row.",
     )
 
@@ -1094,8 +1109,8 @@ def main() -> int:
         ),
 
         (
-            "10. Unapproved RR is forbidden",
-            test_unapproved_balancing_markets_forbidden,
+            "10. Public REN RR",
+            test_public_rr,
         ),
 
         (

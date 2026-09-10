@@ -76,7 +76,7 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
             metric: "marginal_price",
             direction: true,
             session: false,
-            countries: ["ES"]
+            countries: ["ES", "PT"]
         },
 
         {
@@ -88,7 +88,7 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
             metric: "marginal_price",
             direction: true,
             session: false,
-            countries: ["ES"]
+            countries: ["ES", "PT"]
         },
 
         {
@@ -101,6 +101,30 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
             direction: true,
             session: false,
             countries: ["ES"]
+        },
+
+        {
+            id: "afrr_capacity_adjusted_pt",
+            group: "REN aFRR",
+            label: "aFRR capacity — adjusted price",
+            market: "afrr",
+            stage: "capacity",
+            metric: "adjusted_price",
+            direction: true,
+            session: false,
+            countries: ["PT"]
+        },
+
+        {
+            id: "afrr_capacity_final_pt",
+            group: "REN aFRR",
+            label: "aFRR capacity — final price",
+            market: "afrr",
+            stage: "capacity",
+            metric: "final_price",
+            direction: true,
+            session: false,
+            countries: ["PT"]
         },
 
         {
@@ -128,6 +152,18 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
         },
 
         {
+            id: "mfrr_scheduled_activation_pt",
+            group: "REN mFRR",
+            label: "mFRR scheduled — activation price",
+            market: "mfrr",
+            stage: "energy_scheduled",
+            metric: "scheduled_activation_price",
+            direction: true,
+            session: false,
+            countries: ["PT"]
+        },
+
+        {
             id: "mfrr_direct_weighted_es",
             group: "REE/ESIOS mFRR",
             label: "mFRR direct — weighted-average price",
@@ -140,6 +176,30 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
         },
 
         {
+            id: "mfrr_direct_qt_pt",
+            group: "REN mFRR",
+            label: "mFRR direct QT — activation price",
+            market: "mfrr",
+            stage: "energy_direct_qt",
+            metric: "direct_activation_price",
+            direction: true,
+            session: false,
+            countries: ["PT"]
+        },
+
+        {
+            id: "mfrr_direct_q1t_pt",
+            group: "REN mFRR",
+            label: "mFRR direct Q1T — activation price",
+            market: "mfrr",
+            stage: "energy_direct_q1t",
+            metric: "direct_activation_price",
+            direction: true,
+            session: false,
+            countries: ["PT"]
+        },
+
+        {
             id: "mfrr_legacy_es",
             group: "REE/ESIOS mFRR",
             label: "mFRR scheduled — legacy marginal price",
@@ -149,6 +209,18 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
             direction: true,
             session: false,
             countries: ["ES"]
+        },
+
+        {
+            id: "mfrr_legacy_pt",
+            group: "REN mFRR",
+            label: "mFRR scheduled — legacy marginal price",
+            market: "mfrr",
+            stage: "energy_scheduled_legacy",
+            metric: "marginal_price",
+            direction: true,
+            session: false,
+            countries: ["PT"]
         },
 
         {
@@ -178,16 +250,6 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
         }
 
     ];"""
-
-# Portuguese RR stays local until separately authorized. The RR definition is
-# the final entry in the source selector block, so trim only that entry while
-# preserving all validated Spanish REE/ESIOS aFRR and mFRR selectors.
-_PORTUGUESE_RR_SERIES = '\n        {\n            id: "rr_activation_pt"'
-PUBLIC_SERIES_BLOCK = (
-    PUBLIC_SERIES_BLOCK.split(_PORTUGUESE_RR_SERIES, 1)[0].rstrip(",\n")
-    + "\n\n    ];"
-)
-
 
 # ============================================================
 # PUBLIC DATA GUIDE
@@ -387,7 +449,7 @@ PUBLIC_DATA_GUIDE = """
 
                     <p style="margin-top: 0;">
                         <strong>
-                            Public REE/ESIOS price series.
+                            Public REE/ESIOS and REN price series.
                         </strong>
 
                         Electricity must be balanced continuously: at every
@@ -523,7 +585,7 @@ PUBLIC_DATA_GUIDE = """
                     <p>
                         <strong>What the selectors mean.</strong>
                         The labels below describe the exact variable returned by
-                        the selected Spanish REE/ESIOS product; they are not
+                        the selected Spanish REE/ESIOS or Portuguese REN product; they are not
                         interchangeable measures of one balancing price.
                     </p>
 
@@ -540,10 +602,15 @@ PUBLIC_DATA_GUIDE = """
                                 <tr><td><strong>aFRR energy — marginal price</strong></td><td>Price of the marginal automatically activated upward or downward balancing-energy offer in the selected direction.</td><td>EUR/MWh</td></tr>
                                 <tr><td><strong>aFRR capacity — marginal price</strong></td><td>Marginal price paid for holding a unit of aFRR capacity available, rather than for energy actually activated.</td><td>EUR/MW</td></tr>
                                 <tr><td><strong>aFRR capacity — weighted-average price</strong></td><td>Capacity-market price averaged with the awarded capacity as weights for the selected direction.</td><td>EUR/MW</td></tr>
+                                <tr><td><strong>aFRR capacity — adjusted price (Portugal)</strong></td><td>REN's adjusted aFRR-capacity price after the applicable adjustment stage, kept separate from the marginal and final prices.</td><td>EUR/MW</td></tr>
+                                <tr><td><strong>aFRR capacity — final price (Portugal)</strong></td><td>REN's final published aFRR-capacity remuneration price for the selected direction.</td><td>EUR/MW</td></tr>
                                 <tr><td><strong>mFRR scheduled — weighted-average price</strong></td><td>Weighted-average price of manually activated balancing energy scheduled through the standard scheduled process.</td><td>EUR/MWh</td></tr>
                                 <tr><td><strong>mFRR scheduled — market price</strong></td><td>The common scheduled mFRR market price published for the period; it is a separate current product, not a continuation of the legacy series.</td><td>EUR/MWh</td></tr>
                                 <tr><td><strong>mFRR direct — weighted-average price</strong></td><td>Weighted-average price of manually activated energy dispatched directly, outside the scheduled activation product.</td><td>EUR/MWh</td></tr>
                                 <tr><td><strong>mFRR scheduled — legacy marginal price</strong></td><td>Historical marginal price of the former scheduled tertiary-regulation product. It is kept separate from current mFRR market prices.</td><td>EUR/MWh</td></tr>
+                                <tr><td><strong>mFRR scheduled — activation price (Portugal)</strong></td><td>REN's price for scheduled mFRR energy activated in the selected direction.</td><td>EUR/MWh</td></tr>
+                                <tr><td><strong>mFRR direct QT / Q1T — activation price (Portugal)</strong></td><td>REN's direct-activation prices for the distinct QT and Q1T products; they remain separate series.</td><td>EUR/MWh</td></tr>
+                                <tr><td><strong>Replacement reserve — activation price (Portugal)</strong></td><td>REN's price for activated replacement-reserve energy. The legacy hourly and current 15-minute products remain separate internally.</td><td>EUR/MWh</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1041,6 +1108,38 @@ PUBLIC_DATA_GUIDE = """
 
                             </tr>
 
+                            <tr>
+
+                                <td>
+                                    <strong>Balancing prices</strong><br>
+                                    REN Portugal
+                                </td>
+
+                                <td>
+                                    aFRR energy and legacy mFRR: from 1 Jul 2008;<br>
+                                    current mFRR: from 14 Mar 2024;<br>
+                                    RR: 20 Oct 2020–30 Dec 2025;<br>
+                                    aFRR capacity: from 9 Jan 2026.
+                                    Product-specific end dates are shown by the
+                                    live availability catalog.
+                                </td>
+
+                                <td>
+                                    Legacy aFRR energy and mFRR are hourly;
+                                    current aFRR capacity, mFRR and RR are
+                                    15-minute products.
+                                </td>
+
+                                <td>
+                                    REN series are published under written
+                                    authorization with clear source attribution.
+                                    Adjusted, marginal and final capacity prices,
+                                    QT/Q1T direct activation, and legacy/current
+                                    products remain distinct.
+                                </td>
+
+                            </tr>
+
                         </tbody>
 
                     </table>
@@ -1077,8 +1176,9 @@ PUBLIC_DATA_GUIDE = """
                     </li>
                     <li>
                         The deployment database is checked for SQLite integrity,
-                        allowed tables, OMIE-only wholesale rows and
-                        approved REE/ESIOS Spanish aFRR/mFRR rows only.
+                        allowed tables, OMIE-only wholesale rows, approved
+                        REE/ESIOS Spanish aFRR/mFRR rows and approved REN
+                        Portuguese aFRR/mFRR/RR rows only.
                     </li>
                     <li>
                         Market-design and resolution changes are stored as
@@ -1094,9 +1194,10 @@ PUBLIC_DATA_GUIDE = """
                         font-size: 12px;
                     "
                 >
-                    Current public release last includes official observations
-                    through 20 August 2026. Product-specific end dates can be
-                    earlier and are shown by the live availability catalog.
+                    Product-specific end dates differ and are shown by the live
+                    availability catalog. Source: REN — Redes Energéticas
+                    Nacionais. This independent project is not affiliated with
+                    or endorsed by REN.
                 </p>
 
             </div>
@@ -1198,7 +1299,7 @@ def replace_subtitle(
     )
 
     new = (
-        "Public OMIE and REE/ESIOS electricity-market prices "
+        "Public OMIE, REE/ESIOS and REN electricity-market prices "
         "for Spain and Portugal"
     )
 
@@ -1247,8 +1348,9 @@ def add_public_note(
 
             This version exposes historical OMIE wholesale prices for Spain
             and Portugal, authorized REE/ESIOS aFRR and mFRR price series for
-            Spain, plus ENTSO-E generation and installed-capacity fundamentals
-            for Spain and Portugal. Each price product retains its official
+            Spain, authorized REN aFRR, mFRR and RR price series for Portugal,
+            plus ENTSO-E generation and installed-capacity fundamentals for
+            Spain and Portugal. Each price product retains its official
             unit, direction, source identifier and native resolution.
 
         </div>
@@ -1309,9 +1411,7 @@ def validate_output(
     html: str,
 ) -> None:
 
-    forbidden_terms = [
-        'id: "rr_activation_pt"',
-    ]
+    forbidden_terms = []
 
     for term in forbidden_terms:
 
@@ -1336,6 +1436,13 @@ def validate_output(
         'id: "mfrr_scheduled_market_es"',
         'id: "mfrr_direct_weighted_es"',
         'id: "mfrr_legacy_es"',
+        'id: "afrr_capacity_adjusted_pt"',
+        'id: "afrr_capacity_final_pt"',
+        'id: "mfrr_scheduled_activation_pt"',
+        'id: "mfrr_direct_qt_pt"',
+        'id: "mfrr_direct_q1t_pt"',
+        'id: "mfrr_legacy_pt"',
+        'id: "rr_activation_pt"',
         "Public portfolio demo.",
         "Price series &amp; frequency methodology",
         "household electricity tariff",
@@ -1485,6 +1592,9 @@ def main() -> None:
 
     print("  - Spanish REE/ESIOS aFRR")
     print("  - Spanish REE/ESIOS mFRR")
+    print("  - Portuguese REN aFRR")
+    print("  - Portuguese REN mFRR")
+    print("  - Portuguese REN RR")
 
     print(
         "Methodology guide:"
@@ -1526,7 +1636,7 @@ def main() -> None:
 
 
     print(
-        "Balancing-market selectors: Spanish REE/ESIOS aFRR and mFRR"
+        "Balancing-market selectors: Spanish REE/ESIOS and Portuguese REN"
     )
 
     print(

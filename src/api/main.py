@@ -245,6 +245,7 @@ def about():
             "Continuous intraday",
             "aFRR",
             "mFRR",
+            "RR",
             "Generation by technology",
             "Installed capacity by technology",
         ]
@@ -252,6 +253,7 @@ def about():
         sources = [
             "OMIE",
             "ESIOS",
+            "REN",
             "ENTSO-E",
         ]
 

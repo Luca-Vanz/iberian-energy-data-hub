@@ -40,7 +40,7 @@ BALANCING_MARKETS = {
     "rr",
 }
 
-PUBLIC_BALANCING_MARKETS = {"afrr", "mfrr"}
+PUBLIC_BALANCING_MARKETS = {"afrr", "mfrr", "rr"}
 PUBLIC_MARKETS = WHOLESALE_MARKETS | PUBLIC_BALANCING_MARKETS
 
 
@@ -48,8 +48,9 @@ def validate_public_market_access(
     market: str,
 ) -> None:
     """
-    Public mode exposes OMIE wholesale data and validated Spanish
-    REE/ESIOS aFRR and mFRR price series.
+    Public mode exposes OMIE wholesale data, validated Spanish
+    REE/ESIOS aFRR/mFRR prices, and validated Portuguese REN
+    aFRR/mFRR/RR prices.
 
     Local development can use the complete research database,
     including ESIOS and REN balancing-market data.
@@ -184,9 +185,15 @@ def load_cached_market_catalog() -> dict:
 
         balancing = [
             row for row in catalog.get("balancing", [])
-            if row.get("market") in PUBLIC_BALANCING_MARKETS
-            and row.get("country") == "ES"
-            and row.get("source") == "ESIOS"
+            if (
+                row.get("source") == "ESIOS"
+                and row.get("country") == "ES"
+                and row.get("market") in {"afrr", "mfrr"}
+            ) or (
+                row.get("source") == "REN"
+                and row.get("country") == "PT"
+                and row.get("market") in {"afrr", "mfrr", "rr"}
+            )
         ]
 
         return {"wholesale": wholesale, "balancing": balancing}
@@ -261,7 +268,8 @@ def market_prices(
         wholesale + balancing markets
 
     Public mode:
-        OMIE wholesale and validated Spanish REE/ESIOS aFRR/mFRR prices
+        OMIE wholesale, validated Spanish REE/ESIOS aFRR/mFRR prices,
+        and validated Portuguese REN aFRR/mFRR/RR prices
     """
 
     from src.analytics.unified_prices import get_unified_prices
@@ -270,10 +278,10 @@ def market_prices(
         market
     )
 
-    if IS_PUBLIC and market in PUBLIC_BALANCING_MARKETS and country != "ES":
+    if IS_PUBLIC and market == "rr" and country != "PT":
         raise HTTPException(
             status_code=403,
-            detail="Public ancillary-service prices are available for Spain only.",
+            detail="Public RR prices are available for Portugal only.",
         )
 
     try:

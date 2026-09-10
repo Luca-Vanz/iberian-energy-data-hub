@@ -512,10 +512,10 @@ def build_public_database() -> None:
         # ====================================================
         # APPROVED BALANCING PRICES
         #
-        # Only validated Spanish REE/ESIOS aFRR and mFRR are public.
+        # Only validated Spanish REE/ESIOS and Portuguese REN series are public.
         # ====================================================
 
-        print("Copying approved Spanish ESIOS aFRR/mFRR prices...")
+        print("Copying approved ESIOS and REN balancing prices...")
         balancing_count = copy_query_in_batches(
             source_connection, public_connection,
             """
@@ -523,8 +523,13 @@ def build_public_database() -> None:
                    country, service, market_stage, metric, direction, value,
                    unit, resolution_minutes, source, source_id
             FROM balancing_market_data
-            WHERE source = 'ESIOS' AND country = 'ES'
-              AND service IN ('afrr', 'mfrr')
+            WHERE (
+                source = 'ESIOS' AND country = 'ES'
+                AND service IN ('afrr', 'mfrr')
+            ) OR (
+                source = 'REN' AND country = 'PT'
+                AND service IN ('afrr', 'mfrr', 'rr')
+            )
             ORDER BY timestamp_utc, service, market_stage, metric, direction,
                      source_id
             """,
@@ -955,8 +960,11 @@ def build_public_database() -> None:
             """
             SELECT COUNT(*) FROM balancing_market_data
             WHERE NOT (
-                source = 'ESIOS' AND country = 'ES'
-                AND service IN ('afrr', 'mfrr')
+                (source = 'ESIOS' AND country = 'ES'
+                 AND service IN ('afrr', 'mfrr'))
+                OR
+                (source = 'REN' AND country = 'PT'
+                 AND service IN ('afrr', 'mfrr', 'rr'))
             )
             """
         ).fetchone()[0]
@@ -1005,9 +1013,16 @@ def build_public_database() -> None:
             )
             if (
                 not (
-                    row.get("source") == "ESIOS"
-                    and row.get("country") == "ES"
-                    and row.get("market") in {"afrr", "mfrr"}
+                    (
+                        row.get("source") == "ESIOS"
+                        and row.get("country") == "ES"
+                        and row.get("market") in {"afrr", "mfrr"}
+                    )
+                    or (
+                        row.get("source") == "REN"
+                        and row.get("country") == "PT"
+                        and row.get("market") in {"afrr", "mfrr", "rr"}
+                    )
                 )
             )
         ]
@@ -1170,7 +1185,7 @@ def build_public_database() -> None:
         f"{public_market_count:,}"
     )
 
-    print(f"Approved Spanish ESIOS balancing rows: {balancing_count:,}")
+    print(f"Approved ESIOS and REN balancing rows: {balancing_count:,}")
     print(f"ENTSO-E monthly generation rows: {generation_count:,}")
     print(f"ENTSO-E installed-capacity rows: {capacity_count:,}")
 
@@ -1236,7 +1251,7 @@ def build_public_database() -> None:
         "Non-OMIE unified rows: 0"
     )
 
-    print(f"Approved Spanish ESIOS balancing rows: {balancing_count:,}")
+    print(f"Approved ESIOS and REN balancing rows: {balancing_count:,}")
 
     print(
         f"Balancing catalog rows: "
