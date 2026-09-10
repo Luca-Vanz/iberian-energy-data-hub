@@ -4292,11 +4292,6 @@
         }
         }
 
-        const units = [...new Set(combinedData.map(row => row.unit).filter(Boolean))];
-        if (units.length > 1) {
-            throw new Error("The selected series use incompatible units. Compare EUR/MWh prices separately from EUR/MW capacity prices.");
-        }
-
         const eventMap = new Map();
         for (const event of combinedEvents) {
             eventMap.set([event.event_date,event.country,event.service,event.event_type,event.title].join("|"), event);
@@ -5055,6 +5050,24 @@
             );
 
 
+        const units =
+            [
+                ...new Set(
+                    rows.map(row => row.unit).filter(Boolean)
+                )
+            ];
+
+
+        const primaryUnit =
+            units.includes("EUR/MWh")
+                ? "EUR/MWh"
+                : units[0] || "Price";
+
+
+        const secondaryUnit =
+            units.find(unit => unit !== primaryUnit);
+
+
         const datasets =
             [];
 
@@ -5084,6 +5097,12 @@
                             group[0],
                             result.definition
                         ),
+
+                    yAxisID:
+                        secondaryUnit
+                        && group[0].unit === secondaryUnit
+                            ? "ySecondary"
+                            : "y",
 
                     data:
                         group.map(
@@ -5448,10 +5467,25 @@
                                         true,
 
                                     text:
-                                        rows[0]?.unit
-                                        || "Price"
+                                        primaryUnit
                                 }
-                            }
+                            },
+
+
+                            ...(secondaryUnit
+                                ? {
+                                    ySecondary: {
+                                        position: "right",
+                                        title: {
+                                            display: true,
+                                            text: secondaryUnit
+                                        },
+                                        grid: {
+                                            drawOnChartArea: false
+                                        }
+                                    }
+                                }
+                                : {})
                         }
                     }
                 }
@@ -5512,6 +5546,15 @@
                             .selectedIndex
                     ]
                     .text
+            ],
+
+            [
+                "Units",
+                [
+                    ...new Set(
+                        rows.map(row => row.unit).filter(Boolean)
+                    )
+                ].join(" + ")
             ]
         ];
 
