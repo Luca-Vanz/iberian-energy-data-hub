@@ -1859,7 +1859,7 @@
 
         {
             id: "afrr_energy_marginal",
-            group: "REE/ESIOS aFRR",
+            group: "aFRR",
             label: "aFRR energy — marginal price",
             market: "afrr",
             stage: "energy",
@@ -1871,7 +1871,7 @@
 
         {
             id: "afrr_capacity_marginal",
-            group: "REE/ESIOS aFRR",
+            group: "aFRR",
             label: "aFRR capacity — marginal price",
             market: "afrr",
             stage: "capacity",
@@ -1883,8 +1883,9 @@
 
         {
             id: "afrr_capacity_weighted",
-            group: "REE/ESIOS aFRR",
+            group: "aFRR",
             label: "aFRR capacity — weighted-average price",
+            selectorLabel: "aFRR capacity — weighted-average price (Spain only)",
             market: "afrr",
             stage: "capacity",
             metric: "weighted_average_price",
@@ -1895,8 +1896,9 @@
 
         {
             id: "afrr_capacity_adjusted_pt",
-            group: "REN aFRR",
+            group: "aFRR",
             label: "aFRR capacity — adjusted price",
+            selectorLabel: "aFRR capacity — adjusted price (Portugal only)",
             market: "afrr",
             stage: "capacity",
             metric: "adjusted_price",
@@ -1907,8 +1909,9 @@
 
         {
             id: "afrr_capacity_final_pt",
-            group: "REN aFRR",
+            group: "aFRR",
             label: "aFRR capacity — final price",
+            selectorLabel: "aFRR capacity — final price (Portugal only)",
             market: "afrr",
             stage: "capacity",
             metric: "final_price",
@@ -1919,8 +1922,9 @@
 
         {
             id: "mfrr_scheduled_weighted_es",
-            group: "REE/ESIOS mFRR",
+            group: "mFRR",
             label: "mFRR scheduled — weighted-average price",
+            selectorLabel: "mFRR scheduled — weighted-average price (Spain only)",
             market: "mfrr",
             stage: "energy_scheduled",
             metric: "weighted_average_price",
@@ -1931,8 +1935,9 @@
 
         {
             id: "mfrr_scheduled_market_es",
-            group: "REE/ESIOS mFRR",
+            group: "mFRR",
             label: "mFRR scheduled — market price",
+            selectorLabel: "mFRR scheduled — market price (Spain only)",
             market: "mfrr",
             stage: "energy_scheduled",
             metric: "market_price",
@@ -1943,8 +1948,9 @@
 
         {
             id: "mfrr_scheduled_activation_pt",
-            group: "REN mFRR",
+            group: "mFRR",
             label: "mFRR scheduled — activation price",
+            selectorLabel: "mFRR scheduled — activation price (Portugal only)",
             market: "mfrr",
             stage: "energy_scheduled",
             metric: "scheduled_activation_price",
@@ -1955,8 +1961,9 @@
 
         {
             id: "mfrr_direct_weighted_es",
-            group: "REE/ESIOS mFRR",
+            group: "mFRR",
             label: "mFRR direct — weighted-average price",
+            selectorLabel: "mFRR direct — weighted-average price (Spain only)",
             market: "mfrr",
             stage: "energy_direct",
             metric: "weighted_average_price",
@@ -1967,8 +1974,9 @@
 
         {
             id: "mfrr_direct_qt_pt",
-            group: "REN mFRR",
+            group: "mFRR",
             label: "mFRR direct QT — activation price",
+            selectorLabel: "mFRR direct QT — activation price (Portugal only)",
             market: "mfrr",
             stage: "energy_direct_qt",
             metric: "direct_activation_price",
@@ -1979,8 +1987,9 @@
 
         {
             id: "mfrr_direct_q1t_pt",
-            group: "REN mFRR",
+            group: "mFRR",
             label: "mFRR direct Q1T — activation price",
+            selectorLabel: "mFRR direct Q1T — activation price (Portugal only)",
             market: "mfrr",
             stage: "energy_direct_q1t",
             metric: "direct_activation_price",
@@ -1990,33 +1999,22 @@
         },
 
         {
-            id: "mfrr_legacy_es",
-            group: "REE/ESIOS mFRR",
+            id: "mfrr_legacy",
+            group: "mFRR",
             label: "mFRR scheduled — legacy marginal price",
             market: "mfrr",
             stage: "energy_scheduled_legacy",
             metric: "marginal_price",
             direction: true,
             session: false,
-            countries: ["ES"]
-        },
-
-        {
-            id: "mfrr_legacy_pt",
-            group: "REN mFRR",
-            label: "mFRR scheduled — legacy marginal price",
-            market: "mfrr",
-            stage: "energy_scheduled_legacy",
-            metric: "marginal_price",
-            direction: true,
-            session: false,
-            countries: ["PT"]
+            countries: ["ES", "PT"]
         },
 
         {
             id: "rr_activation_pt",
-            group: "REN RR",
+            group: "RR",
             label: "Replacement reserve — activation price",
+            selectorLabel: "Replacement reserve — activation price (Portugal only)",
             market: "rr",
             metric: "activation_price",
             direction: false,
@@ -2477,7 +2475,7 @@
                 definition.id;
 
             option.textContent =
-                definition.label;
+                definition.selectorLabel || definition.label;
 
 
             groups
@@ -2546,7 +2544,7 @@
                     seriesElement.dispatchEvent(new Event("change"));
                 });
                 const text = document.createElement("span");
-                text.textContent = definition.label;
+                text.textContent = definition.selectorLabel || definition.label;
                 label.append(checkbox, text);
                 fieldset.appendChild(label);
             }
@@ -4310,7 +4308,21 @@
         definition
     ) {
 
-        const parts = [row.comparison_definition_label || definition.label, row.country];
+        const countryLabels = {
+            ES: "Spain",
+            PT: "Portugal"
+        };
+
+        const sourceLabels = {
+            ESIOS: "REE/ESIOS",
+            REN: "REN",
+            OMIE: "OMIE"
+        };
+
+        const country = countryLabels[row.country] || row.country;
+        const source = sourceLabels[row.source] || row.source;
+        const geography = [country, source].filter(Boolean).join(" · ");
+        const parts = [row.comparison_definition_label || definition.label, geography];
 
 
         if (

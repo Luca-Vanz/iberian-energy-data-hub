@@ -261,14 +261,18 @@ def test_public_dashboard() -> None:
         'id: "mfrr_scheduled_weighted_es"',
         'id: "mfrr_scheduled_market_es"',
         'id: "mfrr_direct_weighted_es"',
-        'id: "mfrr_legacy_es"',
+        'id: "mfrr_legacy"',
         'id: "afrr_capacity_adjusted_pt"',
         'id: "afrr_capacity_final_pt"',
         'id: "mfrr_scheduled_activation_pt"',
         'id: "mfrr_direct_qt_pt"',
         'id: "mfrr_direct_q1t_pt"',
-        'id: "mfrr_legacy_pt"',
         'id: "rr_activation_pt"',
+        'group: "aFRR"',
+        'group: "mFRR"',
+        'group: "RR"',
+        'weighted-average price (Spain only)',
+        'activation price (Portugal only)',
     ]:
         assert_true(required in html, f"Missing approved selector: {required}")
 

@@ -1486,7 +1486,7 @@
                 definition.id;
 
             option.textContent =
-                definition.label;
+                definition.selectorLabel || definition.label;
 
 
             groups
@@ -1555,7 +1555,7 @@
                     seriesElement.dispatchEvent(new Event("change"));
                 });
                 const text = document.createElement("span");
-                text.textContent = definition.label;
+                text.textContent = definition.selectorLabel || definition.label;
                 label.append(checkbox, text);
                 fieldset.appendChild(label);
             }
@@ -3319,7 +3319,21 @@
         definition
     ) {
 
-        const parts = [row.comparison_definition_label || definition.label, row.country];
+        const countryLabels = {
+            ES: "Spain",
+            PT: "Portugal"
+        };
+
+        const sourceLabels = {
+            ESIOS: "REE/ESIOS",
+            REN: "REN",
+            OMIE: "OMIE"
+        };
+
+        const country = countryLabels[row.country] || row.country;
+        const source = sourceLabels[row.source] || row.source;
+        const geography = [country, source].filter(Boolean).join(" · ");
+        const parts = [row.comparison_definition_label || definition.label, geography];
 
 
         if (

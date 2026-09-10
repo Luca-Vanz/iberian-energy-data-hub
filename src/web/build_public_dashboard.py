@@ -69,7 +69,7 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
 
         {
             id: "afrr_energy_marginal",
-            group: "REE/ESIOS aFRR",
+            group: "aFRR",
             label: "aFRR energy — marginal price",
             market: "afrr",
             stage: "energy",
@@ -81,7 +81,7 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
 
         {
             id: "afrr_capacity_marginal",
-            group: "REE/ESIOS aFRR",
+            group: "aFRR",
             label: "aFRR capacity — marginal price",
             market: "afrr",
             stage: "capacity",
@@ -93,8 +93,9 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
 
         {
             id: "afrr_capacity_weighted",
-            group: "REE/ESIOS aFRR",
+            group: "aFRR",
             label: "aFRR capacity — weighted-average price",
+            selectorLabel: "aFRR capacity — weighted-average price (Spain only)",
             market: "afrr",
             stage: "capacity",
             metric: "weighted_average_price",
@@ -105,8 +106,9 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
 
         {
             id: "afrr_capacity_adjusted_pt",
-            group: "REN aFRR",
+            group: "aFRR",
             label: "aFRR capacity — adjusted price",
+            selectorLabel: "aFRR capacity — adjusted price (Portugal only)",
             market: "afrr",
             stage: "capacity",
             metric: "adjusted_price",
@@ -117,8 +119,9 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
 
         {
             id: "afrr_capacity_final_pt",
-            group: "REN aFRR",
+            group: "aFRR",
             label: "aFRR capacity — final price",
+            selectorLabel: "aFRR capacity — final price (Portugal only)",
             market: "afrr",
             stage: "capacity",
             metric: "final_price",
@@ -129,8 +132,9 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
 
         {
             id: "mfrr_scheduled_weighted_es",
-            group: "REE/ESIOS mFRR",
+            group: "mFRR",
             label: "mFRR scheduled — weighted-average price",
+            selectorLabel: "mFRR scheduled — weighted-average price (Spain only)",
             market: "mfrr",
             stage: "energy_scheduled",
             metric: "weighted_average_price",
@@ -141,8 +145,9 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
 
         {
             id: "mfrr_scheduled_market_es",
-            group: "REE/ESIOS mFRR",
+            group: "mFRR",
             label: "mFRR scheduled — market price",
+            selectorLabel: "mFRR scheduled — market price (Spain only)",
             market: "mfrr",
             stage: "energy_scheduled",
             metric: "market_price",
@@ -153,8 +158,9 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
 
         {
             id: "mfrr_scheduled_activation_pt",
-            group: "REN mFRR",
+            group: "mFRR",
             label: "mFRR scheduled — activation price",
+            selectorLabel: "mFRR scheduled — activation price (Portugal only)",
             market: "mfrr",
             stage: "energy_scheduled",
             metric: "scheduled_activation_price",
@@ -165,8 +171,9 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
 
         {
             id: "mfrr_direct_weighted_es",
-            group: "REE/ESIOS mFRR",
+            group: "mFRR",
             label: "mFRR direct — weighted-average price",
+            selectorLabel: "mFRR direct — weighted-average price (Spain only)",
             market: "mfrr",
             stage: "energy_direct",
             metric: "weighted_average_price",
@@ -177,8 +184,9 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
 
         {
             id: "mfrr_direct_qt_pt",
-            group: "REN mFRR",
+            group: "mFRR",
             label: "mFRR direct QT — activation price",
+            selectorLabel: "mFRR direct QT — activation price (Portugal only)",
             market: "mfrr",
             stage: "energy_direct_qt",
             metric: "direct_activation_price",
@@ -189,8 +197,9 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
 
         {
             id: "mfrr_direct_q1t_pt",
-            group: "REN mFRR",
+            group: "mFRR",
             label: "mFRR direct Q1T — activation price",
+            selectorLabel: "mFRR direct Q1T — activation price (Portugal only)",
             market: "mfrr",
             stage: "energy_direct_q1t",
             metric: "direct_activation_price",
@@ -200,33 +209,22 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
         },
 
         {
-            id: "mfrr_legacy_es",
-            group: "REE/ESIOS mFRR",
+            id: "mfrr_legacy",
+            group: "mFRR",
             label: "mFRR scheduled — legacy marginal price",
             market: "mfrr",
             stage: "energy_scheduled_legacy",
             metric: "marginal_price",
             direction: true,
             session: false,
-            countries: ["ES"]
-        },
-
-        {
-            id: "mfrr_legacy_pt",
-            group: "REN mFRR",
-            label: "mFRR scheduled — legacy marginal price",
-            market: "mfrr",
-            stage: "energy_scheduled_legacy",
-            metric: "marginal_price",
-            direction: true,
-            session: false,
-            countries: ["PT"]
+            countries: ["ES", "PT"]
         },
 
         {
             id: "rr_activation_pt",
-            group: "REN RR",
+            group: "RR",
             label: "Replacement reserve — activation price",
+            selectorLabel: "Replacement reserve — activation price (Portugal only)",
             market: "rr",
             metric: "activation_price",
             direction: false,
@@ -1435,14 +1433,18 @@ def validate_output(
         'id: "mfrr_scheduled_weighted_es"',
         'id: "mfrr_scheduled_market_es"',
         'id: "mfrr_direct_weighted_es"',
-        'id: "mfrr_legacy_es"',
+        'id: "mfrr_legacy"',
         'id: "afrr_capacity_adjusted_pt"',
         'id: "afrr_capacity_final_pt"',
         'id: "mfrr_scheduled_activation_pt"',
         'id: "mfrr_direct_qt_pt"',
         'id: "mfrr_direct_q1t_pt"',
-        'id: "mfrr_legacy_pt"',
         'id: "rr_activation_pt"',
+        'group: "aFRR"',
+        'group: "mFRR"',
+        'group: "RR"',
+        'weighted-average price (Spain only)',
+        'activation price (Portugal only)',
         "Public portfolio demo.",
         "Price series &amp; frequency methodology",
         "household electricity tariff",
