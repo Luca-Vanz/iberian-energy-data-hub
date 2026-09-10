@@ -1618,18 +1618,39 @@
 
     function populateCountries() {
 
-        const definition =
-            selectedDefinition();
+        const definitions =
+            selectedDefinitions();
 
 
-        if (!definition) {
+        if (!definitions.length) {
             return;
         }
 
 
+        const availableByDefinition =
+            definitions.map(
+                definition =>
+                    availableCountriesForDefinition(
+                        definition
+                    )
+            );
+
+
         const available =
-            availableCountriesForDefinition(
-                definition
+            [
+                ...new Set(
+                    availableByDefinition.flat()
+                )
+            ];
+
+
+        const common =
+            available.filter(
+                country =>
+                    availableByDefinition.every(
+                        countries =>
+                            countries.includes(country)
+                    )
             );
 
 
@@ -1691,6 +1712,15 @@
 
 
         if (
+            available.includes("ES")
+            && available.includes("PT")
+            && common.length === 0
+        ) {
+
+            countryElement.value =
+                "both";
+        }
+        else if (
             values.includes(
                 previous
             )

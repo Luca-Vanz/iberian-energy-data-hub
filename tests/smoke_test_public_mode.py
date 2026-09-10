@@ -273,6 +273,8 @@ def test_public_dashboard() -> None:
         'group: "RR"',
         'weighted-average price (Spain only)',
         'activation price (Portugal only)',
+        'const availableByDefinition =',
+        'common.length === 0',
     ]:
         assert_true(required in html, f"Missing approved selector: {required}")
 
