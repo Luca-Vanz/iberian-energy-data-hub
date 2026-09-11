@@ -167,6 +167,40 @@
             accent-color: var(--primary);
         }
 
+        .formula-builder {
+            grid-column: 1 / -1;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            background: #f8fafc;
+        }
+
+        .formula-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text);
+        }
+
+        .formula-toggle input {
+            min-height: auto;
+            accent-color: var(--primary);
+        }
+
+        .formula-input {
+            width: 100%;
+            margin-top: 10px;
+            font-family: Consolas, "Courier New", monospace;
+        }
+
+        .formula-legend {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.55;
+        }
+
         label {
             font-size: 12px;
             font-weight: 650;
@@ -495,6 +529,36 @@
                 <div id="seriesChecklist" class="series-checklist" role="group" aria-label="Price series"></div>
                 <div class="availability">
                     Check every price series you want to display together.
+                </div>
+
+            </div>
+
+
+            <div class="formula-builder">
+
+                <label class="formula-toggle" for="formulaEnabled">
+                    <input id="formulaEnabled" type="checkbox">
+                    Display a mathematical formula instead of the individual series
+                </label>
+
+                <input
+                    id="formulaExpression"
+                    class="formula-input"
+                    type="text"
+                    value="A + B"
+                    aria-label="Price formula"
+                    disabled
+                >
+
+                <div id="formulaLegend" class="formula-legend">
+                    Select at least two price series to build a formula.
+                </div>
+
+                <div class="formula-legend">
+                    Supported syntax: series letters, numbers, +, −, ×, / and
+                    parentheses. Formula points are shown only when every operand
+                    has a value at the same timestamp. Series with different units
+                    cannot be combined.
                 </div>
 
             </div>
@@ -1068,6 +1132,15 @@
     const seriesChecklist =
         document.getElementById("seriesChecklist");
 
+    const formulaEnabled =
+        document.getElementById("formulaEnabled");
+
+    const formulaExpression =
+        document.getElementById("formulaExpression");
+
+    const formulaLegend =
+        document.getElementById("formulaLegend");
+
     const countryElement =
         document.getElementById("country");
 
@@ -1173,6 +1246,340 @@
         const ids = Array.from(seriesElement.selectedOptions).map(option => option.value);
 
         return SERIES.filter(item => ids.includes(item.id));
+    }
+
+    function formulaAlias(index) {
+
+        return String.fromCharCode(65 + index);
+    }
+
+    function updateFormulaBuilder() {
+
+        const definitions = selectedDefinitions();
+
+        formulaExpression.disabled = !formulaEnabled.checked;
+
+        if (definitions.length < 2) {
+
+            formulaLegend.textContent =
+                "Select at least two price series to build a formula.";
+
+            return;
+        }
+
+        formulaLegend.textContent = definitions
+            .map((definition, index) =>
+                `${formulaAlias(index)} = ${definition.label}`
+            )
+            .join(" · ");
+    }
+
+    function tokenizeFormula(expression, aliases) {
+
+        const tokens = [];
+        let position = 0;
+
+        while (position < expression.length) {
+
+            const remaining = expression.slice(position);
+            const whitespace = remaining.match(/^\s+/);
+
+            if (whitespace) {
+                position += whitespace[0].length;
+                continue;
+            }
+
+            const number = remaining.match(/^(?:\d+(?:\.\d*)?|\.\d+)/);
+
+            if (number) {
+                tokens.push({type: "number", value: Number(number[0])});
+                position += number[0].length;
+                continue;
+            }
+
+            const variable = remaining.match(/^[A-Z]/i);
+
+            if (variable) {
+                const name = variable[0].toUpperCase();
+
+                if (!aliases.has(name)) {
+                    throw new Error(`Unknown formula series ${name}.`);
+                }
+
+                tokens.push({type: "variable", value: name});
+                position += variable[0].length;
+                continue;
+            }
+
+            const operator = remaining[0];
+
+            if ("+-*/()".includes(operator)) {
+                tokens.push({type: operator, value: operator});
+                position += 1;
+                continue;
+            }
+
+            throw new Error(`Unsupported formula character: ${operator}`);
+        }
+
+        return tokens;
+    }
+
+    function evaluateFormula(expression, values) {
+
+        const tokens = tokenizeFormula(expression, new Set(values.keys()));
+        let position = 0;
+
+        function parsePrimary() {
+
+            const token = tokens[position];
+
+            if (!token) {
+                throw new Error("The formula is incomplete.");
+            }
+
+            if (token.type === "number") {
+                position += 1;
+                return token.value;
+            }
+
+            if (token.type === "variable") {
+                position += 1;
+                return values.get(token.value);
+            }
+
+            if (token.type === "(") {
+                position += 1;
+                const value = parseAddition();
+
+                if (tokens[position]?.type !== ")") {
+                    throw new Error("A closing parenthesis is missing.");
+                }
+
+                position += 1;
+                return value;
+            }
+
+            if (token.type === "+" || token.type === "-") {
+                position += 1;
+                const value = parsePrimary();
+                return token.type === "-" ? -value : value;
+            }
+
+            throw new Error("The formula has an unexpected operator.");
+        }
+
+        function parseMultiplication() {
+
+            let value = parsePrimary();
+
+            while (tokens[position]?.type === "*" || tokens[position]?.type === "/") {
+                const operator = tokens[position++].type;
+                const right = parsePrimary();
+
+                if (operator === "/" && right === 0) {
+                    throw new Error("The formula divides by zero.");
+                }
+
+                value = operator === "*" ? value * right : value / right;
+            }
+
+            return value;
+        }
+
+        function parseAddition() {
+
+            let value = parseMultiplication();
+
+            while (tokens[position]?.type === "+" || tokens[position]?.type === "-") {
+                const operator = tokens[position++].type;
+                const right = parseMultiplication();
+                value = operator === "+" ? value + right : value - right;
+            }
+
+            return value;
+        }
+
+        const result = parseAddition();
+
+        if (position !== tokens.length) {
+            throw new Error("The formula could not be parsed.");
+        }
+
+        if (!Number.isFinite(result)) {
+            throw new Error("The formula produced a non-finite value.");
+        }
+
+        return result;
+    }
+
+    function applyPriceFormula(result) {
+
+        if (!formulaEnabled.checked) {
+            return result;
+        }
+
+        const definitions = result.definitions || [];
+
+        if (definitions.length < 2) {
+            throw new Error("Select at least two price series for a formula.");
+        }
+
+        if (definitions.length > 26) {
+            throw new Error("A formula can use at most 26 price series.");
+        }
+
+        const expression = formulaExpression.value.trim();
+
+        if (!expression) {
+            throw new Error("Enter a price formula, for example A + B.");
+        }
+
+        const definitionAliases = new Map(
+            definitions.map((definition, index) => [definition.id, formulaAlias(index)])
+        );
+
+        const referencedAliases = new Set(
+            tokenizeFormula(expression, new Set(definitionAliases.values()))
+                .filter(token => token.type === "variable")
+                .map(token => token.value)
+        );
+
+        if (referencedAliases.size < 2) {
+            throw new Error("Use at least two selected price series in the formula.");
+        }
+
+        const relevantDefinitionIds = new Set(
+            [...definitionAliases]
+                .filter(([, alias]) => referencedAliases.has(alias))
+                .map(([definitionId]) => definitionId)
+        );
+
+        const units = new Set(
+            result.data
+                .filter(row => relevantDefinitionIds.has(row.comparison_definition_id))
+                .map(row => row.unit)
+                .filter(Boolean)
+        );
+
+        if (units.size > 1) {
+            throw new Error(
+                "Formula operands use different units. Combine EUR/MWh series with EUR/MWh, or EUR/MW with EUR/MW."
+            );
+        }
+
+        const buckets = new Map();
+
+        for (const row of result.data) {
+
+            if (!relevantDefinitionIds.has(row.comparison_definition_id)) {
+                continue;
+            }
+
+            const key = `${row.timestamp_utc}|${row.country || ""}`;
+
+            if (!buckets.has(key)) {
+                buckets.set(key, []);
+            }
+
+            buckets.get(key).push(row);
+        }
+
+        const formulaRows = [];
+
+        for (const rows of buckets.values()) {
+
+            const directions = [
+                ...new Set(rows.map(row => row.direction).filter(value => value && value !== "none"))
+            ];
+
+            const sessions = [
+                ...new Set(rows.map(row => Number(row.session || 0)).filter(Boolean))
+            ];
+
+            const targetDirections = directions.length ? directions : ["none"];
+            const targetSessions = sessions.length ? sessions : [0];
+
+            for (const direction of targetDirections) {
+                for (const session of targetSessions) {
+
+                    const values = new Map();
+                    const operandRows = [];
+                    let complete = true;
+
+                    for (const definition of definitions) {
+
+                        const alias = definitionAliases.get(definition.id);
+
+                        if (!referencedAliases.has(alias)) {
+                            continue;
+                        }
+
+                        const candidates = rows.filter(row =>
+                            row.comparison_definition_id === definition.id
+                            && (!row.direction || row.direction === "none" || row.direction === direction)
+                            && (!Number(row.session || 0) || Number(row.session) === session)
+                        );
+
+                        if (candidates.length !== 1) {
+                            complete = false;
+                            break;
+                        }
+
+                        values.set(alias, Number(candidates[0].value));
+                        operandRows.push(candidates[0]);
+                    }
+
+                    if (!complete) {
+                        continue;
+                    }
+
+                    const template = operandRows[0];
+                    const value = evaluateFormula(expression, values);
+
+                    formulaRows.push({
+                        ...template,
+                        value,
+                        direction,
+                        session,
+                        comparison_definition_id: "formula",
+                        comparison_definition_label: `y = ${expression}`,
+                        comparison_has_session: sessions.length > 0,
+                        native_resolution_minutes: Math.max(
+                            ...operandRows.map(row => Number(row.native_resolution_minutes || 0))
+                        ),
+                        is_upsampled: operandRows.some(row => row.is_upsampled),
+                        aggregation: "mathematical formula",
+                        source: [...new Set(operandRows.map(row => row.source).filter(Boolean))].join(" + "),
+                        source_id: [...new Set(operandRows.map(row => row.source_id).filter(Boolean))].join(" + ")
+                    });
+                }
+            }
+        }
+
+        if (!formulaRows.length) {
+            throw new Error(
+                "The selected series have no matching timestamps for this formula. Choose an overlapping period, country, direction and auction session."
+            );
+        }
+
+        return {
+            ...result,
+            definition: {
+                id: "formula",
+                label: `y = ${expression}`,
+                session: sessionsUsed(formulaRows)
+            },
+            definitions: [{id: "formula", label: `y = ${expression}`}],
+            missingDefinitions: [],
+            data: formulaRows,
+            formula: expression
+        };
+    }
+
+    function sessionsUsed(rows) {
+
+        return rows.some(row => Number(row.session || 0) > 0);
     }
 
 
@@ -1572,6 +1979,8 @@
 
             seriesChecklist.appendChild(fieldset);
         }
+
+        updateFormulaBuilder();
     }
 
 
@@ -5486,7 +5895,9 @@
         try {
 
             const result =
-                await loadData();
+                applyPriceFormula(
+                    await loadData()
+                );
 
 
             lastResult =
@@ -5665,7 +6076,16 @@
     seriesElement
         .addEventListener(
             "change",
-            refreshAfterSeriesChange
+            () => {
+                updateFormulaBuilder();
+                refreshAfterSeriesChange();
+            }
+        );
+
+    formulaEnabled
+        .addEventListener(
+            "change",
+            updateFormulaBuilder
         );
 
 

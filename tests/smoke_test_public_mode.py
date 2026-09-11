@@ -325,6 +325,17 @@ def test_public_dashboard() -> None:
         'typeof detail === "string"',
     ]
 
+    required_formula_features = [
+        'id="formulaEnabled"',
+        'id="formulaExpression"',
+        'id="formulaLegend"',
+        "function tokenizeFormula(",
+        "function evaluateFormula(",
+        "function applyPriceFormula(",
+        "The selected series have no matching timestamps",
+        "Formula operands use different units",
+    ]
+
     required_fundamentals_features = [
         'id="capacityStartYear"',
         'id="capacityEndYear"',
@@ -343,6 +354,12 @@ def test_public_dashboard() -> None:
         assert_true(
             required in html,
             f"Public dashboard is missing a fundamentals range/download feature: {required}",
+        )
+
+    for required in required_formula_features:
+        assert_true(
+            required in html,
+            f"Public dashboard is missing a price-formula feature: {required}",
         )
 
     for required in required_comparison_features:
