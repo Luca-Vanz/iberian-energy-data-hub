@@ -773,6 +773,13 @@
 
 
         <div
+            id="seriesWarnings"
+            class="status warning hidden"
+            role="alert"
+        ></div>
+
+
+        <div
             id="resolutionNote"
             class="note hidden"
         ></div>
@@ -1108,6 +1115,9 @@
 
     const emptyMessage =
         document.getElementById("emptyMessage");
+
+    const seriesWarnings =
+        document.getElementById("seriesWarnings");
 
     const chartLoading =
         document.getElementById("chartLoading");
@@ -2397,6 +2407,60 @@
     }
 
 
+    function definitionCoverageDescription(definition) {
+
+        const rows =
+            matchingCatalogRows(
+                definition,
+                selectedCountries()
+            );
+
+
+        if (!rows.length) {
+            return "no validated series is available for the selected country";
+        }
+
+
+        return rows.map(row => {
+            const identity = [
+                row.country,
+                row.direction && row.direction !== "none"
+                    ? row.direction.toUpperCase()
+                    : null
+            ].filter(Boolean).join(" ");
+
+            return `${identity}: ${normalizeDate(row.first_date)} to ${normalizeDate(row.last_date)}`;
+        }).join("; ");
+    }
+
+
+    function renderSeriesWarnings(result) {
+
+        const missing =
+            result.missingDefinitions || [];
+
+
+        if (!missing.length) {
+            seriesWarnings.textContent = "";
+            seriesWarnings.classList.add("hidden");
+            return "";
+        }
+
+
+        const message =
+            "No observations were returned for: "
+            + missing.map(definition =>
+                `${definition.label} (${definitionCoverageDescription(definition)})`
+            ).join(". ")
+            + ". The other selected series are still displayed; official gaps remain blank.";
+
+
+        seriesWarnings.textContent = message;
+        seriesWarnings.classList.remove("hidden");
+        return message;
+    }
+
+
     function updateAvailability() {
 
         if (
@@ -3256,6 +3320,9 @@
 
         const combinedData = [];
         const combinedEvents = [];
+        const definitionCounts = new Map(
+            definitions.map(definition => [definition.id, 0])
+        );
 
         for (const definition of definitions) {
 
@@ -3292,7 +3359,12 @@
                         )
                     );
 
-                combinedData.push(...(response.data || []).map(row => ({
+                const responseData = response.data || [];
+                definitionCounts.set(
+                    definition.id,
+                    definitionCounts.get(definition.id) + responseData.length
+                );
+                combinedData.push(...responseData.map(row => ({
                     ...row,
                     comparison_definition_id: definition.id,
                     comparison_definition_label: definition.label,
@@ -3308,7 +3380,11 @@
             eventMap.set([event.event_date,event.country,event.service,event.event_type,event.title].join("|"), event);
         }
 
-        return {definition: definitions[0], definitions, data: combinedData, events: [...eventMap.values()]};
+        const missingDefinitions = definitions.filter(
+            definition => definitionCounts.get(definition.id) === 0
+        );
+
+        return {definition: definitions[0], definitions, missingDefinitions, data: combinedData, events: [...eventMap.values()]};
     }
 
 
@@ -5442,6 +5518,10 @@
             );
 
 
+            const seriesWarning =
+                renderSeriesWarnings(result);
+
+
             if (
                 !result.data.length
             ) {
@@ -5455,6 +5535,13 @@
 
                 setStatus(
                     coverageMessage,
+                    "warning"
+                );
+
+            } else if (seriesWarning) {
+
+                setStatus(
+                    seriesWarning,
                     "warning"
                 );
 
