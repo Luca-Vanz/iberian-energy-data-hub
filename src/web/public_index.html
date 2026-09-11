@@ -175,6 +175,25 @@
             background: #f8fafc;
         }
 
+        .formula-builder.is-active {
+            border-color: #8ab9dc;
+            background: #f4faff;
+        }
+
+        .formula-title {
+            margin: 0 0 4px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .formula-intro {
+            margin: 0 0 10px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
         .formula-toggle {
             display: flex;
             align-items: center;
@@ -190,8 +209,55 @@
 
         .formula-input {
             width: 100%;
-            margin-top: 10px;
             font-family: Consolas, "Courier New", monospace;
+            font-size: 16px;
+        }
+
+        .formula-workspace {
+            display: none;
+            margin-top: 12px;
+        }
+
+        .formula-builder.is-active .formula-workspace {
+            display: block;
+        }
+
+        .formula-aliases,
+        .formula-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-top: 8px;
+        }
+
+        button.formula-chip {
+            min-height: 32px;
+            padding: 4px 10px;
+            background: white;
+            border: 1px solid #b8c7d6;
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        button.formula-chip:hover {
+            background: #eaf4fb;
+            border-color: var(--primary);
+        }
+
+        .formula-status {
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 650;
+            color: var(--muted);
+        }
+
+        .formula-status.ready {
+            color: #067647;
+        }
+
+        .formula-status.warning {
+            color: #b54708;
         }
 
         .formula-legend {
@@ -564,29 +630,53 @@
 
             <div class="formula-builder">
 
+                <div class="formula-title">Create a custom price calculation</div>
+                <p class="formula-intro">
+                    Combine the selected price series and display the result as one line.
+                    Your original official data remains unchanged.
+                </p>
+
                 <label class="formula-toggle" for="formulaEnabled">
                     <input id="formulaEnabled" type="checkbox">
-                    Display a mathematical formula instead of the individual series
+                    Use a custom calculation
                 </label>
 
-                <input
-                    id="formulaExpression"
-                    class="formula-input"
-                    type="text"
-                    value="A + B"
-                    aria-label="Price formula"
-                    disabled
-                >
+                <div class="formula-workspace">
+                    <label>1. Add series to the calculation</label>
+                    <div id="formulaLegend" class="formula-aliases"></div>
 
-                <div id="formulaLegend" class="formula-legend">
-                    Select at least two price series to build a formula.
-                </div>
+                    <label for="formulaExpression" style="display:block; margin-top:12px;">
+                        2. Build your formula
+                    </label>
+                    <input
+                        id="formulaExpression"
+                        class="formula-input"
+                        type="text"
+                        value="A + B"
+                        placeholder="For example: A + B"
+                        aria-describedby="formulaStatus formulaHelp"
+                        disabled
+                    >
 
-                <div class="formula-legend">
-                    Supported syntax: series letters, numbers, +, −, ×, / and
-                    parentheses. Formula points are shown only when every operand
-                    has a value at the same timestamp. Series with different units
-                    cannot be combined.
+                    <div class="formula-actions" aria-label="Formula shortcuts">
+                        <button type="button" class="formula-chip" data-formula-template="sum">Sum</button>
+                        <button type="button" class="formula-chip" data-formula-template="difference">Difference</button>
+                        <button type="button" class="formula-chip" data-formula-template="average">Average</button>
+                        <button type="button" class="formula-chip" data-formula-insert=" + ">+</button>
+                        <button type="button" class="formula-chip" data-formula-insert=" - ">−</button>
+                        <button type="button" class="formula-chip" data-formula-insert=" * ">×</button>
+                        <button type="button" class="formula-chip" data-formula-insert=" / ">÷</button>
+                        <button type="button" class="formula-chip" data-formula-insert="(">(</button>
+                        <button type="button" class="formula-chip" data-formula-insert=")">)</button>
+                        <button type="button" class="formula-chip" data-formula-clear>Clear</button>
+                    </div>
+
+                    <div id="formulaStatus" class="formula-status" aria-live="polite"></div>
+                    <div id="formulaHelp" class="formula-legend">
+                        A result is calculated only where all formula series overlap.
+                        Prices with different units cannot be combined, and missing
+                        official observations remain missing.
+                    </div>
                 </div>
 
             </div>
@@ -2130,6 +2220,12 @@
     const formulaLegend =
         document.getElementById("formulaLegend");
 
+    const formulaBuilder =
+        document.querySelector(".formula-builder");
+
+    const formulaStatus =
+        document.getElementById("formulaStatus");
+
     const countryElement =
         document.getElementById("country");
 
@@ -2246,21 +2342,71 @@
 
         const definitions = selectedDefinitions();
 
-        formulaExpression.disabled = !formulaEnabled.checked;
+        const active = formulaEnabled.checked;
+        const available = definitions.length >= 2;
 
-        if (definitions.length < 2) {
+        formulaBuilder.classList.toggle("is-active", active);
+        formulaExpression.disabled = !active || !available;
+        formulaLegend.replaceChildren();
 
-            formulaLegend.textContent =
-                "Select at least two price series to build a formula.";
+        if (!available) {
+
+            const message = document.createElement("span");
+            message.textContent = "Select at least two price series above to begin.";
+            formulaLegend.appendChild(message);
+            formulaStatus.textContent = active
+                ? "Waiting for another price series."
+                : "";
+            formulaStatus.className = "formula-status warning";
 
             return;
         }
 
-        formulaLegend.textContent = definitions
-            .map((definition, index) =>
-                `${formulaAlias(index)} = ${definition.label}`
-            )
-            .join(" · ");
+        definitions.forEach((definition, index) => {
+            const alias = formulaAlias(index);
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "formula-chip";
+            button.dataset.formulaInsert = alias;
+            button.title = `Insert ${definition.label}`;
+            button.textContent = `${alias} · ${definition.label}`;
+            formulaLegend.appendChild(button);
+        });
+
+        formulaStatus.textContent = active
+            ? "Ready — choose a shortcut or click a series to insert it."
+            : "";
+        formulaStatus.className = "formula-status ready";
+    }
+
+    function insertFormulaText(text) {
+        const start = formulaExpression.selectionStart ?? formulaExpression.value.length;
+        const end = formulaExpression.selectionEnd ?? start;
+        formulaExpression.value =
+            formulaExpression.value.slice(0, start)
+            + text
+            + formulaExpression.value.slice(end);
+        const cursor = start + text.length;
+        formulaExpression.focus();
+        formulaExpression.setSelectionRange(cursor, cursor);
+    }
+
+    function applyFormulaTemplate(template) {
+        const aliases = selectedDefinitions().map((_, index) => formulaAlias(index));
+
+        if (aliases.length < 2) {
+            return;
+        }
+
+        if (template === "sum") {
+            formulaExpression.value = aliases.join(" + ");
+        } else if (template === "difference") {
+            formulaExpression.value = `${aliases[0]} - ${aliases[1]}`;
+        } else if (template === "average") {
+            formulaExpression.value = `(${aliases.join(" + ")}) / ${aliases.length}`;
+        }
+
+        formulaExpression.focus();
     }
 
     function tokenizeFormula(expression, aliases) {
@@ -7074,7 +7220,33 @@
     formulaEnabled
         .addEventListener(
             "change",
-            updateFormulaBuilder
+            () => {
+                updateFormulaBuilder();
+                if (formulaEnabled.checked && !formulaExpression.disabled) {
+                    formulaExpression.focus();
+                }
+            }
+        );
+
+    formulaBuilder
+        .addEventListener(
+            "click",
+            event => {
+                const button = event.target.closest("button");
+
+                if (!button) {
+                    return;
+                }
+
+                if (button.dataset.formulaTemplate) {
+                    applyFormulaTemplate(button.dataset.formulaTemplate);
+                } else if (button.hasAttribute("data-formula-clear")) {
+                    formulaExpression.value = "";
+                    formulaExpression.focus();
+                } else if (button.dataset.formulaInsert !== undefined) {
+                    insertFormulaText(button.dataset.formulaInsert);
+                }
+            }
         );
 
 
