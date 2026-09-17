@@ -254,7 +254,7 @@ PUBLIC_SERIES_BLOCK = """    const SERIES = [
 # ============================================================
 
 PUBLIC_DATA_GUIDE = """
-    <section class="panel">
+    <section id="methodology" class="panel">
 
         <details
             style="
@@ -1329,16 +1329,7 @@ def add_public_note(
     note = """
 <main>
 
-    <section class="panel">
-
-        <div
-            class="note"
-            style="
-                margin-top: 0;
-                padding-top: 0;
-                border-top: 0;
-            "
-        >
+    <aside class="public-notice" aria-label="Public data scope">
 
             <strong>
                 Public portfolio demo.
@@ -1351,9 +1342,7 @@ def add_public_note(
             Spain and Portugal. Each price product retains its official
             unit, direction, source identifier and native resolution.
 
-        </div>
-
-    </section>
+    </aside>
 """
 
     if marker not in html:

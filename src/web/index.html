@@ -29,6 +29,11 @@
             box-sizing: border-box;
         }
 
+        html { scroll-behavior: smooth; }
+
+        .skip-link { position: fixed; left: 12px; top: -60px; z-index: 100; padding: 10px 14px; border-radius: 8px; background: var(--text); color: white; text-decoration: none; }
+        .skip-link:focus { top: 12px; }
+
         body {
             margin: 0;
 
@@ -60,6 +65,9 @@
             padding: 23px 28px;
         }
 
+        .brand-row { display: flex; align-items: center; gap: 11px; }
+        .brand-mark { display: grid; place-items: center; width: 39px; height: 39px; border-radius: 11px; background: linear-gradient(145deg, #1769aa, #09a6a6); color: white; font-size: 20px; box-shadow: 0 6px 18px rgba(23, 105, 170, .22); }
+
         h1 {
             margin: 0;
             font-size: 29px;
@@ -85,9 +93,26 @@
             text-decoration: none;
         }
 
+        nav a[aria-current="page"] { color: var(--text); }
+
         main {
             padding: 25px 28px 45px;
         }
+
+        .welcome { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr); gap: 24px; padding: 27px; background: linear-gradient(135deg, #eef7ff 0%, #f7fbff 55%, #eefcf9 100%); border-color: #cfe3f2; }
+        .welcome h2 { max-width: 760px; margin: 0; font-size: clamp(25px, 3vw, 38px); line-height: 1.12; letter-spacing: -.8px; }
+        .welcome p { max-width: 760px; color: #475467; }
+        .trust-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+        .trust-pill { padding: 6px 10px; border: 1px solid #c9ddea; border-radius: 999px; background: rgba(255,255,255,.78); color: #344054; font-size: 12px; font-weight: 650; }
+        .start-card { align-self: stretch; padding: 17px; border: 1px solid #cfe3f2; border-radius: 11px; background: rgba(255,255,255,.82); }
+        .start-card strong { display: block; margin-bottom: 9px; }
+        .start-step { display: flex; gap: 10px; margin: 9px 0; font-size: 13px; }
+        .step-number { display: grid; place-items: center; flex: 0 0 23px; height: 23px; border-radius: 50%; background: var(--primary); color: white; font-size: 12px; font-weight: 700; }
+        .jump-nav { position: sticky; top: 0; z-index: 20; display: flex; gap: 7px; overflow-x: auto; margin: 0 0 20px; padding: 9px; border: 1px solid var(--border); border-radius: 11px; background: rgba(255,255,255,.96); box-shadow: 0 4px 14px rgba(16,24,40,.06); }
+        .jump-nav a { flex: 0 0 auto; padding: 7px 11px; border-radius: 7px; color: #344054; font-size: 12px; font-weight: 650; text-decoration: none; }
+        .jump-nav a:hover { background: #eef5fb; color: var(--primary); }
+
+        .public-notice { margin: 0 0 14px; padding: 10px 13px; border: 1px solid #cfe3f2; border-radius: 9px; background: #f6fbff; color: #475467; font-size: 12px; }
 
         .panel {
             background: var(--surface);
@@ -95,12 +120,16 @@
             border-radius: 12px;
             padding: 21px;
             margin-bottom: 20px;
+            scroll-margin-top: 70px;
         }
 
         .panel-title {
-            margin: 0 0 17px;
-            font-size: 18px;
+            margin: 0 0 5px;
+            font-size: 20px;
         }
+
+        .panel-intro { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
+        .eyebrow { margin-bottom: 4px; color: var(--primary); font-size: 11px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
 
         .controls {
             display: grid;
@@ -124,6 +153,11 @@
         .series-control {
             grid-column: 1 / -1;
         }
+
+        .series-toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) auto auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+        .series-toolbar input { min-width: 0; }
+        .selected-count { color: var(--primary); font-size: 12px; font-weight: 700; white-space: nowrap; }
+        .series-option.is-filtered, .series-group.is-filtered { display: none; }
 
         .series-checklist {
             display: grid;
@@ -185,6 +219,7 @@
             font-size: 14px;
             font-weight: 700;
             color: var(--text);
+            line-height: 1.5;
         }
 
         .formula-intro {
@@ -306,6 +341,17 @@
 
         button:hover {
             background: var(--primary-dark);
+        }
+
+        button:disabled { cursor: not-allowed; opacity: .55; }
+
+        button:focus-visible,
+        a:focus-visible,
+        summary:focus-visible,
+        input:focus-visible,
+        select:focus-visible {
+            outline: 3px solid rgba(23, 105, 170, .28);
+            outline-offset: 2px;
         }
 
         button.secondary {
@@ -543,6 +589,12 @@
             .chart-wrapper {
                 height: 430px;
             }
+
+            .welcome { grid-template-columns: 1fr; padding: 20px; }
+            .series-toolbar { grid-template-columns: 1fr; }
+            .series-toolbar button { width: 100%; }
+            .controls > .control > button { width: 100%; }
+            .panel { padding: 17px; }
         }
     </style>
 </head>
@@ -550,20 +602,23 @@
 
 <body>
 
+<a class="skip-link" href="#price-explorer">Skip to data explorer</a>
+
 <header>
 
     <div class="header-inner">
 
-        <h1>
-            Iberian Energy Data Hub
-        </h1>
+        <div class="brand-row">
+            <div class="brand-mark" aria-hidden="true">⚡</div>
+            <h1>Iberian Energy Data Hub</h1>
+        </div>
 
         <div class="subtitle">
             Historical electricity-market prices for Spain and Portugal
         </div>
 
         <nav aria-label="Main navigation">
-            <a href="/">Data</a>
+            <a href="/" aria-current="page">Data</a>
             <a href="/research">Research</a>
             <a href="/about/">About</a>
         </nav>
@@ -575,11 +630,47 @@
 
 <main>
 
-    <section class="panel">
+    <section class="panel welcome" aria-labelledby="welcome-title">
+        <div>
+            <div class="eyebrow">Official energy data, made understandable</div>
+            <h2 id="welcome-title">Explore the Iberian electricity system without wrestling with raw files.</h2>
+            <p>
+                Compare wholesale and balancing prices, inspect generation and capacity,
+                and download the exact observations behind every chart.
+            </p>
+            <div class="trust-row" aria-label="Data principles">
+                <span class="trust-pill">Spain + Portugal</span>
+                <span class="trust-pill">Official sources</span>
+                <span class="trust-pill">No invented values</span>
+                <span class="trust-pill">CSV downloads</span>
+            </div>
+        </div>
+        <div class="start-card">
+            <strong>Start exploring in three steps</strong>
+            <div class="start-step"><span class="step-number">1</span><span>Choose one or more price series.</span></div>
+            <div class="start-step"><span class="step-number">2</span><span>Set the country, frequency and dates.</span></div>
+            <div class="start-step"><span class="step-number">3</span><span>Select <b>Load prices</b>, then chart or download.</span></div>
+        </div>
+    </section>
+
+    <nav class="jump-nav" aria-label="Data page sections">
+        <a href="#price-explorer">Explore prices</a>
+        <a href="#download-data">Get CSV</a>
+        <a href="#price-chart-section">View chart</a>
+        <a href="#capacity-section">Capacity</a>
+        <a href="#generation-section">Generation</a>
+        <a href="#methodology">Methodology</a>
+    </nav>
+
+    <section id="price-explorer" class="panel">
+
+        <div class="eyebrow">Step 1 · Build your view</div>
 
         <h2 class="panel-title">
             Price explorer
         </h2>
+
+        <p class="panel-intro">Select the markets you want to compare, then choose how and when to display them.</p>
 
 
         <div class="controls">
@@ -590,6 +681,12 @@
                 <label>
                     Price series
                 </label>
+
+                <div class="series-toolbar">
+                    <input id="seriesSearch" type="search" placeholder="Search prices, markets or services…" aria-label="Search price series">
+                    <span id="selectedSeriesCount" class="selected-count" aria-live="polite"></span>
+                    <button id="resetSeries" class="secondary" type="button">Reset to day-ahead</button>
+                </div>
 
                 <select id="series" multiple class="hidden" aria-hidden="true"></select>
                 <div id="seriesChecklist" class="series-checklist" role="group" aria-label="Price series"></div>
@@ -814,7 +911,9 @@
     </section>
 
 
-    <section class="panel">
+    <section id="download-data" class="panel">
+
+        <div class="eyebrow">Step 2 · Take the data with you</div>
 
         <h2 class="panel-title">
             Download data
@@ -885,7 +984,9 @@
     </section>
 
 
-    <section class="panel">
+    <section id="price-chart-section" class="panel">
+
+        <div class="eyebrow">Step 3 · Read the result</div>
 
         <h2 class="panel-title">
             Price chart
@@ -946,7 +1047,8 @@
 
     </section>
 
-    <section class="panel">
+    <section id="capacity-section" class="panel">
+        <div class="eyebrow">Power system fundamentals</div>
         <h2 class="panel-title">Installed generation capacity by technology</h2>
         <p class="fundamentals-intro">Installed net capacity describes the generating fleet available on 1 January of each year. It is measured in MW and is different from the electricity actually produced.</p>
         <div class="controls">
@@ -962,7 +1064,8 @@
         <div class="note"><strong>Method.</strong> Annual installed net capacity is displayed by production technology as published by ENTSO-E (A68). Capacity has only a yearly frequency because the official series is annual. Values are not interpolated between years; missing observations remain missing. The current Hub archive starts in 2018, although earlier official ENTSO-E observations exist and can be added in a future archive extension.</div>
     </section>
 
-    <section class="panel">
+    <section id="generation-section" class="panel">
+        <div class="eyebrow">Power system fundamentals</div>
         <h2 class="panel-title">Electricity generation by technology</h2>
         <p class="fundamentals-intro">Monthly generation shows which technologies produced electricity. Native average-MW observations are converted into energy using their actual interval duration and summed to GWh.</p>
         <div class="controls">
@@ -1221,6 +1324,15 @@
 
     const seriesChecklist =
         document.getElementById("seriesChecklist");
+
+    const seriesSearch =
+        document.getElementById("seriesSearch");
+
+    const selectedSeriesCount =
+        document.getElementById("selectedSeriesCount");
+
+    const resetSeries =
+        document.getElementById("resetSeries");
 
     const formulaEnabled =
         document.getElementById("formulaEnabled");
@@ -2126,7 +2238,45 @@
             seriesChecklist.appendChild(fieldset);
         }
 
+        filterSeriesChecklist();
+        updateSelectedSeriesCount();
         updateFormulaBuilder();
+    }
+
+    function updateSelectedSeriesCount() {
+        const count = seriesElement.selectedOptions.length;
+        selectedSeriesCount.textContent = `${count} ${count === 1 ? "series" : "series"} selected`;
+    }
+
+    function filterSeriesChecklist() {
+        const query = (seriesSearch.value || "").trim().toLowerCase();
+
+        for (const group of seriesChecklist.querySelectorAll(".series-group")) {
+            let visible = 0;
+
+            for (const option of group.querySelectorAll(".series-option")) {
+                const matches = !query || option.textContent.toLowerCase().includes(query)
+                    || group.querySelector("legend").textContent.toLowerCase().includes(query);
+                option.classList.toggle("is-filtered", !matches);
+                if (matches) visible += 1;
+            }
+
+            group.classList.toggle("is-filtered", visible === 0);
+        }
+    }
+
+    function resetSeriesSelection() {
+        for (const option of seriesElement.options) {
+            option.selected = option.value === "day_ahead";
+        }
+
+        for (const checkbox of seriesChecklist.querySelectorAll('input[type="checkbox"]')) {
+            checkbox.checked = checkbox.value === "day_ahead";
+        }
+
+        seriesSearch.value = "";
+        filterSeriesChecklist();
+        seriesElement.dispatchEvent(new Event("change"));
     }
 
 
@@ -6223,9 +6373,22 @@
         .addEventListener(
             "change",
             () => {
+                updateSelectedSeriesCount();
                 updateFormulaBuilder();
                 refreshAfterSeriesChange();
             }
+        );
+
+    seriesSearch
+        .addEventListener(
+            "input",
+            filterSeriesChecklist
+        );
+
+    resetSeries
+        .addEventListener(
+            "click",
+            resetSeriesSelection
         );
 
     formulaEnabled

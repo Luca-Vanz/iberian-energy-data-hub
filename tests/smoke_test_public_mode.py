@@ -342,6 +342,18 @@ def test_public_dashboard() -> None:
         "Formula operands use different units",
     ]
 
+    required_usability_features = [
+        'class="skip-link"',
+        'class="panel welcome"',
+        'class="jump-nav"',
+        'id="seriesSearch"',
+        'id="selectedSeriesCount"',
+        'id="resetSeries"',
+        "function filterSeriesChecklist(",
+        "function resetSeriesSelection(",
+        'id="methodology"',
+    ]
+
     required_fundamentals_features = [
         'id="capacityStartYear"',
         'id="capacityEndYear"',
@@ -366,6 +378,12 @@ def test_public_dashboard() -> None:
         assert_true(
             required in html,
             f"Public dashboard is missing a price-formula feature: {required}",
+        )
+
+    for required in required_usability_features:
+        assert_true(
+            required in html,
+            f"Public dashboard is missing a usability feature: {required}",
         )
 
     for required in required_comparison_features:
