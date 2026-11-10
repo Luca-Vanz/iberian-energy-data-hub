@@ -11,7 +11,7 @@ interactive web dashboard.
 
 [Open the Iberian Energy Data Hub](https://iberian-energy-data-hub.onrender.com/)
 
-[Download the current public database release](https://github.com/Luca-Vanz/iberian-energy-data-hub/releases/tag/public-db-2026-09-10-ren)
+[Download the current public database release](https://github.com/Luca-Vanz/iberian-energy-data-hub/releases/tag/public-db-2026-11-10)
 
 The public deployment contains sanitized **OMIE wholesale prices**, authorized
 **Spanish REE/ESIOS aFRR and mFRR price series**, and authorized **Portuguese
@@ -53,21 +53,21 @@ necessary.
 
 | Product | Coverage in the current public database | Native resolution |
 | --- | --- | --- |
-| Day-ahead, ES | 1 Jan 1998–20 Aug 2026 | Hourly before 1 Oct 2025; 15-minute from 1 Oct 2025 |
-| Day-ahead, PT | 1 Jul 2007–20 Aug 2026 | Hourly before 1 Oct 2025; 15-minute from 1 Oct 2025 |
-| Intraday auctions, ES and PT | Mainly from 1 Jan 2018; session 1 includes a 31 Dec 2017 delivery-horizon record; end dates vary by session | Historically hourly; 15-minute products from 19 Mar 2025 |
-| Continuous intraday, ES and PT | 13 Jun 2018–19 Aug 2026 | Historically hourly; 15-minute products from 19 Mar 2025 |
-| aFRR energy, ES | 1 Jan 2018–20 Aug 2026 | Hourly and 15-minute, depending on date and indicator |
-| aFRR capacity, ES | Downward series from 1 Jan 2018; upward marginal series from 20 Nov 2024; through 20 Aug 2026 | Hourly and 15-minute, depending on date and indicator |
-| mFRR scheduled, ES | Legacy marginal series from 1 Jan 2018–10 Dec 2024; current weighted-average series from 24 May 2022 and market-price series from 10 Dec 2024; through 20 Aug 2026 | Hourly legacy observations and 15-minute current products |
-| mFRR direct, ES | Upward from 24 May 2022; downward from 15 Aug 2022; through 20 Aug 2026 | 15 minutes |
+| Day-ahead, ES | 1 Jan 1998–10 Nov 2026 | Hourly before 1 Oct 2025; 15-minute from 1 Oct 2025 |
+| Day-ahead, PT | 1 Jul 2007–10 Nov 2026 | Hourly before 1 Oct 2025; 15-minute from 1 Oct 2025 |
+| Intraday auctions, ES and PT | Mainly from 1 Jan 2018; session 1 includes a 31 Dec 2017 delivery-horizon record; current sessions through 9 Nov 2026 | Historically hourly; 15-minute products from 19 Mar 2025 |
+| Continuous intraday, ES and PT | 13 Jun 2018–9 Nov 2026 | Historically hourly; 15-minute products from 19 Mar 2025 |
+| aFRR energy, ES | 1 Jan 2018–10 Nov 2026 | Hourly and 15-minute, depending on date and indicator |
+| aFRR capacity, ES | Downward and weighted-average series from 1 Jan 2018; upward marginal series from 20 Nov 2024; through 10 Nov 2026 | Hourly and 15-minute, depending on date and indicator |
+| mFRR scheduled, ES | Legacy marginal series from 1 Jan 2018–10 Dec 2024; current weighted-average series from 24 May 2022 and market-price series from 10 Dec 2024; through 10 Nov 2026 | Hourly legacy observations and 15-minute current products |
+| mFRR direct, ES | Upward from 24 May 2022; downward from 15 Aug 2022; through 10 Nov 2026 | 15 minutes |
 | aFRR energy, PT | 1 Jul 2008–18 Aug 2026 | Hourly |
-| aFRR capacity, PT | From 9 Jan 2026; product-specific end dates through 19 Aug 2026 | 15 minutes |
-| mFRR scheduled, PT | Legacy from 1 Jul 2008–13 Mar 2024; current product from 14 Mar 2024 through 19 Aug 2026 | Hourly legacy; 15-minute current product |
-| mFRR direct QT/Q1T, PT | From 14 Mar 2024; product-specific end dates through 18 Aug 2026 | 15 minutes |
+| aFRR capacity, PT | From 9 Jan 2026; adjusted-price series through 8 Nov 2026 and marginal/final-price series through 10 Nov 2026 | 15 minutes |
+| mFRR scheduled, PT | Legacy from 1 Jul 2008–13 Mar 2024; current product from 14 Mar 2024 through 10 Nov 2026 | Hourly legacy; 15-minute current product |
+| mFRR direct QT/Q1T, PT | From 14 Mar 2024; product-specific end dates through 7–9 Nov 2026 | 15 minutes |
 | RR activation, PT | Legacy 20 Oct 2020–15 Apr 2025; current 16 Apr–30 Dec 2025 | Hourly legacy; 15-minute current product |
 | Installed capacity, ES and PT | Annual observations, 2018–2026 | Annual |
-| Generation by technology, ES and PT | Monthly energy totals, Jan 2018–Sep 2026 (current month partial) | Calculated from native hourly or 15-minute observations |
+| Generation by technology, ES and PT | Monthly energy totals, Jan 2018–Nov 2026 (current month partial) | Calculated from native hourly or 15-minute observations |
 
 Important interpretation notes:
 
@@ -182,8 +182,8 @@ Official sources (OMIE / REE-ESIOS / REN / ENTSO-E)
 The public SQLite database is built separately. Its wholesale table is
 validated as OMIE-only, while its balancing table is restricted to approved
 Spanish REE/ESIOS aFRR/mFRR and Portuguese REN aFRR/mFRR/RR prices. Every
-other balancing series remains excluded. It contains 2,309,000 approved
-balancing-price observations across 31 catalog series, plus 3,134 ENTSO-E
+other balancing series remains excluded. It contains 2,456,996 approved
+balancing-price observations across 31 catalog series, plus 3,196 ENTSO-E
 monthly-generation rows and 361 ENTSO-E installed-capacity rows for Spain and Portugal. The
 database is compressed as a deployment artifact and fetched during the Render
 build, which verifies SQLite integrity, allowed tables,
@@ -276,8 +276,12 @@ unvalidated balancing datasets remain outside the public release.
 
 Current production release:
 
-- Database snapshot: 10 September 2026, using the validated source data available locally
-- Database tag: `public-db-2026-09-10-ren`
-- Decompressed database: approximately 1,280.83 MB
-- Compressed release asset: approximately 124.13 MB
+- Database snapshot: 10 November 2026, using the validated source data available locally
+- Database tag: `public-db-2026-11-10`
+- Unified OMIE observations: 1,592,131
+- Approved ESIOS and REN balancing observations: 2,456,996
+- Public catalog: 16 wholesale series and 31 balancing series
+- Decompressed database: approximately 1,348.62 MB
+- Compressed release asset: approximately 129.16 MiB
 - Public-mode smoke test: 11 passed, 0 failed, 1 non-failing cold-start timing warning
+- Production health check: passing in `public` mode
